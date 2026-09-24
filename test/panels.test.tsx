@@ -876,6 +876,20 @@ describe("StyleBar", () => {
     expect((screen.getByTitle("Topic font family") as HTMLSelectElement).value).toBe("serif");
   });
 
+  it("sets and clears a topic font family and exact font size", async () => {
+    const onStyle = vi.fn();
+    render(<StyleBar onStyle={onStyle} style={{}} />);
+    await userEvent.selectOptions(
+      screen.getByLabelText("Topic font family"),
+      "SimSun, '宋体', serif",
+    );
+    expect(onStyle).toHaveBeenLastCalledWith({ fontFamily: "SimSun, '宋体', serif" });
+    await userEvent.selectOptions(screen.getByLabelText("Topic font size"), "24px");
+    expect(onStyle).toHaveBeenLastCalledWith({ fontSize: "24px" });
+    await userEvent.selectOptions(screen.getByLabelText("Topic font size"), "");
+    expect(onStyle).toHaveBeenLastCalledWith({ fontSize: "" });
+  });
+
   it("toggles bold off when the topic is already bold (item 21)", async () => {
     const onStyle = vi.fn();
     render(<StyleBar onStyle={onStyle} style={{ fontWeight: "bold" }} />);

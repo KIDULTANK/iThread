@@ -9,7 +9,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { ProgressPie } from "./ProgressPie";
 import { type AgendaItem, agendaBuckets, agendaIsEmpty } from "./agenda";
 import { InspectorResizer } from "./components/InspectorResizer";
 import { editorPrompt } from "./components/editorDialogs";
@@ -642,19 +641,36 @@ export function StyleBar({
         ◳
       </button>
       {divider}
-      {label("Font")}
+      {label(t("panel.font2"))}
       <select
         value={s?.fontFamily ?? ""}
-        onChange={(e) => {
-          if (e.target.value) onStyle({ fontFamily: e.target.value });
-        }}
+        onChange={(e) => onStyle({ fontFamily: e.target.value })}
         title={t("panel.topicFontFamily")}
+        aria-label={t("panel.topicFontFamily")}
         style={{ ...btn(false), padding: coarse ? "4px 6px" : "2px 4px", fontSize: 12 }}
       >
-        <option value="">{t("panel.font")}</option>
+        <option value="">{t("panel.default")}</option>
+        <option value="'Microsoft YaHei', '微软雅黑', sans-serif">微软雅黑</option>
+        <option value="DengXian, '等线', sans-serif">等线</option>
+        <option value="SimSun, '宋体', serif">宋体</option>
+        <option value="KaiTi, '楷体', serif">楷体</option>
         <option value="sans-serif">{t("panel.sans")}</option>
         <option value="serif">{t("panel.serif")}</option>
         <option value="monospace">{t("panel.mono")}</option>
+      </select>
+      <select
+        value={s?.fontSize ?? ""}
+        onChange={(e) => onStyle({ fontSize: e.target.value })}
+        title={t("panel.topicFontSize")}
+        aria-label={t("panel.topicFontSize")}
+        style={{ ...btn(false), padding: coarse ? "4px 6px" : "2px 4px", fontSize: 12 }}
+      >
+        <option value="">{t("panel.autoSize")}</option>
+        {[12, 14, 16, 18, 20, 24, 28, 32, 40, 48].map((px) => (
+          <option key={px} value={`${px}px`}>
+            {px}px
+          </option>
+        ))}
       </select>
       {divider}
       {label("Wrap")}
@@ -729,6 +745,7 @@ export function StyleBar({
             color: "",
             fontWeight: "",
             fontFamily: "",
+            fontSize: "",
             textDecoration: "",
             fillImage: "",
             maxWidth: "",
@@ -2857,7 +2874,6 @@ export function InfoPanel({
   onAddTag,
   onRemoveTag,
   allTags,
-  onSetProgress,
   onSetDue,
   onSetStart,
   onSetPriority,
@@ -3011,81 +3027,34 @@ export function InfoPanel({
   );
   const sectionLabel = (text: string) => <PanelSection>{text}</PanelSection>;
 
-  // Task progress: parents with sub-tasks show an auto-rolled-up pie (read-only); a leaf (or an
-  // undivided node) gets quarter-step buttons to set its own completion, plus a clear-task control.
+  // Task progress is intentionally read-only here. P / Shift+P owns task creation and progress
+  // changes, keeping the inspector quiet and leaving single-letter shortcuts available on canvas.
   const renderProgress = (n: MapNode) => {
-    // Bulk mode with differing progress values: force the editable-step view with no active step + a
-    // "Mixed" hint (suppress the anchor's pie/active step so it can't imply one rolled-up value).
     const progressMixed = !!mixed.progress;
     const info = progressMixed ? null : nodeProgress(n);
     const derived = !progressMixed && hasTaskDescendants(n);
     const pct = info ? toPercent(info.progress) : null;
     return (
       <PropRow label={t("panel.progress")}>
-        {derived ? (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              fontSize: 12,
-            }}
-          >
-            {info ? <ProgressPie fraction={info.progress} size={20} /> : null}
-            <span style={{ color: "var(--ed-ink)", fontVariantNumeric: "tabular-nums" }}>
-              {t("panel.progressSummary", {
-                pct: pct ?? 0,
-                done: info?.done ?? 0,
-                total: info?.total ?? 0,
-              })}
-            </span>
-            <span style={{ color: "var(--ed-faint)" }}>{t("panel.autoSuffix")}</span>
-          </div>
-        ) : (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              flexWrap: "wrap",
-            }}
-          >
-            {progressMixed ? (
-              mixedHint
-            ) : info ? (
-              <ProgressPie fraction={info.progress} size={20} />
-            ) : null}
-            {[0, 25, 50, 75, 100].map((step) => {
-              const active = pct === step;
-              return (
-                <Button
-                  key={step}
-                  active={active}
-                  onClick={() => onSetProgress(step / 100)}
-                  title={t("panel.setTaskPercent", { n: step })}
-                  style={{
-                    padding: "1px 7px",
-                    fontSize: fontSize.sm,
-                    fontVariantNumeric: "tabular-nums",
-                    // Inactive steps are white (not the default lilac control fill).
-                    ...(active ? null : { background: colors.white, color: colors.text }),
-                  }}
-                >
-                  {step}
-                </Button>
-              );
-            })}
-            {info ? (
-              <Button
-                onClick={() => onSetProgress(undefined)}
-                title={t("panel.clearTaskStatus")}
-                style={{ padding: "1px 7px", fontSize: fontSize.sm }}
-              >
-                ✕
-              </Button>
-            ) : null}
-          </div>
-        )}
+        <div style={{ display: "grid", gap: 3, fontSize: fontSize.sm }}>
+          <span style={{ color: "var(--ed-ink)", fontVariantNumeric: "tabular-nums" }}>
+            {progressMixed
+              ? mixedHint
+              : derived
+                ? t("panel.progressSummary", {
+                    pct: pct ?? 0,
+                    done: info?.done ?? 0,
+                    total: info?.total ?? 0,
+                  })
+                : info
+                  ? `${pct}%`
+                  : t("panel.notATask")}
+            {derived ? ` ${t("panel.autoSuffix")}` : null}
+          </span>
+          {!derived ? (
+            <span style={{ color: "var(--ed-faint)" }}>{t("panel.progressShortcutHint")}</span>
+          ) : null}
+        </div>
       </PropRow>
     );
   };

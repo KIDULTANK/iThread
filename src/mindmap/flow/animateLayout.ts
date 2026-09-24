@@ -9,6 +9,12 @@ export function easeInOutCubic(t: number): number {
   return x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2;
 }
 
+/** Responsive, iPad-like settle: movement starts immediately, then glides gently into place. */
+export function easeOutQuint(t: number): number {
+  const x = t < 0 ? 0 : t > 1 ? 1 : t;
+  return 1 - (1 - x) ** 5;
+}
+
 /** Linear interpolation between a and b at parameter t. Pure. */
 export function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
@@ -23,4 +29,4 @@ export function prefersReducedMotion(): boolean {
 }
 
 /** The animation duration (ms) for a layout transition. */
-export const LAYOUT_ANIM_MS = 240;
+export const LAYOUT_ANIM_MS = 300;

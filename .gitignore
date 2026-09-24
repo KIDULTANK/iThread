@@ -11,3 +11,8 @@ coverage
 
 # Local tooling config (Claude Code preview launch config, etc.)
 .claude
+
+# Local validation/reference artifacts — never publish user files or browser captures
+.playwright-cli
+artifacts
+release

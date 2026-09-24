@@ -23,7 +23,7 @@
 // mechanism in both directions with synthetic examples (so the trap cannot be rediscovered even
 // though no real instance of it remains), plus a CLEARANCE test proving actual converted files —
 // eager, lazy, and the last one fixed — really do follow a locale change.
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type Locale, getLocale, registerMessages, setLocale, t } from "../src/i18n";
 
 // A second locale, registered only for this file. `LOCALES` ships `["en"]`, so the cast is how a test
@@ -31,6 +31,7 @@ import { type Locale, getLocale, registerMessages, setLocale, t } from "../src/i
 // and taskDate.test already use.
 const DA = "da" as Locale;
 
+beforeEach(() => setLocale("en"));
 afterEach(() => setLocale("en"));
 
 describe("module-level t() freezes the string at import time", () => {

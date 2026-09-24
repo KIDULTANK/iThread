@@ -79,5 +79,9 @@ describe("parseMdShorthand", () => {
       task: undefined,
       hyperlink: undefined,
     });
+    expect(parseMdShorthand("**粗体** ==高亮== __下划线__")).toMatchObject({
+      topic: "粗体 高亮 下划线",
+      topicRich: "<strong>粗体</strong> <mark>高亮</mark> <u>下划线</u>",
+    });
   });
 });

@@ -1,7 +1,15 @@
 # Notices
 
-This file documents third-party names, marks, and references that appear in
-MindMap Studio's source code, user interface, and accompanying documentation.
+This file documents third-party names, marks, and references that appear in iThread and in its
+upstream project, MindMap Studio. iThread is a derivative work based on MindMap Studio and preserves
+the upstream Apache-2.0 licence, copyright notices, book licence, and attribution.
+
+## Trademark notice — iThoughts
+
+"iThoughts" is a trademark or product name belonging to its respective owner. iThread is an
+independent open-source project and is not affiliated with, endorsed by, sponsored by, or a
+continuation of the original iThoughts product. References to iThoughts and `.itmz` are nominative
+and describe file-format interoperability and keyboard-workflow compatibility only.
 
 ## Trademark notice — MindManager
 

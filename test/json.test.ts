@@ -25,8 +25,8 @@ describe("json I/O", () => {
   });
 
   it("rejects JSON that isn't a MindMap doc", () => {
-    expect(() => parseDoc('{"hello":"world"}')).toThrow(/MindMap Studio/);
-    expect(() => parseDoc('{"schemaVersion":1}')).toThrow(/MindMap Studio/);
+    expect(() => parseDoc('{"hello":"world"}')).toThrow(/iThread/);
+    expect(() => parseDoc('{"schemaVersion":1}')).toThrow(/iThread/);
   });
 
   it("round-trips a typed relationship + the showLinkTypes flag (B3)", () => {

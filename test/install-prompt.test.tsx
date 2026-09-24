@@ -38,7 +38,7 @@ describe("InstallButton / useInstallPrompt (O2)", () => {
     const fakeEvent = { prompt, userChoice: Promise.resolve({ outcome: "accepted" }) };
     __setInstallDeferredForTest(fakeEvent);
     render(<InstallButton />);
-    const btn = screen.getByRole("button", { name: /install mindmap studio/i });
+    const btn = screen.getByRole("button", { name: /install ithread/i });
     expect(btn).toBeTruthy();
     fireEvent.click(btn);
     expect(prompt).toHaveBeenCalled();
@@ -52,7 +52,7 @@ describe("InstallButton / useInstallPrompt (O2)", () => {
     render(<InstallButton />);
     fireEvent.click(screen.getByRole("button", { name: /dismiss install prompt/i }));
     expect(localStorage.getItem("mindmap-install-dismissed")).toBe("1");
-    expect(screen.queryByRole("button", { name: /install mindmap studio/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /install ithread/i })).toBeNull();
   });
 
   it("renders nothing when already running as an installed PWA", () => {

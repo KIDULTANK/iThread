@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { easeInOutCubic, lerp, prefersReducedMotion } from "../src/mindmap/flow/animateLayout";
+import {
+  easeInOutCubic,
+  easeOutQuint,
+  lerp,
+  prefersReducedMotion,
+} from "../src/mindmap/flow/animateLayout";
 
 // Pure math behind the layout-transition tween (#16). The rAF loop itself lives in FlowMindMap and is
 // verified in-browser; here we pin the easing curve + interpolation that drive each frame.
@@ -20,6 +25,16 @@ describe("easeInOutCubic", () => {
     expect(easeInOutCubic(0.25)).toBeLessThan(0.25); // still accelerating
     expect(easeInOutCubic(0.75)).toBeGreaterThan(0.75); // already decelerating
     expect(easeInOutCubic(0.25)).toBeCloseTo(1 - easeInOutCubic(0.75), 10); // symmetric
+  });
+});
+
+describe("easeOutQuint", () => {
+  it("starts immediately and settles gently", () => {
+    expect(easeOutQuint(0)).toBe(0);
+    expect(easeOutQuint(1)).toBe(1);
+    expect(easeOutQuint(0.25)).toBeGreaterThan(0.7);
+    expect(easeOutQuint(-1)).toBe(0);
+    expect(easeOutQuint(2)).toBe(1);
   });
 });
 

@@ -1,15 +1,52 @@
-# MindMap Studio
+# iThread
 
-**Live:** [mindmap-studio.struktureretsundfornuft.dk](https://mindmap-studio.struktureretsundfornuft.dk/)
-· **Status: finished** — feature-complete for its scope ([details](#status))
+**Current release: v0.1.0** · Windows 11 focused · Local-first · Apache-2.0
+
+iThread 是一款面向 Windows 的本地优先思维导图应用，重点兼容 iThoughts `.itmz` 文件，
+提供流畅的大型导图浏览、键盘操作、中英文界面和可供智能体调用的本地 CLI。应用无需账号，
+导图默认保存在浏览器 IndexedDB 或用户选择的本地文件中。
 
 A local-first, offline mind-mapping PWA — a self-hosted replacement for Corel/Mindjet
 MindManager. Built on [React Flow](https://reactflow.dev) (`@xyflow/react`, MIT) with a
 format-agnostic canonical model as the single source of truth. No telemetry, no accounts —
 your maps live in your browser (IndexedDB) and on disk.
 
-Sibling to TP Studio and MECE Studio (same stack: React 19 + Vite + TypeScript, deployed to
-GitHub Pages).
+This repository is derived from
+[Dann Bleeker Pedersen's MindMap Studio](https://github.com/dannbleeker/mindmap-studio)
+under the Apache License 2.0. The upstream copyright, licence and notices are preserved.
+
+## Windows 11 desktop app
+
+Download the portable `iThread-0.1.0-Windows-x64.exe` from the
+[latest release](https://github.com/KIDULTANK/iThread/releases/latest). It runs as a standalone
+Windows application and does not require an installer. Windows may show a SmartScreen notice because
+the community build is not code-signed; verify the SHA-256 value published with the release before
+running it.
+
+To build the desktop executable from source:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm desktop:dist
+```
+
+## Run locally
+
+Requires Node.js 22+ and pnpm 11:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm dev --host 127.0.0.1 --port 4174
+```
+
+Open <http://127.0.0.1:4174/>. For a production build:
+
+```powershell
+pnpm gate
+pnpm preview
+```
+
+The local agent/automation interface is documented in [docs/CLI.md](docs/CLI.md).
 
 ## Features
 
@@ -28,7 +65,7 @@ GitHub Pages).
   `.xlsx`** outlines.
 - **Paste text → map** — turn a pasted outline / bullet list / Markdown into topics (indentation or
   `#` levels set the hierarchy); drop in as a new map or graft under the selected node.
-- **Edit** on the canvas — keyboard-first (Enter = sibling, Tab = child, just start typing or F2 to
+- **Edit** on the canvas — keyboard-first (Enter = sibling, Tab = child, Ctrl/⌘+Enter or F2 to
   edit in place), drag-to-reparent,
   undo/redo (Ctrl+Z / Ctrl+Shift+Z), inline **rich-text** topics (Ctrl+B/I/U), images on
   nodes, and a unified **ℹ Info** panel (note, markers, tags, style, links) for the selected node.
@@ -56,8 +93,8 @@ GitHub Pages).
 - **Topic info panel** — one **ℹ Info** side panel consolidating the selected node's note,
   markers (click-to-toggle, with active highlighted), **tags** (add/remove), style
   (shape/fill/border/bold), and links, organised into **Details / Style / Notes** tabs.
-- **Task progress** — set a topic's completion (0–100%) and a small **completion pie**
-  (MindManager-style, ✓ at 100%) shows on the node — click the pie to step it (0→25→…→100→0).
+- **Task progress** — press **P** to increase a topic's completion (0→25→…→100) and **Shift+P**
+  to decrease it; the state stays visually compact so the topic itself remains the focus.
   Parents **roll up automatically** (average + done/total count), with the percentage echoed in the
   Outline and in image exports.
 - **Due & start dates** — give a topic dates in the **ℹ Info** panel; a **📅 chip** shows on the node
@@ -176,7 +213,8 @@ GitHub Pages).
   (**Shift-drag** detaches a topic to floating, **Ctrl-drag** copies the subtree).
 - **Deep links & history** — every topic has a copyable **deep link** (`?node=` URL), in-note
   links can jump to any topic or map, and **Alt+← / Alt+→** walk your navigation history.
-- **Scales to big maps** — viewport virtualisation keeps the canvas responsive above ~500 nodes.
+- **Scales to big maps** — viewport virtualisation keeps the canvas responsive above ~500 nodes;
+  GPU-composited camera movement and parent-origin branch transitions keep navigation fluid.
 - **Installable PWA** — install to the home screen / desktop; precached app shell for offline use.
 
 ## Architecture
@@ -209,6 +247,15 @@ pnpm test        # unit + integration tests (vitest)
 pnpm build       # production build
 ```
 
+## Local agent CLI
+
+With the development preview open, local scripts and agents can inspect and edit maps through the
+`pnpm ithread` command. It supports listing and reading maps, creating a map, and adding, renaming,
+moving, or explicitly deleting topics. Changes to the open map appear on the canvas immediately.
+The bridge listens only on the local preview and does not require an internet connection.
+
+See [`docs/CLI.md`](docs/CLI.md) for commands, examples, and safety rules.
+
 `pnpm gate` is the "green before done" check: typecheck → lint/format (Biome) → dead-code
 (knip) → tests → build → bundle-size budget (entry chunk), fail-fast. CI
 (`.github/workflows/ci.yml`) runs the same command. See `USER_GUIDE.md` for how to use the
@@ -228,17 +275,11 @@ images through our own importer.
 
 ## Status
 
-**Finished — feature-complete for its scope.** MindMap Studio set out to be a free, local-first,
-offline, single-user replacement for MindManager, and everything in that scope has shipped: the
-brainstorming MVP, the editor/UX redesign, the MindManager canvas-fidelity pass, the competitive
-gap-closing effort (19-tool survey), and the 2026 review programmes (the UX + feature-gap audit,
-two UI reviews, and the MindManager-inspired review — all tiers shipped). The app is **live** at
-<https://mindmap-studio.struktureretsundfornuft.dk/> (GitHub Pages, custom domain, redeployed on
-every push to `main`). Documentation coverage is complete (the user manual covers 100% of the feature
-catalogue) and the review backlog closed on 2026-07-26; what remains is two small deliberate
-residuals — see `NEXT_STEPS.md`.
-Scope intentionally excludes the task / Gantt / resource PM layer and real-time collaboration —
-recorded decisions, not gaps.
+**v0.1.0** is the first public iThread release. It includes `.itmz` import validated against large
+real-world maps, a Windows/iPad-style keyboard workflow, right-growing layouts, Chinese and English
+UI, rich Markdown rendering, animated branch transitions, multi-topic selection, per-topic and
+map-wide typography, and the localhost-only CLI bridge. The app remains local-first and usable
+without a mandatory network connection.
 
 ## The book
 
@@ -246,17 +287,15 @@ A longer-form guide to mind mapping — _Thinking in Maps_ — lives in
 [`docs/guide/`](docs/guide/), built from one Markdown source to two downloads that refresh
 automatically when the manuscript changes:
 
-- **EPUB** (reflowable, Kindle-friendly):
-  [`/Thinking-in-Maps.epub`](https://mindmap-studio.struktureretsundfornuft.dk/Thinking-in-Maps.epub)
-- **PDF** (fixed A4, cover + clickable TOC + bookmarks):
-  [`/Thinking-in-Maps.pdf`](https://mindmap-studio.struktureretsundfornuft.dk/Thinking-in-Maps.pdf)
+- **EPUB** (reflowable, Kindle-friendly): [`public/Thinking-in-Maps.epub`](public/Thinking-in-Maps.epub)
+- **PDF** (fixed A4, cover + clickable TOC + bookmarks): [`public/Thinking-in-Maps.pdf`](public/Thinking-in-Maps.pdf)
 
 Run `pnpm book` to rebuild both (pure Node — no Chromium or LaTeX). Authoring notes are in
 [`docs/guide/AUTHORING.md`](docs/guide/AUTHORING.md).
 
 ## License
 
-MindMap Studio is dual-licensed. The two artefacts in this repository are governed by different
+iThread is dual-licensed. The two artefacts in this repository are governed by different
 licenses:
 
 - **The software** — all source code under `src/`, `test/`, `scripts/`, the build configuration,
@@ -270,4 +309,4 @@ licenses:
 
 Third-party trademarks and third-party authors' work referenced in the book remain the property of
 their respective owners. See [NOTICE.md](NOTICE.md) for the trademark notices and the boundary
-between MindMap Studio's own license and what it doesn't grant rights to.
+between iThread's own license and what it doesn't grant rights to.

@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeAll, describe, expect, it, vi } from "vitest";
-import { SettingsDialog } from "../src/components/SettingsDialog";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { SettingsDialog, applyLocaleChoice } from "../src/components/SettingsDialog";
+import { LOCALE_PREF_KEY, getLocale, setLocale } from "../src/i18n";
 
 // SettingsDialog renders inside the shared native-<dialog> wrapper; guard-stub the modal methods
 // (jsdom may lack them) the same way the other dialog tests do.
@@ -18,6 +19,8 @@ beforeAll(() => {
     };
   }
 });
+
+beforeEach(() => setLocale("en"));
 
 function setup(over: Partial<Parameters<typeof SettingsDialog>[0]> = {}) {
   const props = {
@@ -42,6 +45,18 @@ function setup(over: Partial<Parameters<typeof SettingsDialog>[0]> = {}) {
 }
 
 describe("SettingsDialog", () => {
+  it("offers Chinese and English and persists a language switch", () => {
+    setup();
+    const language = screen.getByLabelText("Language") as HTMLSelectElement;
+    expect([...language.options].map((option) => option.value)).toEqual(["zh-CN", "en"]);
+
+    const reload = vi.fn();
+    applyLocaleChoice("zh-CN", reload);
+    expect(getLocale()).toBe("zh-CN");
+    expect(localStorage.getItem(LOCALE_PREF_KEY)).toBe("zh-CN");
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
   it("renders the sections", () => {
     setup();
     expect(screen.getByText("Settings")).toBeTruthy();

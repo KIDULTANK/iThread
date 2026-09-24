@@ -8,6 +8,7 @@ import {
   addHyperlink,
   addLink,
   addSibling,
+  addSiblingBefore,
   addStickyNote,
   addSubtree,
   alignNodes,
@@ -63,6 +64,7 @@ import {
   setBoundaryLabel,
   setBoundaryShape,
   setBranchColor,
+  setBranchExpandedToLevel,
   setBranchGrowth,
   setCalloutColor,
   setConnectorStyle,
@@ -144,6 +146,11 @@ describe("flow ops — structural", () => {
     const { doc, selectId } = addSibling(base(), "a1");
     expect(kids(doc, "a")).toEqual(["a1", selectId, "a2"]);
     expect(findNode(doc, selectId as string)?.topic).toBe("");
+  });
+
+  it("addSiblingBefore inserts before the target under the same parent", () => {
+    const { doc, selectId } = addSiblingBefore(base(), "a1");
+    expect(doc.root.children[0].children.map((node) => node.id)).toEqual([selectId, "a1", "a2"]);
   });
 
   it("addSibling on the root adds a child instead", () => {
@@ -673,6 +680,40 @@ describe("flow ops — content", () => {
     expect(findNode(l2, "a")?.collapsed).toBe(false);
     // Clamp: level 0 behaves like level 1 (≥1).
     expect(findNode(setExpandedToLevel(base(), 0).doc, "a")?.collapsed).toBe(true);
+  });
+
+  it("setBranchExpandedToLevel applies digits relative to the selected topic only", () => {
+    const doc = base();
+    const a1 = findNode(doc, "a1");
+    const b = findNode(doc, "b");
+    if (!a1 || !b) throw new Error("fixture nodes missing");
+    a1.children = [
+      {
+        id: "a11",
+        topic: "A11",
+        children: [{ id: "a111", topic: "A111", children: [] }],
+      },
+    ];
+    b.children = [{ id: "b1", topic: "B1", children: [] }];
+    b.collapsed = true;
+
+    const level1 = setBranchExpandedToLevel(doc, "a", 1);
+    expect(level1.selectId).toBe("a");
+    expect(findNode(level1.doc, "a")?.collapsed).toBe(false);
+    expect(findNode(level1.doc, "a1")?.collapsed).toBe(true);
+    expect(findNode(level1.doc, "a11")?.collapsed).toBe(true);
+    expect(findNode(level1.doc, "b")?.collapsed).toBe(true); // unrelated branch is unchanged
+
+    const level2 = setBranchExpandedToLevel(doc, "a", 2).doc;
+    expect(findNode(level2, "a")?.collapsed).toBe(false);
+    expect(findNode(level2, "a1")?.collapsed).toBe(false);
+    expect(findNode(level2, "a11")?.collapsed).toBe(true);
+
+    const all = setBranchExpandedToLevel(level1.doc, "a", 0).doc;
+    expect(findNode(all, "a")?.collapsed).toBe(false);
+    expect(findNode(all, "a1")?.collapsed).toBe(false);
+    expect(findNode(all, "a11")?.collapsed).toBe(false);
+    expect(findNode(all, "b")?.collapsed).toBe(true);
   });
 
   it("setNote / toggleIcon / mergeStyle update and clear cleanly", () => {

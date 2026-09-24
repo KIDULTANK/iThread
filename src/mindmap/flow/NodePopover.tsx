@@ -85,8 +85,8 @@ export function NodePopover({
     <NodeToolbar nodeId={sid} isVisible position={Position.Top} offset={10}>
       {/* The transient contextual action bar (UI-3): the high-value per-node edits surface here on
           selection — note / priority / link — replacing the hover pill that used to pop in over the
-          node. Add child/sibling stay as the on-node ＋ affordances; Rename / Delete / markers etc.
-          live behind "More…". Node-tracked via NodeToolbar so it stays put through pan/zoom. */}
+          node. Branch creation plus Rename / Delete / markers remain in the right-click menu.
+          Node-tracked via NodeToolbar so it stays put through pan/zoom. */}
       <div
         className="nodrag nopan"
         style={{

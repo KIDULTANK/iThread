@@ -7,22 +7,15 @@ import type { LinkCandidate } from "./linkAutocomplete";
 
 export interface EditingApi {
   editingId: string | null;
-  /** When edit was started by typing a character on a selected node, that character — the editor
-   *  seeds with it (caret at the end) instead of the existing topic. `null` for a normal edit
-   *  (double-click / F2 / a new node), which seeds with the topic and selects all. */
+  /** Optional initial content for a newly-created topic editor; normal edits use `null`. */
   seed: string | null;
   /** Enter inline edit for a node. */
   beginEdit: (id: string) => void;
-  /** Commit the edited topic (raw contenteditable HTML) and leave edit mode. */
-  commitEdit: (id: string, html: string) => void;
+  /** Commit the edited topic (raw contenteditable HTML) and leave edit mode. `keepSelected` is used
+   *  by Enter; blur commits must not steal selection back from the thing the user clicked. */
+  commitEdit: (id: string, html: string, keepSelected?: boolean) => void;
   /** Commit, then add + edit a sibling (Enter) or child (Tab). `html` is the raw editor HTML. */
   commitAndAdd: (id: string, html: string, what: "sibling" | "child") => void;
-  /** Add a child to a node and drop straight into editing it (the on-node hover ＋ child affordance,
-   *  shown on hover/selection). Unlike commitAndAdd this does NOT touch the node's own text, so it's
-   *  safe to call on a node that isn't currently being edited. */
-  addChild: (id: string) => void;
-  /** Add a sibling after a node and edit it (the on-node hover ＋ sibling affordance). */
-  addSibling: (id: string) => void;
   /** Leave edit mode (Escape). `html` is the live editor buffer: an existing node reverts to its
    *  committed text, but a brand-new node keeps what you typed (or is discarded if still empty). */
   cancelEdit: (html?: string) => void;
@@ -34,10 +27,6 @@ export interface EditingApi {
   setWrapWidth: (id: string, maxWidth: string) => void;
   /** Follow a node's hyperlink: jump to a topic (#node=), open a map (#map=), or open a URL. */
   openLink: (url: string) => void;
-  /** Advance a node's task completion one quarter-step (clicking its on-canvas pie), looping at 100%. */
-  cycleProgress: (id: string) => void;
-  /** Quick task toggle (the hover checkbox): cycle not-a-task → to-do → done → not-a-task. */
-  cycleTask: (id: string) => void;
   /** Click the on-canvas priority chip to step priority: none → High → Med → Low → none. */
   cyclePriority: (id: string) => void;
   /** Select the node and open the inspector on its Notes tab (clicking the node's 📝 indicator). */

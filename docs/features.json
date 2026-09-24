@@ -233,10 +233,10 @@
       "bookExample": false
     },
     {
-      "id": "space-pan-mode",
-      "name": "Space-bar pan mode (hold Space + drag to pan from anywhere, even over a topic)",
-      "area": "navigation",
-      "since": "2026-07-01",
+      "id": "task-progress-keyboard",
+      "name": "P / Shift+P increments or decrements task progress without an on-topic control",
+      "area": "editing",
+      "since": "2026-09-10",
       "manual": true,
       "book": true,
       "bookExample": false
@@ -522,7 +522,7 @@
     },
     {
       "id": "rich-text-topics",
-      "name": "Inline rich-text topics (bold / italic / underline)",
+      "name": "Inline rich-text and Markdown topics (bold / highlight / underline / italic / strike / code)",
       "area": "editing",
       "since": "2026-06-14",
       "manual": true,
@@ -1898,15 +1898,6 @@
       "bookExample": false
     },
     {
-      "id": "task-checkbox",
-      "name": "Quick task toggle — a hover checkbox to cycle not-a-task / to-do / done",
-      "area": "editing",
-      "since": "2026-06-21",
-      "manual": true,
-      "book": true,
-      "bookExample": true
-    },
-    {
       "id": "group-selection",
       "name": "Group a multi-selection of topics in one boundary box",
       "area": "structure",
@@ -2291,6 +2282,24 @@
       "since": "2026-07-02",
       "manual": true,
       "book": true,
+      "bookExample": false
+    },
+    {
+      "id": "local-agent-cli",
+      "name": "Local CLI for agent-controlled map creation, inspection, and topic editing",
+      "area": "library",
+      "since": "2026-09-11",
+      "manual": true,
+      "book": false,
+      "bookExample": false
+    },
+    {
+      "id": "ipad-like-canvas-motion",
+      "name": "iPad-like canvas motion: parent-origin branch reveals, eased layout settling, drag lift, and trackpad pan/pinch zoom",
+      "area": "navigation",
+      "since": "2026-09-22",
+      "manual": true,
+      "book": false,
       "bookExample": false
     }
   ]

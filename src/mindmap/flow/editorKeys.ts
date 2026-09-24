@@ -9,6 +9,7 @@ export interface EditorKeyEvent {
   ctrlKey: boolean;
   metaKey: boolean;
   preventDefault: () => void;
+  stopPropagation: () => void;
 }
 
 /** Side-effecting actions the editor can take, supplied by TopicNode (kept out of this pure router). */
@@ -16,7 +17,9 @@ export interface EditorKeyActions {
   /** Apply an inline format to the contentEditable's selection (Ctrl/Cmd + B/I/U). The tag names are
    *  the semantic ones richTextCommands emits, not the old execCommand verbs. */
   format: (tag: "b" | "i" | "u") => void;
-  /** Commit the edit and add a sibling (Enter) or child (Tab). */
+  /** Commit the edit, leave the topic selected, and remain on it (Enter). */
+  commit: () => void;
+  /** Commit the edit and add a child (Tab). */
   commitAndAdd: (what: "sibling" | "child") => void;
   /** Leave edit mode, keeping/reverting per the editor's own rules (Escape). */
   cancel: () => void;
@@ -34,7 +37,8 @@ export function handleEditorKeyDown(e: EditorKeyEvent, actions: EditorKeyActions
   }
   if (e.key === "Enter") {
     e.preventDefault();
-    actions.commitAndAdd("sibling");
+    e.stopPropagation();
+    actions.commit();
     return true;
   }
   if (e.key === "Tab") {

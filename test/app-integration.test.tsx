@@ -28,11 +28,16 @@ vi.mock("../src/design/tokens", async (importActual) => {
 // this suite so that deferred work executes inline (while still mounted) instead of firing after the
 // component unmounts at teardown — which would otherwise reach into a torn-down jsdom (null document).
 let realRaf: typeof globalThis.requestAnimationFrame;
+let fakeRafTime = 0;
 beforeEach(() => {
   realRaf = globalThis.requestAnimationFrame;
+  fakeRafTime = 0;
   globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => {
-    cb(0);
-    return 0;
+    // Advance the synthetic clock far enough for layout animations to finish on their second frame.
+    // Keeping the callback synchronous still prevents work from leaking past test teardown.
+    fakeRafTime += 1_000;
+    cb(fakeRafTime);
+    return fakeRafTime;
   }) as typeof globalThis.requestAnimationFrame;
 });
 afterEach(() => {

@@ -71,7 +71,7 @@ export async function parseImport(
     return { doc: fromMermaid(await file.text()), warnings: [await lossyNote("mermaid")] };
   }
   if (name.endsWith(".json") || name.endsWith(".mmst")) {
-    // `.mmst` is MindMap Studio's native file — the same lossless schema-v1 JSON (no lossy note).
+    // `.mmst` is iThread's native file — the same lossless schema-v1 JSON (no lossy note).
     return { doc: parseDoc(await file.text()), warnings: [] };
   }
   if (name.endsWith(".opml")) {

@@ -1,4 +1,5 @@
 import type { MapNode, MindMapDoc } from "../model/types";
+import { parseInlineMarkdown, richToInlineMarkdown } from "./richText";
 
 // Markdown <-> canonical model.
 //
@@ -12,15 +13,18 @@ export function toMarkdown(doc: MindMapDoc, numbers?: ReadonlyMap<string, string
   // A heading / bullet is a single physical line, so a topic carrying newlines (from a paste or a
   // note→topic conversion) would split the line — and re-import drops the orphaned continuation, since
   // it isn't a bullet. Collapse any whitespace run (incl. newlines) to one space so the tree round-trips.
-  const inline = (s: string) => s.replace(/\s+/g, " ").trim();
-  const lines = [`# ${inline(doc.root.topic)}`];
+  const inline = (node: MapNode) =>
+    (node.topicRich ? richToInlineMarkdown(node.topicRich) : node.topic)
+      .replace(/\s+/g, " ")
+      .trim();
+  const lines = [`# ${inline(doc.root)}`];
   const prefix = (id: string) => {
     const n = numbers?.get(id);
     return n ? `${n} ` : "";
   };
   const walk = (node: MapNode, depth: number) => {
     for (const child of node.children) {
-      lines.push(`${"  ".repeat(depth)}- ${prefix(child.id)}${inline(child.topic)}`);
+      lines.push(`${"  ".repeat(depth)}- ${prefix(child.id)}${inline(child)}`);
       walk(child, depth + 1);
     }
   };
@@ -46,6 +50,15 @@ export function fromMarkdown(md: string): MindMapDoc {
   let section: MapNode = root;
   // bulletStack[d] = the node whose children receive a bullet at depth d+1, within the section.
   let bulletStack: MapNode[] = [root];
+  const topicNode = (id: string, source: string): MapNode => {
+    const parsed = parseInlineMarkdown(source);
+    return {
+      id,
+      topic: parsed.plain,
+      ...(parsed.rich ? { topicRich: parsed.rich } : {}),
+      children: [],
+    };
+  };
 
   for (const raw of md.split(/\r?\n/)) {
     if (!raw.trim()) continue;
@@ -57,7 +70,11 @@ export function fromMarkdown(md: string): MindMapDoc {
       if (level === 1 && !h1Seen) {
         // The first H1 names the root rather than creating a child.
         h1Seen = true;
-        if (text) root.topic = text;
+        if (text) {
+          const parsed = parseInlineMarkdown(text);
+          root.topic = parsed.plain;
+          if (parsed.rich) root.topicRich = parsed.rich;
+        }
         headings.length = 2; // keep [_, root]
         section = root;
         bulletStack = [root];
@@ -66,7 +83,7 @@ export function fromMarkdown(md: string): MindMapDoc {
       // Any other heading becomes a node under the nearest shallower heading.
       let parentLevel = level - 1;
       while (parentLevel >= 1 && !headings[parentLevel]) parentLevel -= 1;
-      const node: MapNode = { id: nextId(), topic: text, children: [] };
+      const node = topicNode(nextId(), text);
       (headings[parentLevel] ?? root).children.push(node);
       headings[level] = node;
       headings.length = level + 1; // forget any deeper headings
@@ -80,7 +97,7 @@ export function fromMarkdown(md: string): MindMapDoc {
 
     const indent = bullet[1].replace(/\t/g, "  ").length;
     const depth = Math.floor(indent / 2) + 1; // top-level bullets sit under the current section
-    const node: MapNode = { id: nextId(), topic: bullet[2].trim(), children: [] };
+    const node = topicNode(nextId(), bullet[2].trim());
     const parent = bulletStack[depth - 1] ?? section;
     parent.children.push(node);
     bulletStack[depth] = node;

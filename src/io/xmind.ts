@@ -484,7 +484,7 @@ export function toXmind(doc: MindMapDoc): Uint8Array {
   if (rels.length > 0) sheet.relationships = rels;
 
   const content = JSON.stringify([sheet]);
-  const metadata = JSON.stringify({ creator: { name: "MindMap Studio" } });
+  const metadata = JSON.stringify({ creator: { name: "iThread" } });
   const manifest = JSON.stringify({
     "file-entries": { "content.json": {}, "metadata.json": {} },
   });

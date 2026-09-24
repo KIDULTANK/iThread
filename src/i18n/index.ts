@@ -10,7 +10,7 @@
 // `registerMessages` from `./registry` directly — importing this barrel instead would drag the eager
 // core catalogue into that chunk.
 import "./core";
-import { initLocale } from "./registry";
+import { getLocale, initLocale } from "./registry";
 
 // RESOLVE THE LOCALE HERE, not in main.tsx, and for the same reason the catalogue import is here.
 //
@@ -30,6 +30,13 @@ import { initLocale } from "./registry";
 // main.tsx — looks equivalent and is not: `biome check --write` sorts imports alphabetically, so
 // "./App" would move above it and silently undo the fix.
 initLocale();
+
+/** Load the selected non-English catalogue before the first React render. Keeping it dynamic means
+ * English users do not download the Chinese catalogue, while Chinese users still get a fully local,
+ * flash-free first paint. */
+export async function loadLocaleMessages(): Promise<void> {
+  if (getLocale() === "zh-CN") await import("./zh-CN");
+}
 
 export type { Catalogue, Locale, Message, MessageVars } from "./registry";
 export {

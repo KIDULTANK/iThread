@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { initLocale } from "./i18n";
+import { initLocale, loadLocaleMessages } from "./i18n";
 import "./mobile.css";
 
 // The locale is resolved and <html lang>/<html dir> stamped by the `src/i18n` barrel, at import time.
@@ -15,9 +15,14 @@ initLocale();
 
 // StrictMode intentionally omitted: its double-invoked effects re-init the canvas
 // engine instance, which muddies headless screenshots used for verification.
-// biome-ignore lint/style/noNonNullAssertion: #root is guaranteed by index.html
-createRoot(document.getElementById("root")!).render(
-  <ErrorBoundary>
-    <App />
-  </ErrorBoundary>,
-);
+async function start(): Promise<void> {
+  await loadLocaleMessages();
+  // biome-ignore lint/style/noNonNullAssertion: #root is guaranteed by index.html
+  createRoot(document.getElementById("root")!).render(
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>,
+  );
+}
+
+void start();

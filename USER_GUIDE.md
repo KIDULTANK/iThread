@@ -1,4 +1,4 @@
-# MindMap Studio — User Guide
+# iThread — User Guide
 
 A local-first, offline mind-mapping app — a self-hosted replacement for Corel/Mindjet
 MindManager. Your maps live in your browser (IndexedDB) and on disk; there are no accounts
@@ -22,12 +22,15 @@ side panels you had open (Notes, Outline, Markers, Style) — is restored next t
 straight back into the editor. Press **⌂ Start** in the toolbar to return to the Start screen any
 time. It also works fully offline and can be installed (see [Install as an app](#install-as-an-app)).
 
+Local scripts and agents can also create or modify maps while the development preview is open. See
+the [iThread CLI guide](docs/CLI.md) for the supported commands and safety rules.
+
 ---
 
 ## The Start screen
 
 When no map is open — on a fresh install, or any time you press **⌂ Start** in the toolbar —
-MindMap Studio shows a dedicated home. A left rail switches sections; the main area changes in
+iThread shows a dedicated home. A left rail switches sections; the main area changes in
 place and your editor is never touched:
 
 - **Start** — a capture hero to make a new map three ways: **type a topic**, **paste an outline**
@@ -174,7 +177,8 @@ disagree on a field (progress, dates or priority), its control
 shows blank and is tagged **Mixed** — so a bulk edit never silently overwrites them all with one
 topic's value; set the control to apply a single value to the whole selection. A plain click clears
 the multi-selection. *(Because the canvas now box-selects on a
-left-drag, pan with the middle or right mouse button; scroll still zooms.)*
+left-drag, pan with the middle or right mouse button; wheel/two-finger scrolling pans, and
+Ctrl/⌘-scroll or pinch zooms around the pointer.)*
 
 **Map properties.** With nothing selected, the panel shows the **Map** — rename the map inline and
 set its **theme**, **layout**, **background colour / image**, **accent colour**, and **line-jumps**
@@ -340,7 +344,10 @@ editing a topic, a small **format bar** appears above it with **B / I / U** butt
 text-colour swatches — or use the keyboard: **Ctrl + B**, **Ctrl + I**, **Ctrl + U** to bold, italic,
 or underline. Select the characters first, or toggle the format on and keep typing. The
 formatting is saved with the map and travels in the `.json` export. The plain text is always
-kept alongside it, so the outline, Find, and the Markdown/Office exports stay clean and readable.
+kept alongside it, so the outline and Find stay clean and readable. Inline Markdown is recognised
+inside topics too: `**bold**`, `==highlight==`, `__underline__`, `*italic*`, `~~strike~~`, and
+`` `code` `` are restored visually when typed, pasted, or imported from `.md`; Markdown export
+writes the same markers back out instead of flattening the formatting.
 
 ---
 
@@ -556,13 +563,17 @@ the current theme palette in one click.
 re-frames the map. The **Detail level** items (in the same menu, and via **⌘K**) show the map to an
 exact depth — **Show level 1** reveals only the top branches, **level 2** one tier more, and so on —
 the quickest way to step a big map between an overview and full detail (MindManager's detail levels).
+Those menu commands apply to the whole map. The number keys are branch-relative: with a topic
+selected, **1** reveals one level below that topic, **2** reveals two levels, and so on; **0** expands
+all of that selected branch. Other branches keep their current state. Press **.** to toggle only the
+selected branch. Space is intentionally left unassigned.
 
 ### Minimap & zoom
 
 A **minimap** in the bottom-right corner shows a shrunk overview of the whole map with a
 rectangle marking the part you're viewing. **Click or drag** inside it to pan the main canvas
 there. Below it, the zoom controls — **−**, a live **percentage**, **+**, and **⤢ fit** — give
-precise, stepped zoom (the mouse wheel zooms too). Handy for orienting on a large map and for
+precise, stepped zoom (Ctrl/⌘ + mouse wheel zooms too). Handy for orienting on a large map and for
 lining one up before a screenshot or screen-share. When the overview is in the way, the
 **Minimap ▾** button collapses it (click **Minimap ▴** to bring it back); the choice is remembered.
 A slim **status bar** along the bottom shows the topic count, how many topics are selected (click
@@ -571,10 +582,8 @@ it to zoom to the selection), and the live zoom % (click it to reset to 100%) �
 Very large maps stay fluid automatically: above ~500 topics the canvas **virtualises**, rendering
 only what's on screen — no toggle, nothing to configure.
 
-**Pan the canvas** by dragging any empty space. On a dense map where empty space is scarce, **hold
-the space bar and drag** — the cursor turns into a grab hand and the drag pans from anywhere, even
-when it starts over a topic (without the space bar that same drag would move the topic). Release the
-space bar to go back to normal.
+**Pan the canvas** with the middle or right mouse button; left-dragging empty space draws a selection
+box around multiple topics.
 
 ### Layout
 
@@ -825,7 +834,7 @@ learn a feature by reading one that uses it. Opening one creates a fresh, editab
 
 Your maps always autosave into the browser (the [library](#the-map-library)), but you can also keep a
 map as a **file on disk** — to store it in a folder, sync it through Dropbox/OneDrive, email it, or
-put it in version control. MindMap Studio's native file is **`.mmst`** (the same lossless format as a
+put it in version control. iThread's native file is **`.mmst`** (the same lossless format as a
 `.json` export, just a distinct extension so your computer can associate it with the app).
 
 In **More ▸ File** (or the **⌘K** command palette):
@@ -856,9 +865,9 @@ your map safe in the library either way.
 
 ### Make it your default app for `.mmst` (Windows)
 
-If you **install** MindMap Studio as an app (the install button in Chrome/Edge, or *Apps ▸ Install*),
+If you **install** iThread as an app (the install button in Chrome/Edge, or *Apps ▸ Install*),
 Windows can associate `.mmst` files with it: right-click a `.mmst` ▸ **Open with ▸ Choose another app**
-▸ pick MindMap Studio ▸ *Always*. After that, **double-clicking a `.mmst` in File Explorer opens it
+▸ pick iThread ▸ *Always*. After that, **double-clicking a `.mmst` in File Explorer opens it
 directly in the app** (in the already-running window if one is open). This is a Chromium-desktop
 feature; it isn't available in Firefox/Safari or on mobile.
 
@@ -892,6 +901,8 @@ becomes topics. **Indentation** (spaces or tabs) or **`#` heading levels** set t
 doc, an email, or anywhere else just works. Choose **New map** to drop it in as its own map, or
 **Add under selected** to graft it onto the current map under the selected node. It's all local —
 a fast, private way to bring in an outline you wrote (or generated) elsewhere, with no upload.
+Inline formatting markers (`**bold**`, `==highlight==`, `__underline__`, and the italic/strike/code
+forms) are restored on the topic rather than discarded.
 
 ### Fast capture
 
@@ -925,7 +936,7 @@ For getting ideas down quickly, three header tools:
 |---|---|
 | `.mmap` | MindManager export — recovers topics, notes, icons, hyperlinks, relationships, boundaries, floating topics (lossy by design; the `.mmap` export below is the return trip) |
 | `.md` / `.markdown` | Markdown outline — `#`/`##`/`###` headings **and** nested bullets (also imports **Markmap** files, stripping any `---` frontmatter; its `title:` becomes the map title) |
-| `.json` | A native MindMap Studio map — **lossless** |
+| `.json` | A native iThread map — **lossless** |
 | `.opml` | OPML outline (Freeplane, OmniOutliner, Workflowy, …) |
 | `.mm` | FreeMind / Freeplane map — topics, links, folded state, and notes |
 | `.mmd` / `.mermaid` | Mermaid `mindmap` text (any node shape; hierarchy by indentation) |
@@ -1055,7 +1066,7 @@ slides.
 
 ## Install as an app
 
-MindMap Studio is an installable PWA: your browser will offer to install it to your desktop /
+iThread is an installable PWA: your browser will offer to install it to your desktop /
 home screen, after which it launches in its own window and runs fully offline (the app shell
 is precached). On a **phone** the layout adapts — the editor toolbar becomes a single swipeable
 strip so the canvas fills the screen, the side panels (Outline, Info, …) open as **bottom sheets**
@@ -1077,8 +1088,8 @@ updates**.
 | Ctrl + Enter | Add child (selected topic) |
 | Shift + Tab | Outdent (promote one level) |
 | Delete | Remove the topic + its branch — or the whole multi-selection (instant — undo from the toast) |
-| Type a letter (topic selected) | Edit in place, replacing the text |
 | F2 / double-click | Edit in place, keeping the text |
+| P / Shift + P | Increase / decrease task progress (and create/remove task state at the ends) |
 | Ctrl + B / I / U (while editing) | Bold / italic / underline the selection |
 | Ctrl + Z / Ctrl + Shift + Z / Ctrl + Y | Undo / redo |
 | Ctrl + C / Ctrl + Shift + V / Ctrl + D | Copy branch(es) / paste under selection / duplicate as sibling |
@@ -1105,11 +1116,12 @@ Editing / Navigation / View.
 
 ### On the canvas
 
-- **Add a topic with the mouse.** Hover (or select) any topic to reveal a small **＋** — one adds a
-  **child**, one adds a **sibling**, dropping straight into editing. New to the app? A one-time
-  **"3 things to try"** card and an empty-map hint point the way; both disappear once you make an edit.
-- **Move around.** **Drag the background to pan**, **scroll** (or ⌘-scroll) to **zoom**, and
-  **double-click an empty spot** to drop a floating topic. Hold **Shift** and drag to rubber-band a
+- **Add a topic with the mouse.** Right-click a topic and choose **Add child** or **Add sibling**;
+  keyboard users can use Tab and Enter. The canvas stays visually clean without permanent add buttons.
+- **Move around.** Use the **middle/right mouse button** to drag-pan, or wheel/two-finger scroll to
+  glide across the map; **Ctrl/⌘ + scroll** or pinch zooms around the pointer. Branches animate out
+  from their parent when added or expanded, while dragging lifts a topic above the map. You can also
+  **double-click an empty spot** to drop a floating topic. Left-drag empty canvas to rubber-band a
   multi-selection.
 - **Re-parent by dragging.** Drag a topic onto another; the target highlights with a
   **"↳ Make child of X"** label so you can see the result before you let go. Drop on empty space to
@@ -1121,7 +1133,7 @@ Editing / Navigation / View.
 
 ## Notes on scope
 
-MindMap Studio targets **brainstorming, knowledge mapping, and presentation/sharing**. The
+iThread targets **brainstorming, knowledge mapping, and presentation/sharing**. The
 project / task-management layer (Gantt, schedules, dependencies, resources) is intentionally
 out of scope, as are MindManager's collaboration / enterprise features (real-time co-editing,
 cloud sync, the web/Teams apps); see `NEXT_STEPS.md` for the current edges.

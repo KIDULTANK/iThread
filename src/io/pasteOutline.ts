@@ -1,4 +1,5 @@
 import type { MapNode } from "../model/types";
+import { parseInlineMarkdown } from "./richText";
 
 // Parse a pasted text block into a forest of topics — the "Paste text → map" capture path.
 // Forgiving by design, because people paste all sorts of outlines:
@@ -18,10 +19,11 @@ function nextId(): string {
 // Inline-markdown shorthand on a single outline line (after the heading/list marker is stripped):
 //   - `[ ] task` / `[x] done`  → a task at 0% / 100% (the leading `- ` was already removed upstream)
 //   - `[text](url)` spanning the whole line → topic text + a hyperlink (safe http(s)/mailto/tel only)
-//   - `**bold**` / `_italic_` / `` `code` `` → captured as plain topic text (markers dropped)
+//   - `**bold**` / `==highlight==` / `__underline__` → restored as rich topic text
 // Pure; keeps the paste path forgiving without a full markdown parser.
 export function parseMdShorthand(body: string): {
   topic: string;
+  topicRich?: string;
   hyperlink?: string;
   task?: { progress: number };
 } {
@@ -38,12 +40,13 @@ export function parseMdShorthand(body: string): {
     hyperlink = link[2];
     topic = link[1].trim();
   }
-  topic = topic
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/__([^_]+)__/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/`([^`]+)`/g, "$1");
-  return { topic, hyperlink, task };
+  const parsed = parseInlineMarkdown(topic);
+  return {
+    topic: parsed.plain,
+    ...(parsed.rich ? { topicRich: parsed.rich } : {}),
+    hyperlink,
+    task,
+  };
 }
 
 export function parseOutline(text: string): MapNode[] {
@@ -72,6 +75,7 @@ export function parseOutline(text: string): MapNode[] {
     const md = parseMdShorthand(body);
     if (!md.topic) continue; // e.g. a lone "[x]" with no text
     const node: MapNode = { id: nextId(), topic: md.topic, children: [] };
+    if (md.topicRich) node.topicRich = md.topicRich;
     if (md.hyperlink) node.hyperlink = md.hyperlink;
     if (md.task) node.task = md.task;
     while (stack.length > 0 && stack[stack.length - 1].key >= key) stack.pop();

@@ -5,6 +5,26 @@ phase-based. Open work lives in `NEXT_STEPS.md`, not here.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-25
+
+### Added
+
+- Standalone Windows 11 desktop packaging with a portable `.exe` release target.
+- Chinese and English interface switching, including a fully translated shortcut guide.
+- iThoughts `.itmz` import with large real-world file validation, floating topics, folded branches,
+  relationships, images, notes and rich text.
+- Local `pnpm ithread` CLI for agents and scripts to list, open, import, create and modify maps.
+- Long-press Alt shortcut overlay with clickable category pages.
+- Per-topic and map-wide Windows font controls.
+
+### Changed
+
+- Windows/iPad-style keyboard workflow: Alt+arrow branch movement, explicit edit entry, Enter to end
+  editing while preserving selection, and P/Shift+P task progress controls.
+- Right-growing layout preference, smoother branch animation, smaller canvas controls and improved
+  multi-topic rubber-band selection.
+- Product name and visible application branding changed to iThread.
+
 ### Added
 
 - **A localisation layer, with English as the only locale.** The point isn't a second language — it's

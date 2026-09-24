@@ -81,6 +81,8 @@ export type TopicData = {
   /** During a drag-to-reparent, the node the dragged topic would become a child of — highlighted as
    *  the drop target (view-only, canvas-only; never exported). */
   dropTarget?: boolean;
+  /** Ephemeral 0..1 entrance progress. New topics grow out from their parent on the canvas only. */
+  motionProgress?: number;
 };
 
 /** Data carried by an edge (branch or cross-link). */
@@ -128,6 +130,8 @@ export type EdgeData = {
   /** How many children share this edge's parent origin (the fan size), so the trunk can thin for dense
    *  fans and not blob. Branch edges only. */
   fanCount?: number;
+  /** Ephemeral 0..1 entrance progress for a newly revealed branch. */
+  motionProgress?: number;
 };
 
 export type TopicNode = Node<TopicData, "topic">;

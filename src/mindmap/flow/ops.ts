@@ -349,6 +349,18 @@ export function addSibling(doc: MindMapDoc, id: string): OpResult {
   return { doc: next, selectId: sib.id };
 }
 
+/** Add an empty sibling immediately before `id`. Mirrors iThoughts' Shift+Return shortcut. */
+export function addSiblingBefore(doc: MindMapDoc, id: string): OpResult {
+  const next = structuredClone(doc);
+  const loc = locateSib(next, id);
+  if (!loc) return { doc };
+  if (!loc.container) return addChild(doc, id); // the root has no siblings
+  const sib: MapNode = { id: makeId(), topic: "", children: [] };
+  birth(sib, opsClock());
+  loc.container.splice(loc.index, 0, sib);
+  return { doc: next, selectId: sib.id };
+}
+
 /** Append an empty child to `id` and expand it (works on a floating topic too). */
 export function addChild(doc: MindMapDoc, id: string): OpResult {
   const next = structuredClone(doc);
@@ -735,6 +747,24 @@ export function setExpandedToLevel(doc: MindMapDoc, level: number): OpResult {
     if (depth > 0 && node.children.length > 0) node.collapsed = depth >= lvl;
   });
   return { doc: next };
+}
+
+/** Expand only the branch rooted at `id` to a relative detail level. The selected topic is relative
+ *  depth 0, so level 1 reveals its direct children and collapses those children's own descendants;
+ *  level 2 reveals one tier further, and so on. Level 0 expands the complete selected branch. Topics
+ *  outside the branch are deliberately untouched — this is the iThoughts digit-key behaviour. */
+export function setBranchExpandedToLevel(doc: MindMapDoc, id: string, level: number): OpResult {
+  const source = findAnyNode(doc, id);
+  if (!source || source.children.length === 0) return { doc };
+  const next = structuredClone(doc);
+  const root = findAnyNode(next, id);
+  if (!root) return { doc };
+  const showAll = Math.trunc(level) === 0;
+  const lvl = Math.max(1, Math.trunc(level));
+  walkTree(root, (node, depth) => {
+    if (node.children.length > 0) node.collapsed = showAll ? false : depth >= lvl;
+  });
+  return { doc: next, selectId: id };
 }
 
 /** Set the note on a node (empty or whitespace-only clears it). */

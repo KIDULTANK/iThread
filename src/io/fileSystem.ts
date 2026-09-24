@@ -1,7 +1,7 @@
 import { t } from "../i18n/registry";
 // Native file open / save / autosave, on top of the lossless JSON serializer.
 //
-// MindMap Studio's library always lives in IndexedDB (the safety net — see store/mapStore).
+// iThread's library always lives in IndexedDB (the safety net — see store/mapStore).
 // This module adds *disk* files: a user can Open a `.mmst` from anywhere, Save back to it
 // with no dialog, and have edits autosaved through to that same file. It's a thin wrapper
 // over the File System Access API (Chromium desktop) with a download/upload fallback for
@@ -59,7 +59,7 @@ export function suggestedFileName(doc: MindMapDoc): string {
   return `${safeFileStem(doc.title)}${NATIVE_EXT}`;
 }
 
-/** Parse a `.mmst`/`.json` File into a doc (throws on anything that isn't a MindMap Studio map). */
+/** Parse a `.mmst`/`.json` File into a doc (throws on anything that isn't an iThread map). */
 export async function readMapFile(file: File): Promise<MindMapDoc> {
   return parseDoc(await file.text());
 }

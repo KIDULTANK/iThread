@@ -122,14 +122,13 @@ describe("flow exportSvg (model + rects → native-text SVG)", () => {
     const a = buildFlowSvg(doc, rects, palette, cssVar, false, "2026-01-01");
     const b = buildFlowSvg(doc, rects, palette, cssVar, false, "2026-01-01");
     expect(a).toBe(b);
-    // The hover ＋, coachmark, edit microcopy, drop indicator, first-run card and selection chrome
+    // Coachmarks, edit microcopy, drop indicators, the first-run card and selection chrome
     // are React/DOM-only — buildFlowSvg never walks them, so none can reach an export.
     for (const leak of [
       "Make child of", // #11 drop-target label
       "Start your map", // #1 empty-map coachmark
       "Double-click to edit", // #5 first-hover microcopy
       "3 things to try", // #13 first-run card
-      "mm-node-add", // #1 hover ＋ affordance
       "mm-node-bar", // #3 on-topic hover action bar
       "mm-coachmark", // #1
       "mm-firstrun", // #13

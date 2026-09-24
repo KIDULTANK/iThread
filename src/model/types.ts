@@ -90,6 +90,9 @@ export interface Callout {
 
 export interface MapNode {
   id: NodeId;
+  /** Stable id from the source document. Importers keep this separate from the editor id so a
+   *  foreign container can later be updated without discarding unknown source-only fields. */
+  sourceId?: string;
   /** Plain-text topic — always kept in sync as the fallback for search, outline, and exports. */
   topic: string;
   /**

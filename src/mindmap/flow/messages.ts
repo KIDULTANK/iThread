@@ -34,8 +34,6 @@ export const CANVAS_EN = {
   // Node affordances
   "canvas.node.relateGrip": "Drag onto another topic to link them",
   "canvas.node.wrapGrip": "Drag to set the topic's text-wrap width",
-  "canvas.node.toggleTask": "Toggle task",
-  "canvas.node.cycleTask": "Mark as task / done (cycle)",
   "canvas.node.showNote": "Show note",
   "canvas.node.positionLocked": "Position locked — right-click to unlock",
   "canvas.node.positionLockedShort": "Position locked",

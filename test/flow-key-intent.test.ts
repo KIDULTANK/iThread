@@ -64,20 +64,22 @@ describe("keyIntent", () => {
     expect(keyIntent(ev({ key: "d", ctrlKey: true }), st({ selectedId: null }))).toBeNull();
   });
 
-  it("maps Ctrl/⌘+arrow to a freeform position nudge (only in freeform)", () => {
-    // In freeform, Ctrl/⌘+arrow nudges the node's position (a non-drag reposition, WCAG 2.5.7).
-    expect(keyIntent(ev({ key: "ArrowLeft", ctrlKey: true }), st({ freeform: true }))).toEqual({
+  it("maps Alt+arrow to a freeform position nudge (only in freeform)", () => {
+    expect(keyIntent(ev({ key: "ArrowLeft", altKey: true }), st({ freeform: true }))).toEqual({
       kind: "nudge",
       id: "n1",
       dir: "left",
     });
-    expect(keyIntent(ev({ key: "ArrowUp", metaKey: true }), st({ freeform: true }))).toEqual({
+    expect(keyIntent(ev({ key: "ArrowUp", altKey: true }), st({ freeform: true }))).toEqual({
       kind: "nudge",
       id: "n1",
       dir: "up",
     });
-    // Not in freeform → Ctrl+arrow is unbound (the auto-layouts own positioning).
-    expect(keyIntent(ev({ key: "ArrowLeft", ctrlKey: true }), st({ freeform: false }))).toBeNull();
+    // In an auto-layout, the same chord follows iThoughts and moves the branch hierarchy.
+    expect(keyIntent(ev({ key: "ArrowLeft", altKey: true }), st({ freeform: false }))).toEqual({
+      kind: "outdent",
+      id: "n1",
+    });
     // Bare arrow still moves the selection, freeform or not.
     expect(keyIntent(ev({ key: "ArrowLeft" }), st({ freeform: true }))).toEqual({
       kind: "selectDir",
@@ -105,9 +107,9 @@ describe("keyIntent", () => {
       kind: "completeLink",
       id: "n1",
     });
-    // Ctrl+Enter still adds a child even while linking (modifier path is unaffected).
+    // Ctrl+Enter keeps the original iThoughts edit-text command even while linking.
     expect(keyIntent(ev({ key: "Enter", ctrlKey: true }), st({ linking: true }))).toEqual({
-      kind: "addChild",
+      kind: "rename",
       id: "n1",
     });
     // Not linking → Enter is the usual add-sibling.
@@ -117,9 +119,9 @@ describe("keyIntent", () => {
     });
   });
 
-  it("maps Ctrl/⌘+Shift+1..9 to setPriority (MindManager's priority shortcuts)", () => {
-    for (let level = 1; level <= 9; level++) {
-      expect(keyIntent(ev({ key: String(level), ctrlKey: true, shiftKey: true }), st())).toEqual({
+  it("maps iThoughts Ctrl/⌘+1..5 to setPriority (with Ctrl/⌘+Shift as an alias)", () => {
+    for (let level = 1; level <= 5; level++) {
+      expect(keyIntent(ev({ key: String(level), ctrlKey: true }), st())).toEqual({
         kind: "setPriority",
         id: "n1",
         level,
@@ -130,10 +132,9 @@ describe("keyIntent", () => {
         level,
       });
     }
-    // Ctrl+Shift+0 isn't a priority level — falls through (no selection-gated binding claims it).
+    // Priority is deliberately the original iThoughts 1..5 range.
+    expect(keyIntent(ev({ key: "6", ctrlKey: true }), st())).toBeNull();
     expect(keyIntent(ev({ key: "0", ctrlKey: true, shiftKey: true }), st())).toBeNull();
-    // Without Shift, a bare Ctrl+digit is unbound.
-    expect(keyIntent(ev({ key: "5", ctrlKey: true }), st())).toBeNull();
     // No selection → nothing to set priority on.
     expect(
       keyIntent(ev({ key: "1", ctrlKey: true, shiftKey: true }), st({ selectedId: null })),
@@ -148,11 +149,13 @@ describe("keyIntent", () => {
       kind: "zoomIn",
     });
     expect(keyIntent(ev({ key: "-", metaKey: true }), noSel)).toEqual({ kind: "zoomOut" });
+    expect(keyIntent(ev({ key: "PageUp", ctrlKey: true }), noSel)).toEqual({ kind: "zoomIn" });
+    expect(keyIntent(ev({ key: "PageDown", ctrlKey: true }), noSel)).toEqual({ kind: "zoomOut" });
     expect(keyIntent(ev({ key: "0", ctrlKey: true }), noSel)).toEqual({ kind: "zoomReset" });
     // Ctrl+Shift+0 stays unbound (the digit row with Shift belongs to nothing here).
     expect(keyIntent(ev({ key: "0", ctrlKey: true, shiftKey: true }), noSel)).toBeNull();
-    // Without a modifier the keys are ordinary typing (type-to-edit with a selection).
-    expect(keyIntent(ev({ key: "-" }), st())).toEqual({ kind: "typeEdit", id: "n1", seed: "-" });
+    // Without a modifier, punctuation does not implicitly replace the selected topic.
+    expect(keyIntent(ev({ key: "-" }), st())).toBeNull();
   });
 
   it("maps Backspace to delete, same as Delete (Mac keyboards lack forward-Delete)", () => {
@@ -197,12 +200,16 @@ describe("keyIntent", () => {
     const cases: [Partial<KeyEventLike>, KeyIntent][] = [
       [{ key: "Enter" }, { kind: "addSibling", id: "n1" }],
       [
+        { key: "Enter", shiftKey: true },
+        { kind: "addSiblingBefore", id: "n1" },
+      ],
+      [
         { key: "Enter", ctrlKey: true },
-        { kind: "addChild", id: "n1" },
+        { kind: "rename", id: "n1" },
       ],
       [
         { key: "Enter", metaKey: true },
-        { kind: "addChild", id: "n1" },
+        { kind: "rename", id: "n1" },
       ],
       [{ key: "Tab" }, { kind: "addChild", id: "n1" }],
       [
@@ -211,6 +218,7 @@ describe("keyIntent", () => {
       ],
       [{ key: "Delete" }, { kind: "delete", id: "n1" }],
       [{ key: "F2" }, { kind: "rename", id: "n1" }],
+      [{ key: "F4" }, { kind: "openNote", id: "n1" }],
       [
         { key: "t", ctrlKey: true },
         { kind: "openNote", id: "n1" },
@@ -219,9 +227,45 @@ describe("keyIntent", () => {
         { key: "T", metaKey: true },
         { kind: "openNote", id: "n1" },
       ],
-      [{ key: "a" }, { kind: "typeEdit", id: "n1", seed: "a" }],
+      [{ key: "/" }, { kind: "openSlashMenu", id: "n1" }],
     ];
     for (const [e, want] of cases) expect(keyIntent(ev(e), st())).toEqual(want);
+  });
+
+  it("maps iThoughts branch visibility shortcuts", () => {
+    expect(keyIntent(ev({ key: " " }), st())).toBeNull();
+    expect(keyIntent(ev({ key: "Spacebar" }), st())).toBeNull();
+    expect(keyIntent(ev({ key: "." }), st())).toEqual({ kind: "toggleCollapse", id: "n1" });
+    expect(keyIntent(ev({ key: "0" }), st())).toEqual({
+      kind: "setExpandedLevel",
+      id: "n1",
+      level: 0,
+    });
+    expect(keyIntent(ev({ key: "7" }), st())).toEqual({
+      kind: "setExpandedLevel",
+      id: "n1",
+      level: 7,
+    });
+  });
+
+  it("maps held Alt+arrows to full branch movement", () => {
+    expect(keyIntent(ev({ key: "ArrowUp", altKey: true }), st())).toEqual({
+      kind: "moveUp",
+      id: "n1",
+    });
+    expect(keyIntent(ev({ key: "ArrowDown", altKey: true }), st())).toEqual({
+      kind: "moveDown",
+      id: "n1",
+    });
+    expect(keyIntent(ev({ key: "ArrowLeft", altKey: true }), st())).toEqual({
+      kind: "outdent",
+      id: "n1",
+    });
+    expect(keyIntent(ev({ key: "ArrowRight", altKey: true }), st())).toEqual({
+      kind: "indent",
+      id: "n1",
+    });
+    expect(keyIntent(ev({ key: "ArrowRight", ctrlKey: true }), st())).toBeNull();
   });
 
   it("Ctrl/⌘+T opens the note ONLY in the installed PWA (a browser tab reserves it)", () => {
@@ -233,14 +277,14 @@ describe("keyIntent", () => {
     expect(keyIntent(ev({ key: "t", ctrlKey: true }), st({ pwa: false }))).toBeNull();
   });
 
-  it("maps reorder + promote/demote shortcuts (Ctrl/⌘+Shift+↑/↓, Alt+Shift+←/→)", () => {
+  it("accepts Alt+Shift+arrows as the same held-Alt movement", () => {
     const cases: [Partial<KeyEventLike>, KeyIntent][] = [
       [
-        { key: "ArrowUp", ctrlKey: true, shiftKey: true },
+        { key: "ArrowUp", altKey: true, shiftKey: true },
         { kind: "moveUp", id: "n1" },
       ],
       [
-        { key: "ArrowDown", metaKey: true, shiftKey: true },
+        { key: "ArrowDown", altKey: true, shiftKey: true },
         { kind: "moveDown", id: "n1" },
       ],
       [
@@ -255,11 +299,32 @@ describe("keyIntent", () => {
     for (const [e, want] of cases) expect(keyIntent(ev(e), st())).toEqual(want);
   });
 
-  it("type-to-edit only fires for an unmodified single printable char", () => {
+  it("reserves ordinary printable letters for explicit shortcuts", () => {
+    expect(keyIntent(ev({ key: "a" }), st())).toBeNull();
     expect(keyIntent(ev({ key: "a", ctrlKey: true }), st())).toBeNull();
     expect(keyIntent(ev({ key: "a", metaKey: true }), st())).toBeNull();
     expect(keyIntent(ev({ key: "a", altKey: true }), st())).toBeNull();
     expect(keyIntent(ev({ key: "Home" }), st())).toBeNull(); // unhandled multi-char key name
+  });
+
+  it("leaves Space unassigned on the canvas and inside fields", () => {
+    expect(keyIntent(ev({ key: " " }), st())).toBeNull();
+    expect(keyIntent(ev({ key: " " }), st({ editing: true }))).toBeNull();
+    expect(keyIntent(ev({ key: " ", target: { tagName: "INPUT" } }), st())).toBeNull();
+    expect(keyIntent(ev({ key: " ", altKey: true }), st())).toBeNull();
+  });
+
+  it("maps P and Shift+P to task-progress steps", () => {
+    expect(keyIntent(ev({ key: "p" }), st())).toEqual({
+      kind: "stepProgress",
+      id: "n1",
+      direction: "up",
+    });
+    expect(keyIntent(ev({ key: "P", shiftKey: true }), st())).toEqual({
+      kind: "stepProgress",
+      id: "n1",
+      direction: "down",
+    });
   });
 
   it("maps bare arrows to logical selection movement (no modifiers)", () => {
@@ -271,7 +336,7 @@ describe("keyIntent", () => {
     ];
     for (const [e, want] of cases) expect(keyIntent(ev(e), st())).toEqual(want);
     // A modifier defers to the restructure shortcuts (not selectDir), and none fire without selection.
-    expect(keyIntent(ev({ key: "ArrowUp", ctrlKey: true, shiftKey: true }), st())).toEqual({
+    expect(keyIntent(ev({ key: "ArrowUp", altKey: true }), st())).toEqual({
       kind: "moveUp",
       id: "n1",
     });

@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { useInstallPrompt } from "../pwa/useInstallPrompt";
 
-// A self-gating install affordance (O2): renders the in-app "Install MindMap Studio" button when the
+// A self-gating install affordance (O2): renders the in-app "Install iThread" button when the
 // browser has offered installation, an "Add to Home Screen" hint on iOS Safari, or nothing at all
 // (already installed / dismissed / unsupported). Self-styled (inline) so it works in both the Start
 // screen (--st-* theme) and the editor About dialog (--ed-* theme) without a shared stylesheet.
@@ -64,7 +64,7 @@ export function InstallButton({ className }: { className?: string }) {
   return (
     <div className={className} style={wrap}>
       <button type="button" style={btn} onClick={() => void state.promptInstall()}>
-        ⤓ Install MindMap Studio
+        ⤓ Install iThread
       </button>
       <button
         type="button"

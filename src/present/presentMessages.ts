@@ -24,7 +24,6 @@ export const PRESENT_EN = {
   "present.speakerNotes": "Speaker notes",
   "present.nextUp": "Next up",
   "present.endOfMap": "End of map",
-  "present.timer": "Timer",
   "present.budget": "Budget",
 } as const satisfies Catalogue;
 

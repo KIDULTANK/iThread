@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { shortcutGroups } from "../shortcuts";
 import { Dialog } from "./Dialog";
 
@@ -10,8 +11,8 @@ export function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () 
     <Dialog
       open={open}
       onClose={onClose}
-      title="Keyboard shortcuts"
-      ariaLabel="Keyboard shortcuts"
+      title={t("cmd.shortcuts")}
+      ariaLabel={t("cmd.shortcuts")}
       style={{
         boxShadow: "var(--ed-shadow-pop, 0 20px 60px rgba(0,0,0,0.28))",
         padding: "20px 22px",
@@ -21,25 +22,32 @@ export function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () 
         color: "var(--ed-ink)",
       }}
     >
-      <div className="mm-shortcuts">
-        {shortcutGroups().map((group) => (
-          <section key={group.id} className="mm-shortcuts-group">
-            <h3>{group.title}</h3>
-            <dl>
-              {group.items.map((s) => (
-                // Key on keys+action: a single action can have two bindings (e.g. Tab and
-                // Ctrl/⌘+Enter both "Add a child topic"), so `action` alone is not unique.
-                <div key={`${s.keys} ${s.action}`} className="mm-shortcut-row">
-                  <dt>
-                    <kbd>{s.keys}</kbd>
-                  </dt>
-                  <dd>{s.action}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-        ))}
-      </div>
+      <ShortcutSheet />
     </Dialog>
+  );
+}
+
+/** Shared shortcut content used by both the persistent dialog and the hold-Alt overlay. */
+export function ShortcutSheet() {
+  return (
+    <div className="mm-shortcuts">
+      {shortcutGroups().map((group) => (
+        <section key={group.id} className="mm-shortcuts-group">
+          <h3>{group.title}</h3>
+          <dl>
+            {group.items.map((s) => (
+              // Key on keys+action: a single action can have two bindings (e.g. Tab and
+              // Ctrl/⌘+Enter both "Add a child topic"), so `action` alone is not unique.
+              <div key={`${s.keys} ${s.action}`} className="mm-shortcut-row">
+                <dt>
+                  <kbd>{s.keys}</kbd>
+                </dt>
+                <dd>{s.action}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ))}
+    </div>
   );
 }

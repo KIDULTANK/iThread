@@ -37,7 +37,7 @@ function BranchEdgeImpl({ source, target, data }: EdgeProps<FlowEdge>) {
       strokeWidth={stroke ? width : undefined}
       strokeDasharray={dash || undefined}
       strokeLinejoin="round"
-      opacity={data?.dimmed ? 0.12 : 1}
+      opacity={(data?.dimmed ? 0.12 : 1) * (data?.motionProgress ?? 1)}
     />
   );
 }

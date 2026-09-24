@@ -25,7 +25,8 @@ const fixture = `<?xml version="1.0" encoding="UTF-8"?>
   </topics>
 </iThoughts>`;
 
-const makeItmz = (xml: string) => zipSync({ "mapdata.xml": strToU8(xml) });
+const makeItmz = (xml: string, extra: Record<string, Uint8Array> = {}) =>
+  zipSync({ "mapdata.xml": strToU8(xml), ...extra });
 
 describe("iThoughts .itmz import", () => {
   it("builds the root topic and nested children", () => {
@@ -71,6 +72,30 @@ describe("iThoughts .itmz import", () => {
     const doc = fromIthoughts(makeItmz(fixture));
     expect(doc.meta?.source).toBe("ithoughts");
     expect(doc.schemaVersion).toBe(1);
+  });
+
+  it("keeps source UUIDs and imports the folded state", () => {
+    const xml = `<iThoughts><topics><topic uuid="r" text="Root"><topic uuid="c" text="Closed" folded="1"/></topic></topics></iThoughts>`;
+    const doc = fromIthoughts(makeItmz(xml));
+    expect(doc.root.sourceId).toBe("r");
+    expect(doc.root.children[0].sourceId).toBe("c");
+    expect(doc.root.children[0].collapsed).toBe(true);
+  });
+
+  it("recognises floating=1 topics embedded below the central topic", () => {
+    const xml = `<iThoughts><topics><topic uuid="r" text="Root"><topic uuid="branch" text="Branch"/><topic uuid="float" text="Free note" floating="1" position="{320, -40}"/></topic></topics></iThoughts>`;
+    const doc = fromIthoughts(makeItmz(xml));
+    expect(doc.root.children.map((node) => node.topic)).toEqual(["Branch"]);
+    expect(doc.floatingTopics?.map((node) => node.topic)).toEqual(["Free note"]);
+    expect(doc.floatingTopics?.[0].pos).toEqual({ x: 320, y: -40 });
+  });
+
+  it("loads an embedded image topic from its assets folder", () => {
+    const xml = `<iThoughts><topics><topic uuid="r" text="Root"><topic uuid="image" att-id="asset-1" att-name="image.png"/></topic></topics></iThoughts>`;
+    const doc = fromIthoughts(
+      makeItmz(xml, { "assets/asset-1/image.png": new Uint8Array([137, 80, 78, 71]) }),
+    );
+    expect(doc.root.children[0].image?.url).toBe("data:image/png;base64,iVBORw==");
   });
 
   it("throws a descriptive error when mapdata.xml is missing from the zip", () => {

@@ -155,7 +155,7 @@ export function toSmmx(doc: MindMapDoc): Uint8Array {
 
   const lines: string[] = [];
   lines.push('<?xml version="1.0" encoding="UTF-8"?>');
-  lines.push('<simplemind-mindmaps doc-version="6" generator="MindMap Studio">');
+  lines.push('<simplemind-mindmaps doc-version="6" generator="iThread">');
   lines.push("<mindmap>");
   lines.push(`<meta><title text="${escapeXml(doc.title || "Mind map")}"/></meta>`);
   lines.push("<topics>");

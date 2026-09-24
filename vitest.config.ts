@@ -86,7 +86,16 @@ export default defineConfig({
       // than unit-tested, so it shows up (honestly) as low coverage — which is
       // exactly what the dashboard's "risk map" is meant to surface.
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.d.ts", "src/main.tsx", "src/vite-env.d.ts"],
+      // Type-only modules are erased by TypeScript and have no runtime behaviour to exercise. V8
+      // nevertheless reports their source lines as uncovered when they are imported with `import
+      // type`, so exclude them just like declaration files to keep the gate about executable code.
+      exclude: [
+        "src/**/*.d.ts",
+        "src/**/types.ts",
+        "src/i18n/keys.ts",
+        "src/main.tsx",
+        "src/vite-env.d.ts",
+      ],
       reporter: ["text-summary"],
       // No-regression floor, set just under the live numbers so routine variance doesn't flake but a
       // real drop fails the gate. Enforced when the gate runs `vitest run --coverage`. Raise as

@@ -8,6 +8,7 @@ import {
   nodeProgress,
   piePath,
   progressMap,
+  stepTaskProgress,
   toPercent,
 } from "../src/progress";
 
@@ -160,6 +161,26 @@ describe("cycleTaskProgress", () => {
   it("jumps any partial value straight to done", () => {
     expect(cycleTaskProgress(0.5)).toBe(1);
     expect(cycleTaskProgress(0.25)).toBe(1);
+  });
+});
+
+describe("stepTaskProgress", () => {
+  it("increments like iThoughts P", () => {
+    expect(stepTaskProgress(undefined, "up")).toBe(0);
+    expect(stepTaskProgress(0, "up")).toBe(0.25);
+    expect(stepTaskProgress(0.25, "up")).toBe(0.5);
+    expect(stepTaskProgress(0.5, "up")).toBe(0.75);
+    expect(stepTaskProgress(0.75, "up")).toBe(1);
+    expect(stepTaskProgress(1, "up")).toBeUndefined();
+  });
+
+  it("decrements like iThoughts Shift+P", () => {
+    expect(stepTaskProgress(undefined, "down")).toBe(1);
+    expect(stepTaskProgress(1, "down")).toBe(0.75);
+    expect(stepTaskProgress(0.75, "down")).toBe(0.5);
+    expect(stepTaskProgress(0.5, "down")).toBe(0.25);
+    expect(stepTaskProgress(0.25, "down")).toBe(0);
+    expect(stepTaskProgress(0, "down")).toBeUndefined();
   });
 });
 

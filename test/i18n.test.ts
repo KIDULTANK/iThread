@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 //
-// The localisation layer. English is the only shipped locale, so these assert the machinery rather than
-// any translation: key typing, plural selection via Intl.PluralRules, locale resolution, the document
-// lang/dir wiring, and locale-aware collation.
+// The localisation layer: key typing, plural selection, Chinese/English resolution, document lang/dir
+// wiring, and locale-aware collation.
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,9 +23,11 @@ import {
   t,
 } from "../src/i18n";
 import { CORE_EN } from "../src/i18n/core";
+import "../src/i18n/zh-CN";
 import { IO_EN } from "../src/io/messages";
 import { CANVAS_EN } from "../src/mindmap/flow/messages";
 import { PRESENT_EN } from "../src/present/presentMessages";
+import { shortcutGroups } from "../src/shortcuts";
 
 // EVERY catalogue in the app, in load order (eager first). The duplicate checks below iterate this
 // rather than naming a pair, because the migration is adding more of them: a hardcoded CORE-vs-CANVAS
@@ -91,6 +92,31 @@ describe("catalogue", () => {
     expect(t("settings.title")).toBe("Settings");
   });
 
+  it("returns Simplified Chinese after switching locale", () => {
+    setLocale("zh-CN");
+    expect(t("settings.title")).toBe("设置");
+    expect(t("canvas.menu.addChild")).toBe("添加下级分支");
+  });
+
+  it("renders the complete shortcut sheet in Simplified Chinese", () => {
+    setLocale("zh-CN");
+    const groups = shortcutGroups();
+    expect(groups.map((group) => group.title)).toEqual([
+      "编辑",
+      "选择与移动",
+      "文件",
+      "导航",
+      "视图",
+    ]);
+    const rows = groups.flatMap((group) => group.items);
+    expect(rows).toContainEqual({ keys: "长按 Alt", action: "显示全部快捷键" });
+    expect(rows).toContainEqual({
+      keys: "Alt + 方向键",
+      action: "移动分支：上下调整顺序，左右改变层级",
+    });
+    expect(rows.some((row) => row.action === "Add a sibling topic")).toBe(false);
+  });
+
   it("interpolates named placeholders", () => {
     expect(t("settings.prefsFile.exported", { count: "3 preferences" })).toBe(
       "Exported 3 preferences.",
@@ -138,7 +164,6 @@ describe("catalogue", () => {
     // anticipation of a caller that never arrived; either wire it up or delete it. Do not add to this
     // list to make a build pass — a key nothing calls should simply be removed.
     const UNREFERENCED = new Set([
-      "settings.language", // the locale picker's label — SettingsDialog renders the control without it
       // A `count.*` family built for call sites that ended up using bespoke plural messages instead.
       // `count.topics`, `count.nodes` and `count.maps` were revived from this exact list — three call
       // sites (Panels.tsx, App.tsx, TemplateCard.tsx, AllMaps.tsx) had hand-rolled `n === 1 ? "" : "s"`
@@ -290,9 +315,16 @@ describe("locale resolution", () => {
     spy.mockRestore();
   });
 
-  it("ships exactly one locale for now, and it is the default", () => {
-    expect(LOCALES).toEqual(["en"]);
+  it("ships English and Simplified Chinese, with English as the fallback", () => {
+    expect(LOCALES).toEqual(["en", "zh-CN"]);
     expect(LOCALES).toContain(DEFAULT_LOCALE);
+  });
+
+  it("resolves regional Chinese browser tags to Simplified Chinese", () => {
+    localStorage.clear();
+    const spy = vi.spyOn(navigator, "languages", "get").mockReturnValue(["zh-Hans-CN"]);
+    expect(resolveLocale()).toBe("zh-CN");
+    spy.mockRestore();
   });
 });
 

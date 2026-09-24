@@ -8,7 +8,19 @@
 // read it), so rich text is a canvas-only enhancement that never affects the flat formats.
 
 // Inline formatting elements kept verbatim; everything else is unwrapped (its text survives).
-const ALLOWED_TAGS = new Set(["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "SPAN", "BR"]);
+const ALLOWED_TAGS = new Set([
+  "B",
+  "STRONG",
+  "I",
+  "EM",
+  "U",
+  "S",
+  "STRIKE",
+  "MARK",
+  "CODE",
+  "SPAN",
+  "BR",
+]);
 
 // Elements dropped WITH their content (so script/style source never surfaces as visible text).
 const DROP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "IFRAME", "OBJECT", "EMBED"]);
@@ -89,5 +101,132 @@ export function richToPlain(html: string): string {
 
 /** True if sanitised HTML carries any real inline formatting (else the plain topic suffices). */
 export function hasFormatting(cleanHtml: string): boolean {
-  return /<(?:b|strong|i|em|u|s|strike|span|br)\b/i.test(cleanHtml);
+  return /<(?:b|strong|i|em|u|s|strike|mark|code|span|br)\b/i.test(cleanHtml);
+}
+
+const INLINE_MARKERS = [
+  { marker: "**", tag: "strong" },
+  { marker: "==", tag: "mark" },
+  { marker: "__", tag: "u" },
+  { marker: "~~", tag: "s" },
+  { marker: "`", tag: "code" },
+  { marker: "*", tag: "em" },
+  { marker: "_", tag: "em" },
+] as const;
+
+// Markdown permits inline HTML. A few real iThoughts libraries contain literal `<mark>` / `<u>`
+// topic fragments, so recognise only exact, attribute-free formatting tags and escape everything
+// else. Normalising aliases here keeps the stored rich subset small and predictable.
+const INLINE_HTML_TAGS = [
+  { source: "strong", tag: "strong" },
+  { source: "b", tag: "strong" },
+  { source: "mark", tag: "mark" },
+  { source: "u", tag: "u" },
+  { source: "em", tag: "em" },
+  { source: "i", tag: "em" },
+  { source: "del", tag: "s" },
+  { source: "strike", tag: "s" },
+  { source: "s", tag: "s" },
+  { source: "code", tag: "code" },
+] as const;
+
+/** Parse the small inline-Markdown subset supported inside a topic. `__text__` intentionally means
+ * underline here (rather than Markdown's second spelling for bold), matching iThoughts-style topic
+ * formatting and the editor's B/I/U controls. Raw HTML is escaped before any generated tags exist. */
+export function parseInlineMarkdown(text: string): { plain: string; rich?: string } {
+  let formatted = false;
+  const render = (source: string): { html: string; plain: string } => {
+    let html = "";
+    let plain = "";
+    const lower = source.toLowerCase();
+    for (let i = 0; i < source.length; ) {
+      if (source[i] === "\\" && i + 1 < source.length) {
+        html += escapeText(source[i + 1]);
+        plain += source[i + 1];
+        i += 2;
+        continue;
+      }
+      const htmlSpec = INLINE_HTML_TAGS.find(({ source: tag }) => lower.startsWith(`<${tag}>`, i));
+      if (htmlSpec) {
+        const start = i + htmlSpec.source.length + 2;
+        const close = `</${htmlSpec.source}>`;
+        const end = lower.indexOf(close, start);
+        if (end > start) {
+          const inner = source.slice(start, end);
+          const content =
+            htmlSpec.tag === "code" ? { html: escapeText(inner), plain: inner } : render(inner);
+          html += `<${htmlSpec.tag}>${content.html}</${htmlSpec.tag}>`;
+          plain += content.plain;
+          formatted = true;
+          i = end + close.length;
+          continue;
+        }
+      }
+      const spec = INLINE_MARKERS.find(({ marker }) => source.startsWith(marker, i));
+      if (spec) {
+        const start = i + spec.marker.length;
+        const end = source.indexOf(spec.marker, start);
+        if (end > start && source.slice(start, end).trim()) {
+          const inner = source.slice(start, end);
+          const content =
+            spec.tag === "code" ? { html: escapeText(inner), plain: inner } : render(inner);
+          html += `<${spec.tag}>${content.html}</${spec.tag}>`;
+          plain += content.plain;
+          formatted = true;
+          i = end + spec.marker.length;
+          continue;
+        }
+      }
+      html += escapeText(source[i]);
+      plain += source[i];
+      i += 1;
+    }
+    return { html, plain };
+  };
+
+  const rendered = render(text);
+  return formatted ? { plain: rendered.plain, rich: rendered.html } : { plain: rendered.plain };
+}
+
+/** Serialise topic rich text back to the same inline-Markdown subset for a lossless `.md` export. */
+export function richToInlineMarkdown(html: string): string {
+  const doc = new DOMParser().parseFromString(sanitizeRich(html), "text/html");
+  const children = (node: Node): string => Array.from(node.childNodes).map(visit).join("");
+  const visit = (node: Node): string => {
+    if (node.nodeType === 3) return node.textContent ?? "";
+    if (node.nodeType !== 1) return "";
+    const el = node as HTMLElement;
+    let inner = children(el);
+    switch (el.tagName.toLowerCase()) {
+      case "b":
+      case "strong":
+        return `**${inner}**`;
+      case "i":
+      case "em":
+        return `*${inner}*`;
+      case "u":
+        return `__${inner}__`;
+      case "s":
+      case "strike":
+        return `~~${inner}~~`;
+      case "mark":
+        return `==${inner}==`;
+      case "code":
+        return `\`${inner}\``;
+      case "br":
+        return " ";
+      case "span": {
+        const style = el.style;
+        if (style.textDecorationLine.includes("underline")) inner = `__${inner}__`;
+        if (style.textDecorationLine.includes("line-through")) inner = `~~${inner}~~`;
+        if (style.fontStyle === "italic") inner = `*${inner}*`;
+        if (style.fontWeight === "bold" || Number(style.fontWeight) >= 600) inner = `**${inner}**`;
+        if (style.backgroundColor) inner = `==${inner}==`;
+        return inner;
+      }
+      default:
+        return inner;
+    }
+  };
+  return children(doc.body);
 }

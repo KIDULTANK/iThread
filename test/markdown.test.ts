@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { fromMarkdown, toMarkdown } from "../src/io/markdown";
 import type { MapNode, MindMapDoc } from "../src/model/types";
@@ -52,6 +53,16 @@ describe("markdown io", () => {
     const doc = fromMarkdown("# My Map\n- one\n- two\n");
     expect(doc.title).toBe("My Map");
     expect(doc.root.children.map((c) => c.topic)).toEqual(["one", "two"]);
+  });
+
+  it("restores inline topic formatting and preserves it on Markdown export", () => {
+    const doc = fromMarkdown("# **法理学**\n- ==重点==与__下划线__\n  - *斜体*及~~删除线~~\n");
+    expect(doc.root).toMatchObject({ topic: "法理学", topicRich: "<strong>法理学</strong>" });
+    expect(doc.root.children[0]).toMatchObject({
+      topic: "重点与下划线",
+      topicRich: "<mark>重点</mark>与<u>下划线</u>",
+    });
+    expect(toMarkdown(doc)).toBe("# **法理学**\n- ==重点==与__下划线__\n  - *斜体*及~~删除线~~\n");
   });
 
   it("nests by indentation and tolerates tabs and *", () => {

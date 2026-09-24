@@ -1,14 +1,43 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { hasFormatting, richToPlain, sanitizeRich } from "../src/io/richText";
+import {
+  hasFormatting,
+  parseInlineMarkdown,
+  richToInlineMarkdown,
+  richToPlain,
+  sanitizeRich,
+} from "../src/io/richText";
 import { setTopicRich } from "../src/mindmap/flow/ops";
 import type { MindMapDoc } from "../src/model/types";
 
 describe("richText sanitiser", () => {
   it("keeps allowlisted inline formatting verbatim", () => {
-    expect(sanitizeRich("<b>bold</b> <i>it</i> <u>u</u> <s>s</s>")).toBe(
-      "<b>bold</b> <i>it</i> <u>u</u> <s>s</s>",
+    expect(sanitizeRich("<b>bold</b> <i>it</i> <u>u</u> <s>s</s> <mark>hi</mark>")).toBe(
+      "<b>bold</b> <i>it</i> <u>u</u> <s>s</s> <mark>hi</mark>",
     );
+  });
+
+  it("parses and serialises topic inline Markdown safely", () => {
+    const parsed = parseInlineMarkdown(
+      "**粗体**、==高亮==、__下划线__、*斜体*、~~删除~~、`代码` <img>",
+    );
+    expect(parsed.plain).toBe("粗体、高亮、下划线、斜体、删除、代码 <img>");
+    expect(parsed.rich).toBe(
+      "<strong>粗体</strong>、<mark>高亮</mark>、<u>下划线</u>、<em>斜体</em>、<s>删除</s>、<code>代码</code> &lt;img&gt;",
+    );
+    expect(richToInlineMarkdown(parsed.rich ?? "")).toBe(
+      "**粗体**、==高亮==、__下划线__、*斜体*、~~删除~~、`代码` <img>",
+    );
+  });
+
+  it("restores safe inline HTML used by Markdown and older iThoughts topics", () => {
+    expect(parseInlineMarkdown("<mark>重点</mark>和<u>下划线</u>及<b>粗体</b>")).toEqual({
+      plain: "重点和下划线及粗体",
+      rich: "<mark>重点</mark>和<u>下划线</u>及<strong>粗体</strong>",
+    });
+    expect(parseInlineMarkdown('<mark onclick="bad()">不安全</mark>')).toEqual({
+      plain: '<mark onclick="bad()">不安全</mark>',
+    });
   });
 
   it("keeps a span's safe style, drops disallowed props", () => {

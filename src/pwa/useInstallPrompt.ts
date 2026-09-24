@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { isStandalonePwa } from "./standalone";
 
-// In-app "Install MindMap Studio" affordance (O2). The browser fires `beforeinstallprompt` ONCE, early
+// In-app "Install iThread" affordance (O2). The browser fires `beforeinstallprompt` ONCE, early
 // — usually before React has mounted — so we capture it at module-eval time into a singleton and let
 // components subscribe, mirroring the module-level guard pattern in pwaUpdate.ts. iOS Safari never
 // fires the event, so we fall back to an "Add to Home Screen via Share" hint there.

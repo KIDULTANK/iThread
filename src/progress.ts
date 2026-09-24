@@ -88,6 +88,22 @@ export function piePath(cx: number, cy: number, r: number, fraction: number): st
 /** The quarter-step task levels a click on the pie cycles through. */
 const LEVELS = [0, 0.25, 0.5, 0.75, 1];
 
+/** iThoughts-style progress shortcut: P increments and Shift+P decrements across
+ * not-a-task ↔ 0% ↔ 25% ↔ 50% ↔ 75% ↔ 100%. */
+export function stepTaskProgress(
+  current: number | undefined,
+  direction: "up" | "down",
+): number | undefined {
+  const states: (number | undefined)[] = [undefined, ...LEVELS];
+  if (current === undefined) return direction === "up" ? 0 : 1;
+  const normalised = LEVELS.reduce((best, level) =>
+    Math.abs(level - current) < Math.abs(best - current) ? level : best,
+  );
+  const index = states.indexOf(normalised);
+  if (direction === "up") return states[(index + 1) % states.length];
+  return states[(index - 1 + states.length) % states.length];
+}
+
 /** The next quarter-step level after `cur`, looping 100% → 0%. Pure (drives click-to-cycle). */
 export function nextProgressLevel(cur: number): number {
   return LEVELS.find((l) => l > clamp01(cur) + 0.001) ?? 0;

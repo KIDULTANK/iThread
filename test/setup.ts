@@ -18,7 +18,24 @@ import { afterEach } from "vitest";
 // Fixed here rather than per-test, so the next lazy leaf test does not rediscover it. NOT fixed by
 // having flow/messages.ts pull in core — that would drag the whole eager chrome catalogue into the
 // lazy canvas chunk and undo the bundle arrangement the whole layer is built around.
-import "../src/i18n";
+import { LOCALE_PREF_KEY, setLocale } from "../src/i18n";
+
+// Locale is module-global by design. Test files share workers, so a Chinese/pseudo-locale test must
+// not make an unrelated later file format dates, warnings, or exports in that locale.
+setLocale("en");
+try {
+  localStorage.removeItem(LOCALE_PREF_KEY);
+} catch {
+  // Node-environment tests have no localStorage.
+}
+afterEach(() => {
+  setLocale("en");
+  try {
+    localStorage.removeItem(LOCALE_PREF_KEY);
+  } catch {
+    // Node-environment tests have no localStorage.
+  }
+});
 
 const hasDom = typeof window !== "undefined" && typeof document !== "undefined";
 

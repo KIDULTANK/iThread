@@ -1,4 +1,4 @@
-// BrandMark — the MindMap Studio node-link glyph, in the emerald brand accent. Lifted from the
+// BrandMark — the iThread node-link glyph, in the emerald brand accent. Lifted from the
 // design handoff (shared.jsx). Used in the editor's icon rail; the colour follows currentColor so a
 // parent can tint it, defaulting to the emerald accent token.
 

@@ -114,11 +114,11 @@ export const CORE_EN = {
   "io.err.couldNotReadFile": "Could not read file",
   "io.err.couldNotDecodeImage": "Could not decode image",
   "io.err.notValidJson": "Not valid JSON",
-  "io.err.notStudioJson": "Not a MindMap Studio .json file",
-  "io.err.notStudioLibrary": "Not a MindMap Studio library backup",
+  "io.err.notStudioJson": "Not an iThread .json file",
+  "io.err.notStudioLibrary": "Not an iThread library backup",
   "io.err.libraryInvalidMap": "Library backup contains an invalid map",
   "io.err.notMermaid": "Not a Mermaid mindmap (no nodes found)",
-  "io.picker.studioMap": "MindMap Studio map",
+  "io.picker.studioMap": "iThread map",
   "io.picker.mindManagerMap": "MindManager map (import)",
   "common.colourNamed": "Colour {colour}",
   "common.openNamed": "Open {name}",
@@ -214,6 +214,8 @@ export const CORE_EN = {
   "settings.localData.clearBranchClipboard": "Clear branch clipboard",
   "settings.localData.clearAll": "Clear all local data…",
   "settings.language": "Language",
+  "settings.language.chinese": "简体中文",
+  "settings.language.english": "English",
   "settings.appTheme.help":
     "App theme colours the chrome (toolbar, panels, dialogs). The canvas theme (which colours the topics) lives in the Map panel, alongside layout and the rest of the map's look — a dark canvas always darkens the chrome too.",
   "settings.reduceMotion.help":
@@ -258,20 +260,31 @@ export const CORE_EN = {
     "This replaces {count} on this device (saved filters, themes, styles and panel layout as present in the file). Your maps are not touched. The app will reload.",
   "settings.prefsFile.confirmAction": "Import + reload",
 
-  // Keyboard cheat sheet (src/shortcuts.ts). The KEY names themselves ("Ctrl/⌘ + Z", "Tab") stay
-  // literal: they denote physical keys, and the canvas bindings they document are not locale-dependent.
-  // Only the group titles and the action descriptions are translated.
+  // Keyboard cheat sheet (src/shortcuts.ts). Physical key names ("Ctrl/⌘ + Z", "Tab") stay literal;
+  // prose-like gestures ("Double-click a topic") are translated along with groups and actions.
   "shortcuts.group.editing": "Editing",
   "shortcuts.group.selectionMoving": "Selection & moving",
   "shortcuts.group.file": "File",
   "shortcuts.group.navigation": "Navigation",
+  "shortcuts.keys.arrowKeys": "Arrow keys",
+  "shortcuts.keys.altArrowKeys": "Alt + arrow keys",
+  "shortcuts.keys.dragEmptyCanvas": "Drag empty canvas",
+  "shortcuts.keys.holdAlt": "Alt (hold)",
+  "shortcuts.keys.middleRightDrag": "Middle/right drag",
+  "shortcuts.keys.scrollTwoFingerSwipe": "Scroll / two-finger swipe",
+  "shortcuts.keys.modifiedScrollPinch": "Ctrl/⌘ + scroll / pinch",
+  "shortcuts.keys.doubleClickTopic": "Double-click a topic",
+  "shortcuts.keys.doubleClickCanvas": "Double-click the canvas",
+  "shortcuts.keys.dragTopicGrip": "Drag a topic's grip",
   "shortcuts.action.addASiblingTopic": "Add a sibling topic",
+  "shortcuts.action.addASiblingTopicBefore": "Add a sibling topic before",
   "shortcuts.action.addAChildTopic": "Add a child topic",
   "shortcuts.action.outdentPromoteOneLevel": "Outdent (promote one level)",
   "shortcuts.action.renameTheSelectedTopic": "Rename the selected topic",
   "shortcuts.action.startEditingTheSelectedTopic": "Start editing the selected topic",
-  "shortcuts.action.openTheSelectedTopicSNote":
-    "Open the selected topic's note (installed app only)",
+  "shortcuts.action.incrementTaskProgress": "Increase task progress",
+  "shortcuts.action.decrementTaskProgress": "Decrease task progress",
+  "shortcuts.action.openTheSelectedTopicSNote": "Open the selected topic's note",
   "shortcuts.action.deleteTheTopicItsBranchUndoable": "Delete the topic + its branch (undoable)",
   "shortcuts.action.copyTheSelectedBranch": "Copy the selected branch",
   "shortcuts.action.duplicateTheSelectedBranchAsA": "Duplicate the selected branch (as a sibling)",
@@ -283,8 +296,8 @@ export const CORE_EN = {
   "shortcuts.action.setTheSelectedTopicSPriority":
     "Set the selected topic's priority (1 = highest, 9 = lowest)",
   "shortcuts.action.moveTheSelectionThroughTheTree": "Move the selection through the tree",
-  "shortcuts.action.reorderTheTopicAmongItsSiblings": "Reorder the topic among its siblings",
-  "shortcuts.action.outdentIndentTheSelectedTopic": "Outdent / indent the selected topic",
+  "shortcuts.action.moveBranchLikeIthoughts":
+    "Move branch: up/down reorder, left/right change level",
   "shortcuts.action.nudgeTheTopicSPositionFree": "Nudge the topic's position (free layout only)",
   "shortcuts.action.rubberBandSelectSeveralTopics": "Rubber-band select several topics",
   "shortcuts.action.startARelationshipArrowToA":
@@ -297,13 +310,17 @@ export const CORE_EN = {
   "shortcuts.action.focusOnTheSelectedTopicEsc": "Focus on the selected topic (Esc to exit)",
   "shortcuts.action.openFindReplaceOrPress": "Open Find & Replace (or press /)",
   "shortcuts.action.openFindReplace": "Open Find & Replace",
+  "shortcuts.action.showAllShortcuts": "Show all keyboard shortcuts",
+  "shortcuts.releaseAltToClose": "release to close",
+  "shortcuts.pageIndicator": "Shortcut pages",
   "shortcuts.action.goBackToThePreviousTopic": "Go back to the previous topic you visited",
   "shortcuts.action.goForwardAgain": "Go forward again",
   "shortcuts.action.cancelClearTheCurrentSelection": "Cancel / clear the current selection",
   "shortcuts.action.panTheCanvas": "Pan the canvas",
-  "shortcuts.action.panTheCanvasEvenOverA": "Pan the canvas (even over a topic)",
   "shortcuts.action.zoomInAndOut": "Zoom in and out",
   "shortcuts.action.zoomInOut": "Zoom in / out",
+  "shortcuts.action.collapseExpandBranch": "Collapse / expand the selected branch",
+  "shortcuts.action.showLevels": "Show 0 (all) to 9 levels below the selected topic",
   "shortcuts.action.resetZoomTo100": "Reset zoom to 100%",
   "shortcuts.action.fitTheWholeMapToView": "Fit the whole map to view",
   "shortcuts.action.fitTheSelectionToView": "Fit the selection to view",
@@ -377,7 +394,7 @@ export const CORE_EN = {
   "cmd.backup": "Back up whole library",
   "cmd.shortcuts": "Keyboard shortcuts",
   "cmd.settings": "Settings & preferences",
-  "cmd.about": "About MindMap Studio",
+  "cmd.about": "About iThread",
   "cmd.undo": "Undo",
   "cmd.redo": "Redo",
   "cmd.fit": "Fit map to screen",
@@ -540,6 +557,12 @@ export const CORE_EN = {
   "toolbar.saveError.label": "Couldn't save",
   "toolbar.saveError.title":
     "Couldn't save to this browser — it may be out of storage or in private mode.",
+  "toolbar.saving": "Saving…",
+  "toolbar.timer": "Timer",
+  "toolbar.timerFinished": "Time's up!",
+  "toolbar.timerTitle": "Brainstorm timer — timebox an idea sprint",
+  "toolbar.timerMinutes": "{n}m",
+  "toolbar.resume": "Resume",
 
   // Why a menu item is greyed out. Each names the specific precondition, so they don't collapse into
   // one generic "not available" that a translator would have to make vague.
@@ -694,7 +717,7 @@ export const CORE_EN = {
 
   // About dialog. The product name is a message so a locale that requires transliteration can supply
   // one; most will leave it exactly as it is.
-  "about.appName": "MindMap Studio",
+  "about.appName": "iThread",
   "about.close": "Close about dialog",
   "about.tagline":
     "Local-first mind mapping — a MindManager replacement. Your maps stay in your browser.",
@@ -731,6 +754,8 @@ export const CORE_EN = {
   "panel.raisedDropShadow": "Raised (drop shadow)",
   "panel.flatNoShadow": "Flat (no shadow)",
   "panel.topicFontFamily": "Topic font family",
+  "panel.topicFontSize": "Topic font size",
+  "panel.autoSize": "Auto size",
   "panel.topicWrapWidth": "Topic wrap width",
   "panel.dragToSet":
     "Drag to set the topic wrap width (snaps to Narrow / Medium / Wide; far end = None)",
@@ -784,7 +809,8 @@ export const CORE_EN = {
   "panel.nameThisStylePlaceholder": "Name this style…",
   "panel.nameThisStyle": "Name this style",
   "panel.progress": "Progress",
-  "panel.clearTaskStatus": "Clear task status (remove the pie)",
+  "panel.notATask": "Not a task",
+  "panel.progressShortcutHint": "P increase · Shift+P decrease",
   "panel.topicInfo": "Topic info",
   "panel.minimizeCollapseTo": "Minimize — collapse to the right edge",
   "panel.minimizeTopicInfo": "Minimize topic info",
@@ -845,7 +871,6 @@ export const CORE_EN = {
   "panel.cinematicZoomOff": "Cinematic zoom off — centres each topic (click to zoom each branch)",
   "panel.ruleValue": "Rule value",
   "panel.andConditionValue": "AND condition value",
-  "panel.font": "Font…",
   "panel.sans": "Sans",
   "panel.serif": "Serif",
   "panel.mono": "Mono",
@@ -916,7 +941,6 @@ export const CORE_EN = {
   "panel.moveSlideUp": "Move {name} up",
   "panel.moveSlideDown": "Move {name} down",
   "panel.speakerNoteFor": "Speaker note for {name}",
-  "panel.setTaskPercent": "Set task to {n}% complete",
   "panel.removeAdditionalLink": "Remove additional link {link}",
   "panel.goToTopic": 'Go to "{topic}"',
   "panel.goToTopicInMap": 'Go to "{topic}" in {map}',
@@ -1081,6 +1105,10 @@ export const CORE_EN = {
   "panel.venn3Circles": "Venn (3 circles)",
   "panel.colour": "Colour",
   "panel.taskProgress": "Task progress",
+  "panel.topicsLower": "topics",
+  "panel.topicsMatch": "topics match",
+  "panel.branchLower": "branch",
+  "panel.branchesLower": "branches",
   "panel.relationshipInfo": "Relationship info",
   "panel.minimizeRelationshipInfo": "Minimize relationship info",
   "panel.relationshipLabel": "Relationship label",
@@ -1269,9 +1297,8 @@ export const CORE_EN = {
     "Couldn't copy the image — your browser may block clipboard image writes.",
   "app.couldnTRenderTheMap2": "Couldn't render the map to an image for the PDF.",
   "app.thatFileIsnTValid": "That file isn't valid JSON.",
-  "app.thatFileIsnTA": "That file isn't a MindMap Studio settings file.",
-  "app.thatSettingsFileWasWritten":
-    "That settings file was written by a newer version of MindMap Studio.",
+  "app.thatFileIsnTA": "That file isn't an iThread settings file.",
+  "app.thatSettingsFileWasWritten": "That settings file was written by a newer version of iThread.",
   "app.thatSettingsFileHasNo": "That settings file has no preferences in it.",
   "app.prosCons": "Pros & cons",
   "app.meetingAgenda": "Meeting agenda",

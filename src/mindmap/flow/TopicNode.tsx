@@ -14,13 +14,10 @@ import {
   useState,
 } from "react";
 import { Badge, DateChip } from "../../Badge";
-import { ProgressPie } from "../../ProgressPie";
 import { t } from "../../i18n/registry";
 import { markerImage } from "../../icons";
-import { sanitizeRich } from "../../io/richText";
+import { parseInlineMarkdown, sanitizeRich } from "../../io/richText";
 import { priorityColor, priorityLabel } from "../../priority";
-import type { ProgressInfo } from "../../progress";
-import { toPercent } from "../../progress";
 import { type InlineTag, applyColor, toggleInline } from "../../richTextCommands";
 import { isOverdue, taskInfoLine, todayISO } from "../../taskDate";
 import {
@@ -46,7 +43,6 @@ import {
   matchTagCandidates,
   tagTriggerAt,
 } from "./linkAutocomplete";
-import { showNodeAffordances } from "./nodeChrome";
 import { relateGripTopCss } from "./relateGripGeometry";
 import { isGeometric, shapeInset, shapeOverlayPath, shapePath } from "./shapes";
 import { type SlashCommand, matchSlashCommands, slashMenuKey, slashQuery } from "./slashCommands";
@@ -295,52 +291,13 @@ function RichEditToolbar({ editRef }: { editRef: RefObject<HTMLDivElement | null
   );
 }
 
-/** A small task-completion pie on the node (MindManager-style); the exact figure lives in the
- *  tooltip + the Info panel, so the canvas stays uncluttered. When `onCycle` is given (a leaf task,
- *  not a rolled-up parent) the pie is a button that steps the completion on click. */
-function ProgressBadge({ info, onCycle }: { info: ProgressInfo; onCycle?: () => void }) {
-  const pct = toPercent(info.progress);
-  const pie = (
-    <ProgressPie
-      fraction={info.progress}
-      size={16}
-      title={
-        info.derived
-          ? `${info.done} of ${info.total} sub-tasks complete (${pct}%)`
-          : `Task ${pct}% — click to change`
-      }
-    />
-  );
-  if (!onCycle) return pie;
-  return (
-    <button
-      type="button"
-      className="nodrag nopan"
-      onClick={(e) => {
-        e.stopPropagation();
-        onCycle();
-      }}
-      style={{
-        padding: 0,
-        border: "none",
-        background: "transparent",
-        cursor: "pointer",
-        display: "block",
-        lineHeight: 0,
-      }}
-    >
-      {pie}
-    </button>
-  );
-}
-
 // Memoised: React Flow re-renders every visible node whenever the node array changes (e.g. an
 // unrelated node moves or selection shifts). The producer (project/sync in FlowMindMap) only mints
 // a fresh `data` object when this node's content actually changes — selection, Power-Filter dimming,
 // topic/style/progress edits — so the default shallow compare re-renders exactly when needed and
 // skips the rest. Inline-edit + collapse arrive via the `useEditing()` context, which memo never
 // blocks, so editing state still re-renders correctly.
-function TopicNodeImpl({ id, data, selected }: NodeProps<TopicNodeT>) {
+function TopicNodeImpl({ id, data, selected, dragging }: NodeProps<TopicNodeT>) {
   const {
     topic,
     topicRich,
@@ -376,6 +333,7 @@ function TopicNodeImpl({ id, data, selected }: NodeProps<TopicNodeT>) {
     locked,
     fontScale = 1,
     fontFamily: mapFontFamily,
+    motionProgress = 1,
   } = data;
   // Conditional-formatting style sits *under* the node's own style (manual styling wins).
   const style = condStyle ? { ...condStyle, ...ownStyle } : ownStyle;
@@ -484,7 +442,12 @@ function TopicNodeImpl({ id, data, selected }: NodeProps<TopicNodeT>) {
   // drop-highlight ring.
   const [markerDragOver, setMarkerDragOver] = useState(false);
   // Re-sanitise on render too (defence-in-depth: a topicRich could arrive via an imported .json).
-  const richHtml = useMemo(() => (topicRich ? sanitizeRich(topicRich) : null), [topicRich]);
+  // Plain topics also get a lightweight Markdown pass so older iThoughts files containing ** / == /
+  // __ markers render correctly without requiring a one-off data migration.
+  const richHtml = useMemo(
+    () => (topicRich ? sanitizeRich(topicRich) : (parseInlineMarkdown(topic).rich ?? null)),
+    [topic, topicRich],
+  );
   // Slash `/` command menu: opens when the editor text starts with "/", filtered by what follows.
   // `items` empty ⇒ closed. `index` is the highlighted row (Arrow keys move it, Enter/Tab selects).
   const [slashItems, setSlashItems] = useState<SlashCommand[]>([]);
@@ -755,31 +718,44 @@ function TopicNodeImpl({ id, data, selected }: NodeProps<TopicNodeT>) {
         // redesign's selection treatment, replacing React Flow's faint default. Hover gets a softer
         // lift so the node reads as interactive (#5). Canvas-only (exports never render selection or
         // hover), so it carries no canvas==export risk.
-        boxShadow: dropTarget
-          ? // Drag-to-reparent target: a bold emerald ring so the drop destination is unmistakable.
-            "0 0 0 3px #1b8a5e, 0 0 0 8px rgba(27,138,94,0.25), 0 8px 22px rgba(40,30,16,0.18)"
-          : selected
-            ? `0 0 0 2px ${ringColor}, 0 0 0 6px ${ringColor}33, 0 8px 22px rgba(40,30,16,0.16)`
-            : hovered
-              ? isRoot
-                ? "0 10px 26px rgba(27,138,94,0.40)"
-                : underlineLeaf
-                  ? "none"
-                  : "0 6px 18px rgba(40,30,16,0.20)"
-              : // At rest the cards are flat — unless the topic opts into a raised drop shadow (#4),
-                // which IS a persisted style and so also renders in the export (canvas == export).
-                style?.shadow
-                ? TOPIC_SHADOW_CSS
-                : "none",
+        boxShadow: dragging
+          ? "0 14px 34px rgba(40,30,16,0.28)"
+          : dropTarget
+            ? // Drag-to-reparent target: a bold emerald ring so the drop destination is unmistakable.
+              "0 0 0 3px #1b8a5e, 0 0 0 8px rgba(27,138,94,0.25), 0 8px 22px rgba(40,30,16,0.18)"
+            : selected
+              ? `0 0 0 2px ${ringColor}, 0 0 0 6px ${ringColor}33, 0 8px 22px rgba(40,30,16,0.16)`
+              : hovered
+                ? isRoot
+                  ? "0 10px 26px rgba(27,138,94,0.40)"
+                  : underlineLeaf
+                    ? "none"
+                    : "0 6px 18px rgba(40,30,16,0.20)"
+                : // At rest the cards are flat — unless the topic opts into a raised drop shadow (#4),
+                  // which IS a persisted style and so also renders in the export (canvas == export).
+                  style?.shadow
+                  ? TOPIC_SHADOW_CSS
+                  : "none",
         // Hover lift + a pointer cursor signal "you can click/edit me" (#5); selection keeps the ring.
-        transform: hovered && !selected && !isEditing ? "translateY(-1px)" : undefined,
-        cursor: isEditing ? "text" : "pointer",
+        transform:
+          motionProgress < 1
+            ? `scale(${0.9 + motionProgress * 0.1})`
+            : dragging
+              ? "scale(1.025)"
+              : hovered && !selected && !isEditing
+                ? "translateY(-1px)"
+                : undefined,
+        transformOrigin: tipLeft ? "right center" : "left center",
+        cursor: isEditing ? "text" : dragging ? "grabbing" : "pointer",
         // Read-only Power Filter: fade nodes that aren't on a path to a match.
-        opacity: dimmed ? 0.22 : 1,
+        opacity: (dimmed ? 0.22 : 1) * motionProgress,
         // Drag-a-marker drop target highlight, else a Find-result highlight ring.
         outline: markerDragOver ? "2px dashed #1b8a5e" : matched ? "2px solid #f5a623" : undefined,
         outlineOffset: 2,
-        transition: "opacity 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease",
+        transition:
+          motionProgress < 1
+            ? "none"
+            : "opacity 0.16s ease, box-shadow 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1)",
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -865,23 +841,6 @@ function TopicNodeImpl({ id, data, selected }: NodeProps<TopicNodeT>) {
           }}
         />
       ) : null}
-      {/* Quick task toggle — a hover checkbox on the left edge: cycle not-a-task → to-do → done.
-          Hidden on the root and on aggregate (rolled-up) progress; the pie handles fine steps. */}
-      {!isRoot && !progress?.derived && (
-        <button
-          type="button"
-          className="mm-task-check nodrag nopan"
-          aria-label={t("canvas.node.toggleTask")}
-          aria-pressed={(progress?.progress ?? 0) >= 1}
-          title={t("canvas.node.cycleTask")}
-          onClick={(e) => {
-            e.stopPropagation();
-            editing?.cycleTask(id);
-          }}
-        >
-          {(progress?.progress ?? 0) >= 1 ? "☑" : "☐"}
-        </button>
-      )}
       {geom && shape ? (
         <svg
           width="100%"
@@ -1028,6 +987,7 @@ function TopicNodeImpl({ id, data, selected }: NodeProps<TopicNodeT>) {
                     format: (tag) => {
                       if (editRef.current) toggleInline(editRef.current, tag);
                     },
+                    commit: () => editing?.commitEdit(id, html, true),
                     commitAndAdd: (what) => editing?.commitAndAdd(id, html, what),
                     cancel: () => editing?.cancelEdit(html),
                   });
@@ -1254,12 +1214,6 @@ function TopicNodeImpl({ id, data, selected }: NodeProps<TopicNodeT>) {
                 </Badge>
               )
             ) : null}
-            {progress ? (
-              <ProgressBadge
-                info={progress}
-                onCycle={progress.derived ? undefined : () => editing?.cycleProgress(id)}
-              />
-            ) : null}
             {due ? (
               <DateChip due={due} overdue={isOverdue(due, progress?.progress ?? 0, todayISO())} />
             ) : null}
@@ -1310,8 +1264,8 @@ function TopicNodeImpl({ id, data, selected }: NodeProps<TopicNodeT>) {
             position: "absolute",
             // Leaf-facing edge: left for a left-growing branch (two-sided left half / all-left), else
             // right — so the toggle sits at the branch tip like MindManager, not toward the root.
-            ...(tipLeft ? { left: -12 } : { right: -12 }),
-            bottom: -12,
+            ...(tipLeft ? { left: -8 } : { right: -8 }),
+            bottom: -8,
             // Size/shape/font live in CSS (.mm-collapse-toggle) so the touch (coarse-pointer) escalation
             // actually applies — inline width would otherwise outrank the @media rule. Only the dynamic
             // branch-coloured border/text stays inline.
@@ -1364,58 +1318,8 @@ function TopicNodeImpl({ id, data, selected }: NodeProps<TopicNodeT>) {
           ) : null}
         </output>
       ) : null}
-      {/* On-node ＋ add affordances (#1): child on the right edge, sibling below. Shown on hover or
-          selection; ≥24px desktop / ≥44px touch (see .mm-node-add). nodrag nopan so dragging from
-          them never moves the node. Canvas-only — not authored into exports. */}
-      {/* Note + priority used to live in an on-hover pill here; they moved into the on-selection
-          contextual action bar (NodePopover, UI-3) so the node stays uncluttered at rest. Add child/
-          sibling stay as the on-node ＋ affordances below. */}
-      {showNodeAffordances(hovered, selected, multiSelected, isEditing) ? (
-        <>
-          <button
-            type="button"
-            className="mm-node-add nodrag nopan"
-            title={t("canvas.node.addChild")}
-            aria-label={t("canvas.node.addChild")}
-            onClick={(e) => {
-              e.stopPropagation();
-              editing?.addChild(id);
-            }}
-            style={
-              {
-                right: -13,
-                top: "50%",
-                transform: "translateY(-50%)",
-                "--mm-add-color": ringColor,
-              } as CSSProperties
-            }
-          >
-            +
-          </button>
-          {!isRoot ? (
-            <button
-              type="button"
-              className="mm-node-add nodrag nopan"
-              title={t("canvas.node.addSibling")}
-              aria-label={t("canvas.node.addSibling")}
-              onClick={(e) => {
-                e.stopPropagation();
-                editing?.addSibling(id);
-              }}
-              style={
-                {
-                  left: "50%",
-                  bottom: -13,
-                  transform: "translateX(-50%)",
-                  "--mm-add-color": ringColor,
-                } as CSSProperties
-              }
-            >
-              +
-            </button>
-          ) : null}
-        </>
-      ) : null}
+      {/* Branch creation intentionally lives in the topic's context menu. Keeping the node itself free
+          of hover/selection ＋ buttons avoids accidental activation and leaves the map visually calm. */}
       {hovered && !isEditing && !editHintSeen ? (
         <span className="mm-node-hint nodrag nopan">
           <span className="mm-hint-mouse">{t("canvas.coach.editMouse")}</span>

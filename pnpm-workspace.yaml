@@ -4,4 +4,6 @@
 # on them and blocking `pnpm test` / `pnpm dev`.
 allowBuilds:
   '@biomejs/biome': true
+  electron: true
+  electron-winstaller: false
   esbuild: true

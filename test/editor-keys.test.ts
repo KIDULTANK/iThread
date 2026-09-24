@@ -13,14 +13,16 @@ const ev = (over: Partial<EditorKeyEvent>): EditorKeyEvent => ({
   ctrlKey: false,
   metaKey: false,
   preventDefault: vi.fn(),
+  stopPropagation: vi.fn(),
   ...over,
 });
 
 const actions = (): EditorKeyActions & {
   format: ReturnType<typeof vi.fn>;
+  commit: ReturnType<typeof vi.fn>;
   commitAndAdd: ReturnType<typeof vi.fn>;
   cancel: ReturnType<typeof vi.fn>;
-} => ({ format: vi.fn(), commitAndAdd: vi.fn(), cancel: vi.fn() });
+} => ({ format: vi.fn(), commit: vi.fn(), commitAndAdd: vi.fn(), cancel: vi.fn() });
 
 describe("handleEditorKeyDown", () => {
   // The router now dispatches the SEMANTIC tag richTextCommands applies (b/i/u), not the old
@@ -43,10 +45,13 @@ describe("handleEditorKeyDown", () => {
     }
   });
 
-  it("commits + adds a sibling on Enter and a child on Tab", () => {
+  it("commits in place on Enter and commits + adds a child on Tab", () => {
     const a = actions();
-    expect(handleEditorKeyDown(ev({ key: "Enter" }), a)).toBe(true);
-    expect(a.commitAndAdd).toHaveBeenCalledWith("sibling");
+    const enter = ev({ key: "Enter" });
+    expect(handleEditorKeyDown(enter, a)).toBe(true);
+    expect(a.commit).toHaveBeenCalledOnce();
+    expect(a.commitAndAdd).not.toHaveBeenCalled();
+    expect(enter.stopPropagation).toHaveBeenCalledOnce();
 
     const b = actions();
     expect(handleEditorKeyDown(ev({ key: "Tab" }), b)).toBe(true);
@@ -67,6 +72,7 @@ describe("handleEditorKeyDown", () => {
     expect(handleEditorKeyDown(e, a)).toBe(false);
     expect(e.preventDefault).not.toHaveBeenCalled();
     expect(a.format).not.toHaveBeenCalled();
+    expect(a.commit).not.toHaveBeenCalled();
     expect(a.commitAndAdd).not.toHaveBeenCalled();
     expect(a.cancel).not.toHaveBeenCalled();
   });

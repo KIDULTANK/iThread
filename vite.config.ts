@@ -9,6 +9,108 @@ import { NAVIGATION_FALLBACK_DENYLIST } from "./src/pwa/navigationDenylist";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 
+/** A production PWA service worker can otherwise keep serving an old app shell when this repository
+ * is later opened through Vite on the same localhost origin. During development, replace that worker
+ * with a one-shot reset worker: it clears app-shell caches, unregisters itself, and reloads clients
+ * onto Vite. IndexedDB (the map library) is deliberately untouched. */
+function devServiceWorkerResetPlugin(): Plugin {
+  return {
+    name: "dev-service-worker-reset",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use("/sw.js", (_req, res) => {
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+        res.setHeader("Cache-Control", "no-store");
+        res.end(`
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) => {
+  event.waitUntil((async () => {
+    const names = await caches.keys();
+    await Promise.all(names.map((name) => caches.delete(name)));
+    await self.registration.unregister();
+    const windows = await self.clients.matchAll({ type: "window" });
+    await Promise.all(windows.map((client) => client.navigate(client.url)));
+  })());
+});
+`);
+      });
+    },
+  };
+}
+
+/** Local-only command queue used by `pnpm ithread`. Browser-origin POSTs from anywhere except this
+ * Vite origin are rejected, so an unrelated website cannot drive the editor through localhost. */
+function iThreadCliBridgePlugin(): Plugin {
+  const queue: Record<string, unknown>[] = [];
+  const results = new Map<string, unknown>();
+  let lastAppPoll = 0;
+  const send = (res: import("node:http").ServerResponse, status: number, body?: unknown) => {
+    res.statusCode = status;
+    res.setHeader("Cache-Control", "no-store");
+    if (body === undefined) return res.end();
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.end(JSON.stringify(body));
+  };
+  const readJson = async (req: import("node:http").IncomingMessage): Promise<unknown> => {
+    let text = "";
+    for await (const chunk of req) {
+      text += chunk;
+      // File-import commands carry the source as base64. Keep this local-only bridge roomy enough for
+      // real iThoughts libraries while still rejecting accidentally unbounded requests.
+      if (text.length > 64_000_000) throw new Error("Command is too large");
+    }
+    return JSON.parse(text || "{}");
+  };
+  return {
+    name: "ithread-cli-bridge",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const url = new URL(req.url ?? "/", "http://127.0.0.1");
+        if (!url.pathname.startsWith("/__ithread_cli/v1/")) return next();
+        const origin = req.headers.origin;
+        if (origin && !/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin))
+          return send(res, 403, { error: "Cross-origin CLI access denied" });
+        try {
+          if (req.method === "GET" && url.pathname === "/__ithread_cli/v1/status")
+            return send(res, 200, {
+              name: "iThread",
+              appConnected: Date.now() - lastAppPoll < 2500,
+              queued: queue.length,
+            });
+          if (req.method === "POST" && url.pathname === "/__ithread_cli/v1/commands") {
+            const body = (await readJson(req)) as Record<string, unknown>;
+            if (typeof body.action !== "string") return send(res, 400, { error: "Missing action" });
+            const id = crypto.randomUUID();
+            queue.push({ ...body, requestId: id });
+            return send(res, 202, { id });
+          }
+          if (req.method === "GET" && url.pathname === "/__ithread_cli/v1/commands/next") {
+            lastAppPoll = Date.now();
+            const command = queue.shift();
+            return command ? send(res, 200, command) : send(res, 204);
+          }
+          const match = url.pathname.match(/^\/__ithread_cli\/v1\/commands\/([^/]+)\/result$/);
+          if (match && req.method === "POST") {
+            results.set(match[1], await readJson(req));
+            return send(res, 204);
+          }
+          if (match && req.method === "GET") {
+            if (!results.has(match[1])) return send(res, 200, { status: "pending" });
+            const payload = results.get(match[1]);
+            results.delete(match[1]);
+            return send(res, 200, { status: "complete", payload });
+          }
+          return send(res, 404, { error: "Unknown CLI endpoint" });
+        } catch (error) {
+          return send(res, 400, { error: error instanceof Error ? error.message : String(error) });
+        }
+      });
+    },
+  };
+}
+
 // Render USER_GUIDE.md to a styled, standalone user-guide.html. Done here (at
 // build time / on dev request) so the published manual is always generated from
 // the one canonical source — never a hand-maintained second copy that can drift.
@@ -34,7 +136,7 @@ function userGuideShell(body: string): string {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>User Guide — MindMap Studio</title>
+<title>User Guide — iThread</title>
 <style>
   :root {
     --bg: #ffffff; --fg: #18181b; --muted: #71717a; --accent: #6366f1;
@@ -91,11 +193,11 @@ function userGuideShell(body: string): string {
 <body>
 <main>
 <header class="page-header">
-<a href="/" class="back">← Back to MindMap Studio</a>
-<span class="brand">MindMap Studio</span>
+<a href="/" class="back">← Back to iThread</a>
+<span class="brand">iThread</span>
 </header>
 ${body}
-<footer>Rendered from <code>USER_GUIDE.md</code> in the MindMap Studio repo at build time.</footer>
+<footer>Rendered from <code>USER_GUIDE.md</code> in the iThread repo at build time.</footer>
 </main>
 </body>
 </html>
@@ -170,6 +272,8 @@ export default defineConfig({
   // `script-src 'self'` CSP holds (modern browsers / the PWA target support modulepreload natively).
   build: { modulePreload: { polyfill: false } },
   plugins: [
+    devServiceWorkerResetPlugin(),
+    iThreadCliBridgePlugin(),
     react(),
     cspPlugin(),
     userGuidePlugin(),
@@ -190,9 +294,9 @@ export default defineConfig({
         // language these three strings ARE, which is what a screen reader in the launcher needs.
         lang: "en",
         dir: "ltr",
-        name: "MindMap Studio",
-        short_name: "MindMap",
-        description: "Local-first mind mapping — a self-hosted MindManager replacement.",
+        name: "iThread",
+        short_name: "iThread",
+        description: "Local-first visual thinking and mind mapping for Windows.",
         theme_color: "#26215c",
         background_color: "#ffffff",
         display: "standalone",

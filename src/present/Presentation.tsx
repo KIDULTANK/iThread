@@ -125,7 +125,7 @@ function PresenterSidebar({
 
       {/* 3. Pacing timer — elapsed clock (coloured vs the budget) + a total-talk budget stepper. */}
       <section>
-        <h2 style={sectionLabelStyle}>{t("present.timer")}</h2>
+        <h2 style={sectionLabelStyle}>{t("toolbar.timer")}</h2>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
           <span
             style={{

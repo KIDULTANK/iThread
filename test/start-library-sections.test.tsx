@@ -114,12 +114,12 @@ describe("AppTips", () => {
 describe("About section", () => {
   it("renders the local-first blurb and every resource link with its href", () => {
     render(<About />);
-    expect(screen.getByRole("heading", { name: /About MindMap Studio/i })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /About iThread/i })).toBeTruthy();
     const guide = screen.getByRole("link", { name: /User guide/i });
     expect(guide.getAttribute("href")).toBe("/user-guide.html");
     expect(guide.getAttribute("target")).toBe("_blank");
     expect(screen.getByRole("link", { name: /Source/i }).getAttribute("href")).toBe(
-      "https://github.com/dannbleeker/mindmap-studio",
+      "https://github.com/KIDULTANK/iThread",
     );
     // All six resource links render.
     expect(screen.getAllByRole("link")).toHaveLength(6);

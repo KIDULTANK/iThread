@@ -242,8 +242,8 @@ describe("dashboard loads (inline script against jsdom)", () => {
     const day = 86_400_000;
     const isoAgo = (d: number) => new Date(Date.now() - d * day).toISOString();
     const repo = {
-      name: "mindmap-studio",
-      full_name: "dannbleeker/mindmap-studio",
+      name: "iThread",
+      full_name: "KIDULTANK/iThread",
       default_branch: "main",
       language: "TypeScript",
       created_at: isoAgo(5),

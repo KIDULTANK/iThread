@@ -511,8 +511,41 @@ export function MapPanel({
               ) : null}
             </div>
           </div>
+          <label className="mm-map-field">
+            <span>{t("panel.font2")}</span>
+            <select
+              className="mm-map-control"
+              value={doc.meta?.fontFamily ?? ""}
+              onChange={(e) => onSetFontFamily(e.target.value)}
+              aria-label={t("panel.baseFontFamily")}
+              title={t("panel.mapWideBaseFontA")}
+            >
+              <option value="">{t("panel.default")}</option>
+              <option value="'Microsoft YaHei', '微软雅黑', sans-serif">微软雅黑</option>
+              <option value="DengXian, '等线', sans-serif">等线</option>
+              <option value="SimSun, '宋体', serif">宋体</option>
+              <option value="KaiTi, '楷体', serif">楷体</option>
+              <option value="Inter, system-ui, sans-serif">{t("panel.sans")}</option>
+              <option value="Georgia, 'Times New Roman', serif">{t("panel.serif")}</option>
+              <option value="'Courier New', ui-monospace, monospace">{t("panel.mono")}</option>
+            </select>
+          </label>
+          <label className="mm-map-field">
+            <span>{t("panel.textSize")}</span>
+            <select
+              className="mm-map-control"
+              value={doc.meta?.fontScale ?? "comfortable"}
+              onChange={(e) => onSetFontScale(e.target.value as FontScale)}
+              aria-label={t("panel.fontSizeScale")}
+              title={t("panel.mapWideTextSizeA")}
+            >
+              <option value="compact">{t("panel.compact")}</option>
+              <option value="comfortable">{t("panel.comfortable")}</option>
+              <option value="large">{t("panel.large")}</option>
+            </select>
+          </label>
         </div>
-        {/* Progressive disclosure: the high-frequency controls (Theme/Layout/Background/Accent) stay
+        {/* Progressive disclosure: the high-frequency controls (Theme/Layout/Background/Accent/type) stay
             visible; the rest tuck behind a collapsed disclosure so the panel isn't an 11-control wall. */}
         <CollapsibleSection label={t("panel.moreStyling")} defaultOpen={false}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 8 }}>
@@ -578,35 +611,6 @@ export function MapPanel({
                 <option value="fine">{t("panel.fine")}</option>
                 <option value="regular">{t("panel.regular")}</option>
                 <option value="bold">{t("panel.bold")}</option>
-              </select>
-            </label>
-            <label className="mm-map-field">
-              <span>{t("panel.font2")}</span>
-              <select
-                className="mm-map-control"
-                value={doc.meta?.fontFamily ?? ""}
-                onChange={(e) => onSetFontFamily(e.target.value)}
-                aria-label={t("panel.baseFontFamily")}
-                title={t("panel.mapWideBaseFontA")}
-              >
-                <option value="">{t("panel.default")}</option>
-                <option value="Inter, system-ui, sans-serif">{t("panel.sans")}</option>
-                <option value="Georgia, 'Times New Roman', serif">{t("panel.serif")}</option>
-                <option value="'Courier New', ui-monospace, monospace">{t("panel.mono")}</option>
-              </select>
-            </label>
-            <label className="mm-map-field">
-              <span>{t("panel.textSize")}</span>
-              <select
-                className="mm-map-control"
-                value={doc.meta?.fontScale ?? "comfortable"}
-                onChange={(e) => onSetFontScale(e.target.value as FontScale)}
-                aria-label={t("panel.fontSizeScale")}
-                title={t("panel.mapWideTextSizeA")}
-              >
-                <option value="compact">{t("panel.compact")}</option>
-                <option value="comfortable">{t("panel.comfortable")}</option>
-                <option value="large">{t("panel.large")}</option>
               </select>
             </label>
             {!doc.backdrop && onSetBackdrop ? (
@@ -720,11 +724,15 @@ export function MapPanel({
               {filteredCount != null ? `${filteredCount}/${counts.total}` : counts.total}
             </div>
             {/* A Power Filter narrows the canvas; say so instead of silently showing whole-map totals. */}
-            <div className="mm-stat-label">{filteredCount != null ? "topics match" : "topics"}</div>
+            <div className="mm-stat-label">
+              {filteredCount != null ? t("panel.topicsMatch") : t("panel.topicsLower")}
+            </div>
           </div>
           <div className="mm-stat">
             <div className="mm-stat-num">{branches}</div>
-            <div className="mm-stat-label">{branches === 1 ? "branch" : "branches"}</div>
+            <div className="mm-stat-label">
+              {branches === 1 ? t("panel.branchLower") : t("panel.branchesLower")}
+            </div>
           </div>
         </div>
         {counts.withProgress > 0 && (

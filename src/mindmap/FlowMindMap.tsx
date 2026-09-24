@@ -30,11 +30,11 @@ import { t } from "../i18n/registry";
 import { MARKER_PALETTE, markerImage } from "../icons";
 import "./flow/messages";
 import { parseOutline } from "../io/pasteOutline";
-import { hasFormatting, richToPlain, sanitizeRich } from "../io/richText";
+import { hasFormatting, parseInlineMarkdown, richToPlain, sanitizeRich } from "../io/richText";
 import { isDangerousUrl } from "../io/urlSafety";
 import type { Boundary, CanvasShape, MapNode, MindMapDoc, Summary } from "../model/types";
 import { PRIORITY_LEVELS, cyclePriority, priorityLabel } from "../priority";
-import { cycleTaskProgress, nextProgressLevel } from "../progress";
+import { stepTaskProgress } from "../progress";
 import { isStandalonePwa } from "../pwa/standalone";
 import { setSavedViews } from "../savedViews";
 import { getBranches, setBranches } from "../store/branchClipboard";
@@ -63,7 +63,7 @@ import { NodePopover } from "./flow/NodePopover";
 import { ShapeLayer } from "./flow/ShapeLayer";
 import { Summaries } from "./flow/Summaries";
 import { TopicNode } from "./flow/TopicNode";
-import { LAYOUT_ANIM_MS, easeInOutCubic, lerp, prefersReducedMotion } from "./flow/animateLayout";
+import { LAYOUT_ANIM_MS, easeOutQuint, lerp, prefersReducedMotion } from "./flow/animateLayout";
 import { type BraceGroup, computeBraces } from "./flow/brace";
 import { buildFlowState } from "./flow/buildFlowState";
 import { resolveDropTarget } from "./flow/dropTarget";
@@ -92,6 +92,7 @@ import {
   addLink,
   addShape,
   addSibling,
+  addSiblingBefore,
   addStickyNote,
   addSubtree,
   alignNodes,
@@ -147,6 +148,7 @@ import {
   setBoundaryLabel,
   setBoundaryShape,
   setBranchColor,
+  setBranchExpandedToLevel,
   setBranchGrowth,
   setCalloutColor,
   setCalloutText,
@@ -369,7 +371,7 @@ function FlowInner({
   // channel — mutually exclusive with node / edge / overlay; drives the shape halo + inline toolbar.
   const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  // When edit was started by typing on a selected node, the character to seed the editor with
+  // Optional initial text for explicit edit entry points such as the slash command menu.
   // (caret at end); null for a normal edit (double-click / F2 / new node → seed topic, select all).
   const [editSeed, setEditSeed] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number; id: string } | null>(null);
@@ -396,11 +398,6 @@ function FlowInner({
   } | null>(null);
   // While set, the next node click completes a relationship from this node (the "Link to…" gesture).
   const [linkingFrom, setLinkingFrom] = useState<string | null>(null);
-  // Space-bar pan (A1): while the space bar is held the canvas enters "pan from anywhere" mode. Left
-  // drag already pans the background, but in tree mode a drag that starts *on a topic* re-parents it —
-  // so holding space makes every node pointer-inert (via the `.mm-space-pan` wrapper class), letting the
-  // drag fall through to the pane's pan even over a topic, with a grab cursor. Matches Figma / XMind.
-  const [spacePan, setSpacePan] = useState(false);
   // The corner minimap can be collapsed (it covers dense maps); the choice persists. It defaults open
   // on desktop but closed on a phone, where an open minimap covers a big share of the small canvas and
   // overlaps the bottom status bar — an explicit stored choice still wins.
@@ -553,37 +550,64 @@ function FlowInner({
         hideUnmatched: hideUnmatchedRef.current,
         highlightIds: highlightIdsRef.current,
       });
-      // Edges follow the live node positions, so set them once up front; the nodes either snap or tween.
-      setEdges(edges);
       const from = animate ? new Map(getNodes().map((n) => [n.id, n.position])) : null;
+      const entering = new Set(from ? nodes.filter((n) => !from.has(n.id)).map((n) => n.id) : []);
       const moves =
         !!from &&
         !prefersReducedMotion() &&
-        nodes.some((n) => {
-          const f = from.get(n.id);
-          return f && (f.x !== n.position.x || f.y !== n.position.y);
-        });
+        (entering.size > 0 ||
+          nodes.some((n) => {
+            const f = from.get(n.id);
+            return f && (f.x !== n.position.x || f.y !== n.position.y);
+          }));
       if (!moves) {
+        setEdges(edges);
         setNodes(nodes);
         return;
       }
-      // Tween every node that exists in both the old + new layout from its old position to its new one;
-      // nodes that just appeared (expand) start at their target. One rAF loop, eased, ~240ms.
+      const nodeById = new Map(nodes.map((n) => [n.id, n]));
+      const parentById = new Map(
+        edges
+          .filter((edge) => !edge.data?.crosslink)
+          .map((edge) => [edge.target, edge.source] as const),
+      );
+      const originFor = (id: string) => {
+        const parentId = parentById.get(id);
+        return parentId
+          ? (from.get(parentId) ?? nodeById.get(parentId)?.position)
+          : nodeById.get(id)?.position;
+      };
+      const nodesAt = (e: number) =>
+        nodes.map((n) => {
+          const f = from.get(n.id) ?? originFor(n.id);
+          return {
+            ...n,
+            position: f
+              ? { x: lerp(f.x, n.position.x, e), y: lerp(f.y, n.position.y, e) }
+              : n.position,
+            data: entering.has(n.id) ? { ...n.data, motionProgress: e } : n.data,
+          };
+        });
+      const edgesAt = (e: number): FlowEdge[] =>
+        edges.map((edge) => {
+          if (!entering.has(edge.target) || !edge.data) return edge;
+          return { ...edge, data: { ...edge.data, motionProgress: e } };
+        });
+      // Put the first frame into the DOM immediately, then glide to the computed layout. A newly
+      // revealed topic starts at its parent's anchor, fading/scaling in as its branch grows outward.
+      setNodes(nodesAt(0));
+      setEdges(edgesAt(0));
       const tick = (now: number) => {
         if (layoutStart.current == null) layoutStart.current = now;
         const t = Math.min(1, (now - layoutStart.current) / LAYOUT_ANIM_MS);
-        const e = easeInOutCubic(t);
-        setNodes(
-          nodes.map((n) => {
-            const f = from?.get(n.id);
-            return f
-              ? { ...n, position: { x: lerp(f.x, n.position.x, e), y: lerp(f.y, n.position.y, e) } }
-              : n;
-          }),
-        );
+        const e = easeOutQuint(t);
+        setNodes(nodesAt(e));
+        if (entering.size > 0) setEdges(edgesAt(e));
         if (t < 1) {
           layoutRaf.current = requestAnimationFrame(tick);
         } else {
+          setNodes(nodes);
+          setEdges(edges);
           layoutRaf.current = null;
           layoutStart.current = null;
         }
@@ -705,7 +729,7 @@ function FlowInner({
 
   // Apply a pure op: persist + re-render; optionally enter edit on the resulting node.
   const apply = useCallback(
-    (result: OpResult, edit = false, animate = false, coalesceKey?: string) => {
+    (result: OpResult, edit = false, animate = true, coalesceKey?: string) => {
       if (result.doc !== docRef.current) {
         // Coalesce repeated same-key edits within a short window into one undo step (S4): on a matching
         // key inside COALESCE_MS, skip pushing a snapshot (the pre-spree doc is already on top of `past`).
@@ -741,8 +765,8 @@ function FlowInner({
     [sync, fireSelect, selectOnly, reportHistory],
   );
 
-  // Enter inline edit for a node; `seed` is the character to start typing with (type-to-edit),
-  // or null for a normal edit (seed the existing topic + select all).
+  // Enter inline edit for a node; `seed` supplies explicit initial text (for example `/`), or null
+  // for a normal edit (seed the existing topic + select all).
   const startEdit = useCallback((id: string, seed: string | null = null) => {
     suppressCommitRef.current = null; // a fresh edit is never a leftover slash-command suppression
     setEditSeed(seed);
@@ -995,7 +1019,8 @@ function FlowInner({
   const editingApi = useMemo(() => {
     const parse = (html: string) => {
       const clean = sanitizeRich(html);
-      return { rich: hasFormatting(clean) ? clean : undefined, plain: richToPlain(clean) };
+      const plain = richToPlain(clean);
+      return hasFormatting(clean) ? { rich: clean, plain } : parseInlineMarkdown(plain);
     };
     const changed = (n: MapNode | null, rich: string | undefined, plain: string) =>
       !!n && (n.topic !== plain || (n.topicRich ?? undefined) !== rich);
@@ -1003,10 +1028,6 @@ function FlowInner({
       editingId,
       seed: editSeed,
       beginEdit: (id: string) => startEdit(id),
-      // On-node hover ＋ affordances (#1): add a child/sibling and drop straight into editing it.
-      // These never commit the node's own text (no inline-edit in flight), unlike commitAndAdd.
-      addChild: (id: string) => apply(addChild(docRef.current, id), true),
-      addSibling: (id: string) => apply(addSibling(docRef.current, id), true),
       // Escape passes the live editor buffer (`html`) so we can tell a typed-but-uncommitted new topic
       // from an empty one: an existing node just reverts (no commit), a brand-new node keeps what you
       // typed (commit) or — if still empty — is discarded rather than left as a blank box.
@@ -1031,7 +1052,7 @@ function FlowInner({
         const n = findNode(docRef.current, id);
         if (changed(n, rich, plain)) apply(setTopicRich(docRef.current, id, rich, plain));
       },
-      commitEdit: (id: string, html: string) => {
+      commitEdit: (id: string, html: string, keepSelected = false) => {
         setEditingId(null);
         setEditSeed(null);
         // The editor unmounting after a slash command fires this blur with the stale "/query" buffer —
@@ -1042,12 +1063,19 @@ function FlowInner({
           return;
         }
         const { rich, plain } = parse(html);
-        // Click-away (blur) that leaves a just-created node empty discards it (same as Escape).
+        // Enter explicitly accepts an empty topic. Click-away still treats a never-confirmed empty
+        // creation as abandoned; Escape retains its existing cancel semantics.
         const wasJustAdded = id === justAddedRef.current;
         justAddedRef.current = null;
-        if (wasJustAdded && !plain.trim() && discardJustAdded(id)) return;
+        if (wasJustAdded && !keepSelected && !plain.trim() && discardJustAdded(id)) return;
         const n = id ? findNode(docRef.current, id) : null;
-        if (changed(n, rich, plain)) apply(setTopicRich(docRef.current, id, rich, plain));
+        if (changed(n, rich, plain)) {
+          const result = setTopicRich(docRef.current, id, rich, plain);
+          apply(keepSelected ? { ...result, selectId: id } : result);
+        } else if (keepSelected) {
+          selectOnly(id);
+          fireSelect(id);
+        }
       },
       commitAndAdd: (id: string, html: string, what: "sibling" | "child") => {
         let d = docRef.current;
@@ -1068,28 +1096,6 @@ function FlowInner({
         if (link.kind === "node") focusNodeById(link.id);
         else if (link.kind === "map") onMapLinkRef.current?.(link.id, link.nodeId);
         else if (!isDangerousUrl(link.url)) window.open(link.url, "_blank", "noopener,noreferrer");
-      },
-      // Click the on-canvas pie to step a leaf task's completion (0→25→50→75→100→0). A rapid spree on
-      // the same node coalesces into one undo (S4) via the progress:id key.
-      cycleProgress: (id: string) => {
-        const n = findNode(docRef.current, id);
-        if (n)
-          apply(
-            setProgress(docRef.current, id, nextProgressLevel(n.task?.progress ?? 0)),
-            false,
-            false,
-            `progress:${id}`,
-          );
-      },
-      cycleTask: (id: string) => {
-        const n = findNode(docRef.current, id);
-        if (n)
-          apply(
-            setProgress(docRef.current, id, cycleTaskProgress(n.task?.progress)),
-            false,
-            false,
-            `progress:${id}`,
-          );
       },
       // Click the on-canvas priority chip to step priority: none → High → Med → Low → none.
       cyclePriority: (id: string) => {
@@ -1333,7 +1339,7 @@ function FlowInner({
   }, [renderDoc, selectedOverlay]);
 
   // Dismiss the empty-map coachmark permanently once the user enters edit mode by any path
-  // (double-click, F2, type-to-edit, or the ＋ affordance) — it never nags again this session.
+  // (double-click, F2, slash menu, or creating a branch) — it never nags again this session.
   useEffect(() => {
     if (editingId) setCoachDismissed(true);
   }, [editingId]);
@@ -1489,8 +1495,8 @@ function FlowInner({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // Fit-to-view shortcuts: Shift+1 = fit all, Shift+2 = fit the current selection. Keyed on e.code
-      // (Digit1/Digit2) so they're keyboard-layout robust — e.key would be "!"/"@" with Shift held, and
-      // would otherwise fall through to type-to-edit. Skipped while inline-editing or focused in a field.
+      // (Digit1/Digit2) so they're keyboard-layout robust — e.key would be "!"/"@" with Shift held.
+      // Skipped while inline-editing or focused in a field.
       if (e.shiftKey && (e.code === "Digit1" || e.code === "Digit2") && !editingRef.current) {
         const tgt = e.target as HTMLElement | null;
         const inField =
@@ -1523,7 +1529,7 @@ function FlowInner({
         {
           editing: !!editingRef.current,
           // First-run: on an empty map (bare root, nothing selected) fall back to the root, so the
-          // coachmark's advertised Tab / Enter / type-to-edit keys act on it instead of no-op'ing on
+          // coachmark's advertised Tab / Enter keys act on it instead of no-op'ing on
           // a null selection. Doesn't touch the mount render (the fresh-map Map panel is unchanged).
           selectedId:
             selectedRef.current ??
@@ -1606,6 +1612,9 @@ function FlowInner({
         case "addSibling":
           apply(addSibling(docRef.current, intent.id), true);
           break;
+        case "addSiblingBefore":
+          apply(addSiblingBefore(docRef.current, intent.id), true);
+          break;
         // Indent / outdent apply to the WHOLE selection (one undo step) when several are selected —
         // not just the anchor — so multi-select restructuring matches multi-select Delete.
         case "outdent": {
@@ -1626,6 +1635,12 @@ function FlowInner({
         case "moveDown":
           apply(moveSibling(docRef.current, intent.id, "down"));
           break;
+        case "toggleCollapse":
+          apply(toggleCollapse(docRef.current, intent.id), false, true);
+          break;
+        case "setExpandedLevel":
+          apply(setBranchExpandedToLevel(docRef.current, intent.id, intent.level), false, true);
+          break;
         case "delete":
           deleteSelectionWithUndo();
           break;
@@ -1635,9 +1650,24 @@ function FlowInner({
         case "rename":
           startEdit(intent.id);
           break;
-        case "typeEdit":
-          startEdit(intent.id, intent.seed);
+        case "openSlashMenu":
+          startEdit(intent.id, "/");
           break;
+        case "stepProgress": {
+          const n = findNode(docRef.current, intent.id);
+          if (n)
+            apply(
+              setProgress(
+                docRef.current,
+                intent.id,
+                stepTaskProgress(n.task?.progress, intent.direction),
+              ),
+              false,
+              false,
+              `progress:${intent.id}`,
+            );
+          break;
+        }
         case "selectDir": {
           const next = nextSelectionId(docRef.current, intent.id, intent.dir);
           if (next) focusNodeById(next);
@@ -1702,38 +1732,6 @@ function FlowInner({
   ]);
 
   // (The context menu's own outside-pointerdown + Escape close lives in the ContextMenu primitive.)
-
-  // Space-bar pan (A1): hold Space → "pan from anywhere" (see the spacePan state). Guarded against the
-  // inline topic editor / any text field so a typed space still types; preventDefault on keydown stops
-  // the page from scrolling. A window blur resets the flag so the mode can't get stuck held.
-  useEffect(() => {
-    const inField = () => {
-      const el = document.activeElement as HTMLElement | null;
-      return (
-        !!editingRef.current ||
-        !!el?.isContentEditable ||
-        (!!el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
-      );
-    };
-    const onDown = (e: KeyboardEvent) => {
-      if (e.code !== "Space" && e.key !== " ") return;
-      if (e.repeat || inField()) return;
-      e.preventDefault();
-      setSpacePan(true);
-    };
-    const onUp = (e: KeyboardEvent) => {
-      if (e.code === "Space" || e.key === " ") setSpacePan(false);
-    };
-    const reset = () => setSpacePan(false);
-    document.addEventListener("keydown", onDown);
-    document.addEventListener("keyup", onUp);
-    window.addEventListener("blur", reset);
-    return () => {
-      document.removeEventListener("keydown", onDown);
-      document.removeEventListener("keyup", onUp);
-      window.removeEventListener("blur", reset);
-    };
-  }, []);
 
   const withSelected = useCallback((fn: (id: string) => void): boolean => {
     const id = selectedRef.current;
@@ -1875,6 +1873,7 @@ function FlowInner({
   useImperativeHandle(
     ref,
     (): MindMapHandle => ({
+      replaceDocument: (next) => apply({ doc: next }),
       // Author a clean native-text SVG straight from the model + the live node rects
       // (position + measured size). Flows through useMapExports.cleanSvg() to drive
       // png/svg/html/pdf — and, unlike the old export, carries arrow + boundary labels.
@@ -2232,9 +2231,6 @@ function FlowInner({
           // ReactFlow SVG graph is an anonymous box) and the skip-link has a target (#mm-canvas).
           // A <section> with an accessible name is a navigable landmark — better than role on a div.
           id="mm-canvas"
-          // `mm-space-pan` (A1): while the space bar is held, editor.css makes topics pointer-inert and
-          // shows a grab/grabbing cursor so a left drag pans from anywhere, even over a topic.
-          className={spacePan ? "mm-space-pan" : undefined}
           tabIndex={-1}
           aria-roledescription="mind map canvas"
           aria-label={t("canvas.region.label", {
@@ -2325,10 +2321,7 @@ function FlowInner({
             onEdgesChange={onEdgesChange}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
-            // While space-pan is held, nodes are made pointer-inert by the `.mm-space-pan` class on the
-            // wrapper (pointer-events:none in editor.css), so a left drag falls through to the pane and
-            // pans even over a topic; `nodesDraggable={!spacePan}` keeps RF's drag state in agreement. (A1)
-            nodesDraggable={!spacePan}
+            nodesDraggable
             // Drag-to-relate: pulling from a topic's hover handle onto another topic draws a cross-link
             // (loose mode lets the drag end anywhere on the target node, not just its anchor handle).
             nodesConnectable
@@ -2372,11 +2365,17 @@ function FlowInner({
             // cache) can't flip fitView back on and re-fit away the restored viewport.
             fitView={!mountSession.current?.viewport}
             defaultViewport={mountSession.current?.viewport}
-            // Left-drag the background to pan (the gesture most people reach for first); the +/−/fit
-            // controls stay too. Scroll / ⌘-scroll zooms (React Flow's defaults). Hold Shift and drag
-            // to rubber-band a marquee selection; Shift/Ctrl/Cmd-click extends the selection. (#6)
-            panOnDrag
-            selectionKeyCode="Shift"
+            // Plain left-drag on empty canvas draws a marquee; middle/right drag pans.
+            panOnDrag={[1, 2]}
+            // Trackpad/touch navigation follows the iPad model: two-finger/wheel pans the map,
+            // Ctrl/⌘ + wheel (and pinch) zooms around the pointer instead of jumping the camera.
+            panOnScroll
+            panOnScrollSpeed={0.85}
+            zoomOnScroll
+            zoomOnPinch
+            autoPanSpeed={22}
+            selectionOnDrag
+            selectionKeyCode={null}
             multiSelectionKeyCode={["Shift", "Meta", "Control"]}
             onSelectionChange={onSelectionChange}
             onNodeClick={(ev, node) => {

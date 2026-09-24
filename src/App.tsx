@@ -36,20 +36,18 @@ import { FindReplaceOverlay } from "./components/FindReplaceOverlay";
 import { FirstRunCard } from "./components/FirstRunCard";
 import { IconRail } from "./components/IconRail";
 import { InspectorRail } from "./components/InspectorRail";
-import { InstallButton } from "./components/InstallButton";
 import { MapPanel } from "./components/MapPanel";
 import { MobileSheetScrim } from "./components/MobileSheetScrim";
 import { OverlayInspector } from "./components/OverlayInspector";
 import { type DockEntry, PanelDock } from "./components/PanelDock";
 import { SearchResults } from "./components/SearchResults";
-import { SettingsDialog } from "./components/SettingsDialog";
-import { ShortcutsDialog } from "./components/ShortcutsDialog";
 import { ToastBar } from "./components/ToastBar";
 import { Toolbar, type ToolbarProps } from "./components/Toolbar";
 import { buildEditorCommands } from "./components/editorCommands";
 import { DialogHost, editorConfirm, editorPrompt } from "./components/editorDialogs";
 import { PANEL_LABELS } from "./panelLabels";
 import "./design/editor.css";
+import { useCliBridge } from "./agent/useCliBridge";
 import { editorThemeVars } from "./design/tokens";
 import { designById } from "./designs";
 import { type FilterCriteria, filterResult, filterToDoc, focusSet, isFilterActive } from "./filter";
@@ -81,6 +79,7 @@ import { parseImport } from "./io/importDispatch";
 import { parseLibraryFolders, serializeLibrary, tryParseLibrary } from "./io/library";
 import { toMarkdown } from "./io/markdown";
 import { mapToTsv } from "./io/tableExport";
+import { resolveInitialLayout } from "./layoutPreference";
 import {
   type CanvasSession,
   type LayoutKind,
@@ -184,6 +183,18 @@ const BranchExportDialog = lazy(() =>
 const ThemeDesignerDialog = lazy(() =>
   import("./components/ThemeDesignerDialog").then((m) => ({ default: m.ThemeDesignerDialog })),
 );
+const SettingsDialog = lazy(() =>
+  import("./components/SettingsDialog").then((m) => ({ default: m.SettingsDialog })),
+);
+const ShortcutsDialog = lazy(() =>
+  import("./components/ShortcutsDialog").then((m) => ({ default: m.ShortcutsDialog })),
+);
+const AltShortcutOverlay = lazy(() =>
+  import("./components/AltShortcutOverlay").then((m) => ({ default: m.AltShortcutOverlay })),
+);
+const InstallButton = lazy(() =>
+  import("./components/InstallButton").then((m) => ({ default: m.InstallButton })),
+);
 
 // How many recently-used document tabs keep their canvas session (viewport + undo/redo) cached for
 // lossless switching; beyond this the least-recently-used session is dropped (that tab reopens fresh).
@@ -268,29 +279,11 @@ export function App() {
     root.style.colorScheme = chromeDark ? "dark" : "light";
   }, [chromeDark]);
   const [layout, setLayout] = useState<LayoutKind>(() => {
-    const valid = [
-      "side",
-      "left",
-      "right",
-      "org-down",
-      "org-up",
-      "radial",
-      "timeline",
-      "fishbone",
-      "grid",
-      "swimlane",
-      "brace",
-    ];
-    try {
-      // A ?layout= query param wins (shareable layout links); else the persisted choice.
-      const q = new URLSearchParams(window.location.search).get("layout");
-      if (q && valid.includes(q)) return q as LayoutKind;
-      const ls = localStorage.getItem("mindmap-layout");
-      if (ls && valid.includes(ls)) return ls as LayoutKind;
-    } catch {
-      // ignore
-    }
-    return "side";
+    // A ?layout= query param wins (shareable layout links), then the persisted choice. A fresh or
+    // reset profile grows every branch to the right by default.
+    return resolveInitialLayout(window.location.search, () =>
+      localStorage.getItem("mindmap-layout"),
+    );
   });
   const {
     query,
@@ -813,11 +806,9 @@ export function App() {
   }, [doc.id, handleCache]);
 
   // Reflect the linked file + unsaved-to-disk state in the tab/window title (a ● marks unsaved file
-  // changes — the in-app library is always saved). Plain "MindMap Studio" when no file is bound.
+  // changes — the in-app library is always saved). Plain "iThread" when no file is bound.
   useEffect(() => {
-    document.title = fileName
-      ? `${dirty ? "● " : ""}${fileName} — MindMap Studio`
-      : "MindMap Studio";
+    document.title = fileName ? `${dirty ? "● " : ""}${fileName} — iThread` : "iThread";
   }, [fileName, dirty]);
 
   // A fresh import collapses the warnings banner back to its summary line.
@@ -1019,6 +1010,18 @@ export function App() {
     },
     [load],
   );
+
+  const replaceActiveFromCli = useCallback((next: MindMapDoc) => {
+    if (!mapRef.current) return false;
+    mapRef.current.replaceDocument(next);
+    return true;
+  }, []);
+  useCliBridge({
+    activeDoc: liveDocRef,
+    openDoc: load,
+    replaceActive: replaceActiveFromCli,
+    refreshMaps,
+  });
 
   // Open a doc from the start screen in the editor (optionally applying its layout), and switch view.
   function openFromStart(next: MindMapDoc, nextLayout?: string) {
@@ -2685,11 +2688,7 @@ export function App() {
           <a href="/dashboard.html" target="_blank" rel="noopener noreferrer">
             {t("about.dashboard")}
           </a>
-          <a
-            href="https://github.com/dannbleeker/mindmap-studio"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a href="https://github.com/KIDULTANK/iThread" target="_blank" rel="noopener noreferrer">
             {t("about.source")}
           </a>
         </div>
@@ -2716,12 +2715,23 @@ export function App() {
             {t("about.checkUpdates")}
           </button>
           {/* Renders only when installation is offered (otherwise nothing). */}
-          <InstallButton className="mm-install-about" />
+          {aboutOpen && (
+            <Suspense fallback={null}>
+              <InstallButton className="mm-install-about" />
+            </Suspense>
+          )}
         </div>
       </Dialog>
 
       {/* Keyboard shortcuts cheat-sheet (#2) — opened from the icon-rail (?) and ⌘K. */}
-      <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      {shortcutsOpen && (
+        <Suspense fallback={null}>
+          <ShortcutsDialog open onClose={() => setShortcutsOpen(false)} />
+        </Suspense>
+      )}
+      <Suspense fallback={null}>
+        <AltShortcutOverlay enabled={view === "editor" && !shortcutsOpen} />
+      </Suspense>
 
       {/* "Export this branch…" format picker (B4), scoped to the chosen subtree. Lazy: only mounted
           (and fetched) once a branch export is chosen, so it stays out of the entry bundle. */}
@@ -2752,69 +2762,75 @@ export function App() {
           canvas + panels in place of native window.prompt/confirm. */}
       <DialogHost />
 
-      <SettingsDialog
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        appearance={appearance}
-        setAppearance={setAppearance}
-        motionPref={motionPref}
-        setMotionPref={setMotionPref}
-        contrastPref={contrastPref}
-        setContrastPref={setContrastPref}
-        onReShowGettingStarted={reShowFirstRun}
-        onClearRecents={() => {
-          clearRecents();
-          showHint(t("hint.commandHistoryCleared"));
-        }}
-        onClearBranchClipboard={() => {
-          clearBranch();
-          showHint(t("hint.branchClipboardCleared"));
-        }}
-        onExportSettings={() => {
-          const file = collectSettings(new Date().toISOString());
-          const keys = settingsKeysIn(file);
-          if (keys.length === 0) {
-            showHint(t("settings.prefsFile.nothingToExport"));
-            return;
-          }
-          downloadBlob(
-            new Blob([serializeSettings(file)], { type: "application/json" }),
-            "mindmap-studio-preferences.json",
-          );
-          showHint(
-            t("settings.prefsFile.exported", { count: t("count.preferences", { n: keys.length }) }),
-          );
-        }}
-        onImportSettings={(f) => {
-          void (async () => {
-            let parsed: SettingsFile;
-            try {
-              parsed = parseSettingsFile(await f.text());
-            } catch (err) {
-              setError(err instanceof Error ? err.message : t("settings.prefsFile.unreadable"));
-              return;
-            }
-            const keys = settingsKeysIn(parsed);
-            if (keys.length === 0) {
-              setError(t("settings.prefsFile.unusable"));
-              return;
-            }
-            // Preferences are read at mount, so applying them needs a reload to take effect —
-            // confirm first, and say exactly how many are being replaced.
-            const ok = await editorConfirm({
-              title: t("settings.prefsFile.confirmTitle"),
-              body: t("settings.prefsFile.confirmBody", {
-                count: t("count.preferences", { n: keys.length }),
-              }),
-              confirmText: t("settings.prefsFile.confirmAction"),
-            });
-            if (!ok) return;
-            applySettings(parsed);
-            location.reload();
-          })();
-        }}
-        onClearAllData={clearAllLocalData}
-      />
+      {settingsOpen && (
+        <Suspense fallback={null}>
+          <SettingsDialog
+            open
+            onClose={() => setSettingsOpen(false)}
+            appearance={appearance}
+            setAppearance={setAppearance}
+            motionPref={motionPref}
+            setMotionPref={setMotionPref}
+            contrastPref={contrastPref}
+            setContrastPref={setContrastPref}
+            onReShowGettingStarted={reShowFirstRun}
+            onClearRecents={() => {
+              clearRecents();
+              showHint(t("hint.commandHistoryCleared"));
+            }}
+            onClearBranchClipboard={() => {
+              clearBranch();
+              showHint(t("hint.branchClipboardCleared"));
+            }}
+            onExportSettings={() => {
+              const file = collectSettings(new Date().toISOString());
+              const keys = settingsKeysIn(file);
+              if (keys.length === 0) {
+                showHint(t("settings.prefsFile.nothingToExport"));
+                return;
+              }
+              downloadBlob(
+                new Blob([serializeSettings(file)], { type: "application/json" }),
+                "ithread-preferences.json",
+              );
+              showHint(
+                t("settings.prefsFile.exported", {
+                  count: t("count.preferences", { n: keys.length }),
+                }),
+              );
+            }}
+            onImportSettings={(f) => {
+              void (async () => {
+                let parsed: SettingsFile;
+                try {
+                  parsed = parseSettingsFile(await f.text());
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : t("settings.prefsFile.unreadable"));
+                  return;
+                }
+                const keys = settingsKeysIn(parsed);
+                if (keys.length === 0) {
+                  setError(t("settings.prefsFile.unusable"));
+                  return;
+                }
+                // Preferences are read at mount, so applying them needs a reload to take effect —
+                // confirm first, and say exactly how many are being replaced.
+                const ok = await editorConfirm({
+                  title: t("settings.prefsFile.confirmTitle"),
+                  body: t("settings.prefsFile.confirmBody", {
+                    count: t("count.preferences", { n: keys.length }),
+                  }),
+                  confirmText: t("settings.prefsFile.confirmAction"),
+                });
+                if (!ok) return;
+                applySettings(parsed);
+                location.reload();
+              })();
+            }}
+            onClearAllData={clearAllLocalData}
+          />
+        </Suspense>
+      )}
 
       {/* Paste text → map — controlled <Dialog>; focus the textarea on open. (No drop shadow here —
           the original Paste dialog had none, so cancel the shared base shadow.) */}

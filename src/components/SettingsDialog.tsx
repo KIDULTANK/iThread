@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../design/primitives";
-import { t } from "../i18n";
+import { type Locale, getLocale, setLocale, t } from "../i18n";
 import type { Appearance } from "../useAppearance";
 import type { ContrastPref } from "../useHighContrast";
 import type { MotionPref } from "../useReducedMotion";
@@ -53,6 +53,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+export function applyLocaleChoice(locale: Locale, reload = () => window.location.reload()): void {
+  setLocale(locale);
+  reload();
+}
+
 export function SettingsDialog({
   open,
   onClose,
@@ -102,6 +107,18 @@ export function SettingsDialog({
       }}
     >
       <Section title={t("settings.appearance")}>
+        <label className="mm-map-field">
+          <span>{t("settings.language")}</span>
+          <select
+            className="mm-map-control"
+            value={getLocale()}
+            onChange={(e) => applyLocaleChoice(e.target.value as Locale)}
+            aria-label={t("settings.language")}
+          >
+            <option value="zh-CN">{t("settings.language.chinese")}</option>
+            <option value="en">{t("settings.language.english")}</option>
+          </select>
+        </label>
         <label className="mm-map-field">
           <span>{t("settings.appTheme")}</span>
           <select

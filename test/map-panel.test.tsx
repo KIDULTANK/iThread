@@ -154,13 +154,21 @@ describe("MapPanel", () => {
     expect(onManageThemes).toHaveBeenCalled();
   });
 
-  it("collapses the low-frequency controls behind 'More styling' and reveals them on expand", async () => {
-    setup();
+  it("keeps typography visible and collapses lower-frequency controls behind 'More styling'", async () => {
+    const { onSetFontFamily, onSetFontScale } = setup();
     expect(screen.getByLabelText("Canvas theme")).toBeTruthy(); // high-frequency control stays visible
+    expect(screen.getByLabelText("Base font family")).toBeTruthy();
+    expect(screen.getByLabelText("Font size scale")).toBeTruthy();
+    await userEvent.selectOptions(
+      screen.getByLabelText("Base font family"),
+      "'Microsoft YaHei', '微软雅黑', sans-serif",
+    );
+    expect(onSetFontFamily).toHaveBeenCalledWith("'Microsoft YaHei', '微软雅黑', sans-serif");
+    await userEvent.selectOptions(screen.getByLabelText("Font size scale"), "large");
+    expect(onSetFontScale).toHaveBeenCalledWith("large");
     expect(screen.queryByLabelText("Connector style")).toBeNull(); // advanced control is tucked away
     await userEvent.click(screen.getByRole("button", { name: /More styling/i }));
     expect(screen.getByLabelText("Connector style")).toBeTruthy();
-    expect(screen.getByLabelText("Base font family")).toBeTruthy();
   });
 
   it("reads the filtered match count in the stats when a Power Filter is active", () => {

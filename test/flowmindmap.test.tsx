@@ -239,6 +239,49 @@ describe("FlowMindMap canvas", () => {
     run(() => fireEvent.keyDown(document, { key: "y", ctrlKey: true }));
   });
 
+  it("applies digit detail levels relative to the selected branch", () => {
+    const doc = baseDoc();
+    doc.root.children[0] = {
+      id: "a",
+      topic: "Alpha",
+      collapsed: true,
+      children: [
+        {
+          id: "a1",
+          topic: "Alpha 1",
+          children: [
+            {
+              id: "a11",
+              topic: "Alpha 1.1",
+              children: [{ id: "a111", topic: "Alpha 1.1.1", children: [] }],
+            },
+          ],
+        },
+      ],
+    };
+    doc.root.children[1] = {
+      id: "b",
+      topic: "Beta",
+      collapsed: true,
+      children: [{ id: "b1", topic: "Beta 1", children: [] }],
+    };
+    const { h, onChange } = mount(doc);
+    run(() => h.focusNode("a"));
+
+    run(() => fireEvent.keyDown(document, { key: "1" }));
+    const level1 = onChange.mock.calls.at(-1)?.[0] as MindMapDoc;
+    expect(findAnyNode(level1, "a")?.collapsed).toBe(false);
+    expect(findAnyNode(level1, "a1")?.collapsed).toBe(true);
+    expect(findAnyNode(level1, "b")?.collapsed).toBe(true);
+
+    run(() => fireEvent.keyDown(document, { key: "2" }));
+    const level2 = onChange.mock.calls.at(-1)?.[0] as MindMapDoc;
+    expect(findAnyNode(level2, "a")?.collapsed).toBe(false);
+    expect(findAnyNode(level2, "a1")?.collapsed).toBe(false);
+    expect(findAnyNode(level2, "a11")?.collapsed).toBe(true);
+    expect(findAnyNode(level2, "b")?.collapsed).toBe(true);
+  });
+
   it("keyboard branch clipboard: copy, duplicate-as-sibling, and paste under the selection", () => {
     localStorage.removeItem("mindmap-branch-clipboard");
     const { h, onChange } = mount(); // root > [a (> a1), b]
@@ -364,25 +407,34 @@ describe("FlowMindMap canvas", () => {
     run(() => fireEvent.click(screen.getByTitle("Zoom to fit the selection"))); // no throw (fitView)
   });
 
-  it("Ctrl+Enter adds a child of the selected node (plain Enter still adds a sibling)", () => {
-    const { h, onChange } = mount();
-    run(() => h.focusNode("a")); // "a" starts with one child (a1)
-    onChange.mockClear();
+  it("Ctrl+Enter edits the selected topic, matching iThoughts Windows", () => {
+    const { container, h } = mount();
+    run(() => h.focusNode("a"));
     run(() => fireEvent.keyDown(document, { key: "Enter", ctrlKey: true }));
-    const doc = onChange.mock.calls.at(-1)?.[0] as MindMapDoc;
-    expect(doc.root.children.find((n) => n.id === "a")?.children).toHaveLength(2);
+    expect(container.querySelector('[contenteditable="true"]')?.textContent).toBe("Alpha");
   });
 
-  it("type-to-edit: typing a printable char on a selected node enters edit seeded with that char", () => {
+  it("Alt+Right indents a branch and Alt+Left outdents it again", () => {
+    const { h, onChange } = mount();
+    run(() => h.focusNode("b"));
+    run(() => fireEvent.keyDown(document, { key: "ArrowRight", altKey: true }));
+    let doc = onChange.mock.calls.at(-1)?.[0] as MindMapDoc;
+    expect(doc.root.children.map((node) => node.id)).toEqual(["a"]);
+    expect(doc.root.children[0].children.map((node) => node.id)).toEqual(["a1", "b"]);
+
+    run(() => fireEvent.keyDown(document, { key: "ArrowLeft", altKey: true }));
+    doc = onChange.mock.calls.at(-1)?.[0] as MindMapDoc;
+    expect(doc.root.children.map((node) => node.id)).toEqual(["a", "b"]);
+  });
+
+  it("does not enter edit when a printable letter is typed on a selected topic", () => {
     const { container, h } = mount();
     run(() => h.focusNode("a"));
     run(() => fireEvent.keyDown(document, { key: "X" }));
-    const editable = container.querySelector('[contenteditable="true"]');
-    expect(editable).toBeTruthy();
-    expect(editable?.textContent).toBe("X"); // seeded with the typed char, not the old topic
+    expect(container.querySelector('[contenteditable="true"]')).toBeNull();
   });
 
-  it("type-to-edit ignores modified keys (Ctrl/Cmd shortcuts don't open the editor)", () => {
+  it("does not let modified letter shortcuts open the editor", () => {
     const { container, h } = mount();
     run(() => h.focusNode("a"));
     run(() => fireEvent.keyDown(document, { key: "b", ctrlKey: true })); // a shortcut, not an edit
@@ -599,20 +651,42 @@ describe("FlowMindMap canvas", () => {
     expect(a?.children.some((c) => c.topic === "Typed")).toBe(true);
   });
 
-  it("Enter then Escape keeps the committed text and drops only the empty new sibling (no data loss)", () => {
-    const { container, h, onChange } = mount();
+  it("Enter commits in place, keeps selection, and does not create a sibling", () => {
+    const { container, h, onChange, onSelect } = mount();
     run(() => h.focusNode("a")); // a has [a1]
     run(() => fireEvent.keyDown(document, { key: "Tab" })); // empty child C1 + edit
-    let editable = container.querySelector('[contenteditable="true"]') as HTMLElement;
+    const editable = container.querySelector('[contenteditable="true"]') as HTMLElement;
     editable.innerHTML = "First"; // type into C1
-    run(() => fireEvent.keyDown(editable, { key: "Enter" })); // commit C1="First", add empty sibling C2
-    editable = container.querySelector('[contenteditable="true"]') as HTMLElement; // now C2's editor
-    run(() => fireEvent.keyDown(editable, { key: "Escape" })); // discard the empty C2
-    const a = (onChange.mock.calls.at(-1)?.[0] as MindMapDoc).root.children.find(
-      (n) => n.id === "a",
+    run(() => fireEvent.keyDown(editable, { key: "Enter" }));
+    expect(container.querySelector('[contenteditable="true"]')).toBeNull();
+    let a = (onChange.mock.calls.at(-1)?.[0] as MindMapDoc).root.children.find((n) => n.id === "a");
+    expect(a?.children.map((child) => child.topic)).toEqual(["Alpha 1", "First"]);
+    const committedId = a?.children.find((child) => child.topic === "First")?.id;
+    expect(onSelect.mock.calls.at(-1)?.[0]?.id).toBe(committedId);
+
+    // The committed topic remains selected: Alt+Up immediately reorders that same branch.
+    run(() => fireEvent.keyDown(document, { key: "ArrowUp", altKey: true }));
+    a = (onChange.mock.calls.at(-1)?.[0] as MindMapDoc).root.children.find((n) => n.id === "a");
+    expect(a?.children.map((child) => child.topic)).toEqual(["First", "Alpha 1"]);
+  });
+
+  it("Enter confirms and keeps a newly-created empty topic", () => {
+    const { container, h, onChange, onSelect } = mount();
+    run(() => h.focusNode("a"));
+    run(() => fireEvent.keyDown(document, { key: "Enter" })); // new empty sibling + edit
+    const editable = container.querySelector('[contenteditable="true"]') as HTMLElement;
+    expect(editable).toBeTruthy();
+    const beforeCommit = onChange.mock.calls.at(-1)?.[0] as MindMapDoc;
+    const emptyId = beforeCommit.root.children.find((node) => node.topic === "")?.id;
+    expect(emptyId).toBeTruthy();
+
+    run(() => fireEvent.keyDown(editable, { key: "Enter" })); // explicitly accept the blank topic
+    expect(container.querySelector('[contenteditable="true"]')).toBeNull();
+    const afterCommit = onChange.mock.calls.at(-1)?.[0] as MindMapDoc;
+    expect(afterCommit.root.children.some((node) => node.id === emptyId && node.topic === "")).toBe(
+      true,
     );
-    expect(a?.children.some((c) => c.topic === "First")).toBe(true); // C1's text survived the discard
-    expect(a?.children).toHaveLength(2); // a1 + C1 only (C2 dropped, not stranded empty)
+    expect(onSelect.mock.calls.at(-1)?.[0]?.id).toBe(emptyId);
   });
 
   it("drops a URL onto the canvas as a floating topic", () => {
@@ -629,6 +703,27 @@ describe("FlowMindMap canvas", () => {
       fireEvent.drop(surface, { dataTransfer });
     });
     expect(onChange).toHaveBeenCalled();
+  });
+
+  it("leaves Space unassigned when a topic is selected", () => {
+    const { h, onChange } = mount();
+    run(() => h.focusNode("a"));
+    onChange.mockClear();
+    run(() => fireEvent.keyDown(document, { key: " ", code: "Space" }));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("renders inline Markdown in a plain topic without exposing the markers", () => {
+    const doc = baseDoc();
+    doc.root.children[0].topic = "**粗体** <mark>高亮</mark> __下划线__";
+    const { container } = mount(doc);
+    const node = nodeEl(container, "a");
+    expect(node.querySelector("strong")?.textContent).toBe("粗体");
+    expect(node.querySelector("mark")?.textContent).toBe("高亮");
+    expect(node.querySelector("u")?.textContent).toBe("下划线");
+    expect(node.textContent).not.toContain("**");
+    expect(node.textContent).not.toContain("<mark>");
+    expect(node.textContent).not.toContain("__");
   });
 
   it("renders overlays for a doc with boundaries / summaries / callouts / backdrop in brace layout", () => {
@@ -851,19 +946,16 @@ describe("FlowMindMap canvas", () => {
     expect(a?.rollup).toBe("src-2");
   });
 
-  it("reveals the on-node ＋ add affordances on hover (#1) and wires them to add child/sibling", () => {
-    const { container, onChange } = mount();
-    // Nothing hovered or selected → no ＋.
+  it("keeps branch creation in the topic context menu without on-node add buttons", () => {
+    const { container } = mount();
+    const node = nodeEl(container, "b");
+    run(() => fireEvent.mouseOver(node.firstElementChild as HTMLElement));
+    expect(container.querySelector(".mm-node-add")).toBeNull();
     expect(screen.queryByRole("button", { name: /Add child/ })).toBeNull();
-    // Hovering a node reveals the ＋ child / ＋ sibling affordances (re-homed off the popover).
-    const inner = nodeEl(container, "b").firstElementChild as HTMLElement;
-    run(() => fireEvent.mouseOver(inner));
-    const addChildBtn = screen.getByRole("button", { name: /Add child/ });
-    expect(screen.getByRole("button", { name: /Add sibling/ })).toBeTruthy();
-    // Clicking ＋ adds a child and drops straight into editing it.
-    run(() => fireEvent.click(addChildBtn));
-    expect(onChange).toHaveBeenCalled();
-    expect(container.querySelector('[contenteditable="true"]')).toBeTruthy();
+    run(() => fireEvent.contextMenu(node));
+    const menu = openMenu() as HTMLElement;
+    expect(within(menu).getByRole("menuitem", { name: "Add child" })).toBeTruthy();
+    expect(within(menu).getByRole("menuitem", { name: "Add sibling" })).toBeTruthy();
   });
 
   it("the on-selection action bar wires note + priority quick-actions (UI-3)", () => {
@@ -997,7 +1089,7 @@ describe("FlowMindMap canvas", () => {
     );
   });
 
-  it("commits inline edits and runs the node affordances (link / progress / collapse)", () => {
+  it("commits inline edits and runs the node affordances (link / note / collapse)", () => {
     const doc: MindMapDoc = {
       schemaVersion: 1,
       id: "edit1",
@@ -1045,11 +1137,10 @@ describe("FlowMindMap canvas", () => {
     editA();
     run(() => fireEvent.blur(editable())); // commitEdit
 
-    // Node affordances: follow the hyperlink (openLink → window.open, stubbed), step the task pie
-    // (cycleProgress), and toggle collapse (the root also has a collapse button → take the first).
+    // Node affordances: follow the hyperlink (openLink → window.open, stubbed) and toggle collapse
+    // (the root also has a collapse button → take the first).
     run(() => fireEvent.click(screen.getByTitle(/Follow link/)));
     expect(window.open).toHaveBeenCalled();
-    run(() => fireEvent.click(screen.getByTitle(/click to change/)));
     // 📝 indicator (present only because the node has a note) → asks the app to open the Notes tab.
     // Do this before the collapse below, which collapses the root and hides the node.
     run(() => fireEvent.click(screen.getByTitle("Show note")));
@@ -1073,7 +1164,7 @@ describe("FlowMindMap canvas", () => {
     expect(screen.getByLabelText("Roll-up source")).toBeTruthy();
   });
 
-  it("coalesces a rapid task-pie spree into a single undo (S4)", () => {
+  it("uses P / Shift+P for task progress without rendering task chrome on the topic", () => {
     const taskDoc: MindMapDoc = {
       schemaVersion: 1,
       id: "td",
@@ -1084,19 +1175,18 @@ describe("FlowMindMap canvas", () => {
         children: [{ id: "a", topic: "Task", task: { progress: 0.25 }, children: [] }],
       },
     };
-    const { onChange } = mount(taskDoc);
+    const { container, onChange, h } = mount(taskDoc);
+    expect(container.querySelector(".mm-task-check")).toBeNull();
+    expect(container.querySelector(".mm-progress-badge")).toBeNull();
+    expect(screen.queryByTitle(/Task 25%/)).toBeNull();
     onChange.mockClear();
-    const pie = () => screen.getByTitle(/click to change/);
-    // Three quick clicks (0.25 → 0.5 → 0.75 → 1.0) within the coalesce window.
-    run(() => fireEvent.click(pie()));
-    run(() => fireEvent.click(pie()));
-    run(() => fireEvent.click(pie()));
-    const after = onChange.mock.calls.at(-1)?.[0] as MindMapDoc;
-    expect(findAnyNode(after, "a")?.task?.progress).toBe(1);
-    // A single undo reverts the WHOLE spree back to the pre-spree 0.25 (not just one step).
-    run(() => fireEvent.keyDown(document, { key: "z", ctrlKey: true }));
-    const undone = onChange.mock.calls.at(-1)?.[0] as MindMapDoc;
-    expect(findAnyNode(undone, "a")?.task?.progress).toBe(0.25);
+    run(() => h.focusNode("a"));
+    run(() => fireEvent.keyDown(document, { key: "p" }));
+    let after = onChange.mock.calls.at(-1)?.[0] as MindMapDoc;
+    expect(findAnyNode(after, "a")?.task?.progress).toBe(0.5);
+    run(() => fireEvent.keyDown(document, { key: "P", shiftKey: true }));
+    after = onChange.mock.calls.at(-1)?.[0] as MindMapDoc;
+    expect(findAnyNode(after, "a")?.task?.progress).toBe(0.25);
   });
 
   it("toggles the minimap, follows in-map / map links, and edits a relationship edge", () => {

@@ -93,6 +93,8 @@ export interface SelectedOverlay {
 
 /** Imperative API a canvas component exposes via its ref. */
 export interface MindMapHandle {
+  /** Replace the live document from a trusted local automation source and record one undo step. */
+  replaceDocument: (doc: MindMapDoc) => void;
   /** Render the map to a portable SVG. With `rootId` set, scope the render to that node's subtree
    *  ("Export this branch", B4) — the branch framed to its own bounds at its live canvas positions. */
   exportSvg: (rootId?: string) => Blob | null;
