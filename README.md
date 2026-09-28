@@ -30,6 +30,18 @@ pnpm install --frozen-lockfile
 pnpm desktop:dist
 ```
 
+## Code signing policy
+
+iThread has applied for the SignPath Foundation open-source code-signing programme. Free code
+signing provided by [SignPath.io](https://signpath.io/), certificate by
+[SignPath Foundation](https://signpath.org/). Until the application is approved and the signing
+pipeline is active, a release may remain unsigned; always compare its SHA-256 checksum with the
+value published in the GitHub release.
+
+The complete policy, maintainer roles, build provenance and approval process are documented in
+[CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md). iThread's data-handling commitments are documented
+in [PRIVACY.md](PRIVACY.md).
+
 ## Run locally
 
 Requires Node.js 22+ and pnpm 11:
