@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Electron runtime
+        run: node node_modules/electron/install.js
+
       - name: Run quality gate
         run: pnpm gate
 
