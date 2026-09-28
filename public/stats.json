@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-09-28T07:06:10.173Z",
-  "commit": "b67bd05",
+  "generatedAt": "2026-09-28T07:55:18.313Z",
+  "commit": "b4535ed",
   "headline": {
     "linesTsJs": 88006,
     "tests": 2318,
     "lineCoveragePct": 90.51,
-    "commits": 1218,
+    "commits": 1220,
     "ageDays": 108,
-    "trackedFiles": 557,
+    "trackedFiles": 568,
     "featureManualPct": 100,
     "featureBookPct": 96.1,
     "featureExamplePct": 58.7
@@ -35,8 +35,8 @@
     },
     {
       "category": "Docs (Markdown)",
-      "files": 20,
-      "lines": 3450
+      "files": 23,
+      "lines": 3560
     }
   ],
   "coverage": {
@@ -57,34 +57,34 @@
     },
     "branches": {
       "pct": 86.89,
-      "covered": 9440,
-      "total": 10864
+      "covered": 9439,
+      "total": 10863
     }
   },
   "tests": {
     "unit": 2318,
     "e2e": 0,
-    "durationMs": 119035,
+    "durationMs": 120681,
     "slowest": [
       {
         "file": "test/flowmindmap.test.tsx",
-        "ms": 31385
+        "ms": 31981
       },
       {
         "file": "test/app-integration.test.tsx",
-        "ms": 22512
+        "ms": 23424
       },
       {
         "file": "test/panels.test.tsx",
-        "ms": 9517
+        "ms": 9742
       },
       {
         "file": "test/toolbar.test.tsx",
-        "ms": 8863
+        "ms": 8904
       },
       {
         "file": "test/book-build.test.ts",
-        "ms": 6503
+        "ms": 6387
       }
     ]
   },
@@ -331,8 +331,8 @@
   "git": {
     "born": "2026-06-11T20:30:20+02:00",
     "ageDays": 108,
-    "commits": 1218,
-    "commits7d": 6,
+    "commits": 1220,
+    "commits7d": 8,
     "authors": [
       {
         "name": "Dann Bleeker Pedersen",
@@ -340,7 +340,7 @@
       },
       {
         "name": "github-actions[bot]",
-        "count": 547
+        "count": 548
       },
       {
         "name": "Claude",
@@ -348,12 +348,12 @@
       },
       {
         "name": "KIDULTANK",
-        "count": 3
+        "count": 4
       }
     ],
     "churn30d": {
-      "added": 5805,
-      "removed": 1381
+      "added": 6215,
+      "removed": 1406
     },
     "changelogEntries": 462
   }
