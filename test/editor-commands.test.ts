@@ -40,6 +40,7 @@ function mkProps(selected: SelectedNode | null = null): ToolbarProps {
       "exportXmind",
       "exportSmmx",
       "exportMmap",
+      "exportIthoughts",
       "exportOpml",
       "exportFreemind",
       "exportPng",
@@ -189,16 +190,18 @@ describe("buildEditorCommands", () => {
     expect(cmds.length).toBeGreaterThan(40);
   });
 
-  it("covers every export format (22) and each defers to its io handler", () => {
+  it("covers every export format (23) and each defers to its io handler", () => {
     const props = mkProps();
     const cmds = buildEditorCommands(props);
     const exports = cmds.filter((c) => c.kind === "export");
     // 17 original + png @2×/@4×/transparent + pdf fit/A4 (the print PDF replaced the old single .pdf).
-    expect(exports).toHaveLength(22);
+    expect(exports).toHaveLength(23);
     byId(props).get("export:json")?.run();
     expect(props.io.exportJson).toHaveBeenCalled();
     byId(props).get("export:pptx")?.run();
     expect(props.io.exportPptx).toHaveBeenCalled();
+    byId(props).get("export:ithoughts")?.run();
+    expect(props.io.exportIthoughts).toHaveBeenCalled();
     // The PNG-scale + direct-PDF variants defer to the right io calls (items 6, 7).
     byId(props).get("export:png2x")?.run();
     expect(props.io.exportPng).toHaveBeenCalledWith({ scale: 2 });

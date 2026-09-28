@@ -1,12 +1,12 @@
 # iThread 中文快速上手
 
-iThread v0.1.1 是面向 Windows 11 的公开预览版。它可以导入 iThoughts `.itmz` 文件，但目前
-不能把修改重新导出为 `.itmz`。第一次测试时请务必保留原文件，并优先使用副本。
+iThread v0.2.0 是面向 Windows 11 的公开预览版。它可以导入 iThoughts `.itmz` 文件，也能
+把修改导出为新的 iThoughts 兼容 `.itmz`。第一次测试时仍请保留原文件，并优先使用副本。
 
 ## 1. 下载和启动
 
 1. 从 [GitHub Releases](https://github.com/KIDULTANK/iThread/releases) 下载
-   `iThread-0.1.1-Windows-x64.exe`。
+   `iThread-0.2.0-Windows-x64.exe`。
 2. 对照同一 Release 中的 `SHA256SUMS.txt` 核对文件校验值。
 3. 当前版本尚未取得代码签名。Windows SmartScreen 如提示“未知发布者”，请先确认下载地址
    和 SHA-256，再决定是否运行。
@@ -21,10 +21,10 @@ iThread v0.1.1 是面向 Windows 11 的公开预览版。它可以导入 iThough
 
 ## 3. 保存编辑结果
 
-- 日常编辑建议保存为 `.mmst`，这是 iThread 的原生无损格式。
+- 日常编辑建议保存为 `.ithread`，这是 iThread 的原生无损格式；旧 `.mmst` 仍可直接打开。
 - `.json` 可用于完整备份或排查问题。
 - `.mm`、`.opml`、`.mmap` 和 Markdown 等格式适合交换，但可能丢失部分样式或元数据。
-- 当前不能保存为 iThoughts 可重新打开的 `.itmz`。
+- 需要回到 iThoughts 时，使用“导出 → `.itmz（兼容 iThoughts）`”生成新文件；不会覆盖原文件。
 
 ## 4. 常用操作
 

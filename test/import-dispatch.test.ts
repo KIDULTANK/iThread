@@ -37,13 +37,16 @@ describe("parseImport — extension routing", () => {
     expect(doc.root.topic).toBe("Root");
   });
 
-  it("routes native .json / .mmst losslessly through parseDoc", async () => {
+  it("routes native .ithread / .json / legacy .mmst losslessly through parseDoc", async () => {
     const native = nativeDoc("Native");
     const json = JSON.stringify(native);
     expect((await parseImport(file("m.json", json), stubMmap(nativeDoc("x")))).doc.title).toBe(
       "Native",
     );
     expect((await parseImport(file("m.mmst", json), stubMmap(nativeDoc("x")))).doc.title).toBe(
+      "Native",
+    );
+    expect((await parseImport(file("m.ithread", json), stubMmap(nativeDoc("x")))).doc.title).toBe(
       "Native",
     );
   });

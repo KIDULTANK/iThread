@@ -834,12 +834,13 @@ learn a feature by reading one that uses it. Opening one creates a fresh, editab
 
 Your maps always autosave into the browser (the [library](#the-map-library)), but you can also keep a
 map as a **file on disk** — to store it in a folder, sync it through Dropbox/OneDrive, email it, or
-put it in version control. iThread's native file is **`.mmst`** (the same lossless format as a
-`.json` export, just a distinct extension so your computer can associate it with the app).
+put it in version control. iThread's native file is **`.ithread`** (the same lossless format as a
+`.json` export, just a distinct extension so your computer can associate it with the app). Files
+created by earlier previews with the `.mmst` extension remain fully readable.
 
 In **More ▸ File** (or the **⌘K** command palette):
 
-- **Open file…** (`Ctrl/⌘ + O`) — pick a `.mmst` (or `.json`) and open it. You can also pick a
+- **Open file…** (`Ctrl/⌘ + O`) — pick an `.ithread`, legacy `.mmst`, or `.json` file and open it. You can also pick a
   MindManager **`.mmap`** here — see *Opening MindManager files* below.
 - **Open recent** — the same menu lists your recently opened disk files (up to 8) for one-click
   reopening.
@@ -860,14 +861,14 @@ your map safe in the library either way.
 
 > **Browser support.** Open/Save-to-the-same-file and file autosave use the **File System Access API**,
 > available in **Chrome, Edge, and other Chromium browsers on desktop**. In Firefox, Safari, and on
-> mobile, **Save** downloads a `.mmst` file and **Open** uses the normal file picker instead — and your
+> mobile, **Save** downloads an `.ithread` file and **Open** uses the normal file picker instead — and your
 > work still autosaves to the browser, so nothing is lost.
 
-### Make it your default app for `.mmst` (Windows)
+### Make it your default app for `.ithread` (Windows)
 
 If you **install** iThread as an app (the install button in Chrome/Edge, or *Apps ▸ Install*),
-Windows can associate `.mmst` files with it: right-click a `.mmst` ▸ **Open with ▸ Choose another app**
-▸ pick iThread ▸ *Always*. After that, **double-clicking a `.mmst` in File Explorer opens it
+Windows can associate `.ithread` files with it: right-click an `.ithread` ▸ **Open with ▸ Choose another app**
+▸ pick iThread ▸ *Always*. After that, **double-clicking an `.ithread` in File Explorer opens it
 directly in the app** (in the already-running window if one is open). This is a Chromium-desktop
 feature; it isn't available in Firefox/Safari or on mobile.
 
@@ -886,7 +887,7 @@ images without a raster fallback — and whatever was dropped is listed in the i
 **Important — `.mmap` is import-only, and you can't save back to it.** An opened `.mmap` becomes an
 ordinary map in your **library** (autosaved to the browser as usual, so your edits aren't lost), but it
 is **not** linked to the `.mmap` file — *Save* won't write `.mmap`. To keep your changes as a file, use
-**Save as…** to write a **`.mmst`**; after that it behaves like any native file (Save / autosave to
+**Save as iThread file…** to write an **`.ithread`**; after that it behaves like any native file (Save / autosave to
 disk). Re-opening the same `.mmap` again imports a fresh copy.
 
 ---
@@ -990,6 +991,7 @@ Pick a format from the **⬆ Export…** menu:
 | `.mmd` | Mermaid `mindmap` text — paste into Markdown, GitHub, or docs that render Mermaid |
 | `.xmind` | XMind (2020+) — topic tree, notes, links, tags, plus floating topics + relationships |
 | `.smmx` | SimpleMind — topic tree, notes, web links, relations, plus floating topics |
+| `.itmz` | iThoughts-compatible copy — topic tree, notes, links, folded state, task progress, relationships, floating topics and embedded images; the source `.itmz` is never overwritten |
 | `.mmap` | MindManager — topic tree, notes, hyperlinks, icons, tags, task info (dates / priority / progress), embedded images, relationships, and the two-sided side; the mirror of the `.mmap` importer (round-trips back into Studio for these fields) |
 | `.png` / `.svg` | Image of the map (inherits the current theme). PNG comes in four flavours: **`.png` (image)**, **`@2×` (sharp)**, **`@4×` (print)**, and **transparent** (no background fill) |
 | `.html` (standalone) | A single self-contained HTML file — the whole map as an image (opens anywhere, offline) |

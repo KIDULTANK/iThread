@@ -109,6 +109,7 @@ const EXPORTS = (io: ToolbarProps["io"]): [string, string, () => void][] => [
   ["xmind", t("cmd.export.xmind"), io.exportXmind],
   ["smmx", t("cmd.export.smmx"), io.exportSmmx],
   ["mmap", t("cmd.export.mmap"), io.exportMmap],
+  ["ithoughts", t("cmd.export.ithoughts"), io.exportIthoughts],
   ["png", t("cmd.export.png"), () => io.exportPng()],
   ["png2x", t("cmd.export.png2x"), () => io.exportPng({ scale: 2 })],
   ["png4x", t("cmd.export.png4x"), () => io.exportPng({ scale: 4 })],

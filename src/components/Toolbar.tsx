@@ -246,6 +246,7 @@ export interface ToolbarIo {
   exportXmind: () => void;
   exportSmmx: () => void;
   exportMmap: () => void;
+  exportIthoughts: () => void;
   exportOpml: () => void;
   exportFreemind: () => void;
   /** Export the map as a PNG; opts pick a resolution scale (2×/4×) and/or a transparent background. */
@@ -439,6 +440,7 @@ export function Toolbar({
         ["xmind", t("cmd.export.xmind"), io.exportXmind],
         ["smmx", t("cmd.export.smmx"), io.exportSmmx],
         ["mmap", t("cmd.export.mmap"), io.exportMmap],
+        ["ithoughts", t("cmd.export.ithoughts"), io.exportIthoughts],
       ],
     },
     {
@@ -734,7 +736,7 @@ export function Toolbar({
                   ref={importInputRef}
                   id="mmap-input"
                   type="file"
-                  accept=".mmst,.mmap,.mmp,.md,.markdown,.json,.opml,.mm,.mmd,.mermaid,.xmind,.smmx,.docx,.xlsx,.itmz,.mind,.mup,.textpack,.textbundle"
+                  accept=".ithread,.mmst,.mmap,.mmp,.md,.markdown,.json,.opml,.mm,.mmd,.mermaid,.xmind,.smmx,.docx,.xlsx,.itmz,.mind,.mup,.textpack,.textbundle"
                   multiple
                   onChange={(e) => {
                     io.handleFile(e);

@@ -1,6 +1,7 @@
-import { strToU8, zipSync } from "fflate";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
-import { fromIthoughts } from "../src/io/ithoughts";
+import { fromIthoughts, toIthoughts } from "../src/io/ithoughts";
+import type { MindMapDoc } from "../src/model/types";
 
 // Hand-authored mapdata.xml matching the iThoughts format:
 //   • <iThoughts> root wrapper with <topics> child
@@ -151,5 +152,96 @@ describe("iThoughts .itmz import", () => {
 </iThoughts>`;
     const doc = fromIthoughts(makeItmz(xml));
     expect(doc.links).toBeUndefined();
+  });
+});
+
+const exportedDoc = (): MindMapDoc => ({
+  schemaVersion: 1,
+  id: "doc-export",
+  title: "Export & test",
+  root: {
+    id: "root",
+    topic: "Root & <centre>",
+    note: "Root note",
+    children: [
+      {
+        id: "a",
+        topic: "Alpha\nsecond line",
+        note: 'A note with <xml> & quotes "here"',
+        hyperlink: "https://example.com/a?x=1&y=2",
+        collapsed: true,
+        style: { background: "#AABBCC", color: "#112233", fontSize: "18px" },
+        task: { priority: 2, progress: 0.75 },
+        children: [{ id: "a1", topic: "Nested", children: [] }],
+      },
+      { id: "b", topic: "Beta", children: [] },
+    ],
+  },
+  floatingTopics: [{ id: "float", topic: "Free note", pos: { x: 320, y: -40 }, children: [] }],
+  links: [{ id: "rel", from: "a", to: "b", label: "feeds & supports" }],
+  meta: { updatedAt: Date.parse("2026-09-28T10:30:00Z") },
+});
+
+describe("iThoughts .itmz export", () => {
+  it("emits the native iThoughts container files", () => {
+    const files = unzipSync(toIthoughts(exportedDoc()));
+    expect(Object.keys(files).sort()).toEqual(
+      [
+        "display_state.plist",
+        "manifest.plist",
+        "mapdata.xml",
+        "preferences.plist",
+        "preview.png",
+        "style.xml",
+      ].sort(),
+    );
+    const xml = strFromU8(files["mapdata.xml"]);
+    expect(xml).toContain('<iThoughts version="4.0"');
+    expect(xml).toContain('floating="1"');
+    expect(xml).toContain("Root &amp; &lt;centre&gt;");
+  });
+
+  it("round-trips structure, notes, links, folding, task state and floating topics", () => {
+    const back = fromIthoughts(toIthoughts(exportedDoc()));
+    expect(back.root.topic).toBe("Root & <centre>");
+    expect(back.root.note).toBe("Root note");
+    expect(back.root.children.map((node) => node.topic)).toEqual(["Alpha\nsecond line", "Beta"]);
+    const alpha = back.root.children[0];
+    expect(alpha.note).toBe('A note with <xml> & quotes "here"');
+    expect(alpha.hyperlink).toBe("https://example.com/a?x=1&y=2");
+    expect(alpha.collapsed).toBe(true);
+    expect(alpha.children[0].topic).toBe("Nested");
+    expect(alpha.style).toMatchObject({
+      background: "#AABBCC",
+      color: "#112233",
+      fontSize: "18px",
+    });
+    expect(alpha.task).toEqual({ priority: 2, progress: 0.75 });
+    expect(back.floatingTopics?.[0]).toMatchObject({
+      topic: "Free note",
+      pos: { x: 320, y: -40 },
+    });
+    expect(back.links?.[0].label).toBe("feeds & supports");
+    expect(back.links?.[0].from).toBe(alpha.id);
+    expect(back.links?.[0].to).toBe(back.root.children[1].id);
+  });
+
+  it("packages inline images below assets/ and restores them", () => {
+    const doc = exportedDoc();
+    doc.root.children[0].image = {
+      url: "data:image/png;base64,iVBORw==",
+      width: 240,
+    };
+    const bytes = toIthoughts(doc);
+    const entries = Object.keys(unzipSync(bytes));
+    expect(entries.some((name) => /^assets\/.+\/image\.png$/.test(name))).toBe(true);
+    expect(fromIthoughts(bytes).root.children[0].image).toEqual({
+      url: "data:image/png;base64,iVBORw==",
+      width: 240,
+    });
+  });
+
+  it("is byte-deterministic for the same document", () => {
+    expect(toIthoughts(exportedDoc())).toEqual(toIthoughts(exportedDoc()));
   });
 });

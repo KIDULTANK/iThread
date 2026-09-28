@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { fromIthoughts } from "../src/io/ithoughts";
+import { fromIthoughts, toIthoughts } from "../src/io/ithoughts";
 import type { MapNode } from "../src/model/types";
 
 const samples = [
@@ -85,6 +85,25 @@ describeSamples("real iThoughts samples", () => {
       ).toBe(sample.images);
       expect(doc.floatingTopics?.length ?? 0).toBe(sample.floating);
       expect(doc.root.topic.trim().length).toBeGreaterThan(0);
+    });
+
+    it(`round-trips supported content from ${sample.file}`, () => {
+      const first = fromIthoughts(new Uint8Array(readFileSync(join(sampleDir, sample.file))));
+      const second = fromIthoughts(toIthoughts(first));
+      const roots = [second.root, ...(second.floatingTopics ?? [])];
+      expect(second.root.topic).toBe(first.root.topic);
+      expect(roots.reduce((sum, node) => sum + countNodes(node), 0)).toBe(sample.topics);
+      expect(second.links?.length ?? 0).toBe(sample.links);
+      expect(
+        roots.reduce(
+          (sum, node) => sum + countMatching(node, (item) => item.collapsed === true),
+          0,
+        ),
+      ).toBe(sample.folded);
+      expect(
+        roots.reduce((sum, node) => sum + countMatching(node, (item) => item.image != null), 0),
+      ).toBe(sample.images);
+      expect(second.floatingTopics?.length ?? 0).toBe(sample.floating);
     });
   }
 });

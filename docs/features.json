@@ -1259,8 +1259,8 @@
       "bookExample": true
     },
     {
-      "id": "import-ithoughts",
-      "name": "Import iThoughts .itmz",
+      "id": "ithoughts-roundtrip",
+      "name": "Import and export iThoughts-compatible .itmz files",
       "area": "import",
       "since": "2026-06-14",
       "manual": true,
@@ -1601,8 +1601,8 @@
       "bookExample": true
     },
     {
-      "id": "files-mmst",
-      "name": "Work with maps as files on disk (.mmst): Open / Save / autosave + Windows file association",
+      "id": "files-ithread",
+      "name": "Work with maps as native .ithread files: Open / Save / autosave + legacy .mmst compatibility",
       "area": "library",
       "since": "2026-06-19",
       "manual": true,

@@ -72,6 +72,7 @@ describe("useMapExports — filenames + MIME types", () => {
     ["exportFreemind", "Demo Map.mm", "application/x-freemind"],
     ["exportXmind", "Demo Map.xmind", "application/vnd.xmind.workbook"],
     ["exportSmmx", "Demo Map.smmx", "application/octet-stream"],
+    ["exportIthoughts", "Demo Map.itmz", "application/octet-stream"],
     ["exportInteractiveHtml", "Demo Map-interactive.html", "text/html"],
     ["exportDeck", "Demo Map-slides.html", "text/html"],
     [
@@ -122,6 +123,17 @@ describe("useMapExports — filenames + MIME types", () => {
     const parsed = JSON.parse(await downloads[0].blob.text());
     expect(parsed.title).toBe("Demo Map");
     expect(parsed.root.children).toHaveLength(2);
+  });
+
+  it("exportIthoughts preserves rich topic formatting as iThread inline Markdown", async () => {
+    const doc = docOf("Demo Map");
+    doc.root.topic = "Bold Highlight Under";
+    doc.root.topicRich = "<strong>Bold</strong> <mark>Highlight</mark> <u>Under</u>";
+    const ex = useMapExports(handleRef(SVG), () => doc);
+    await ex.exportIthoughts();
+    const { fromIthoughts } = await import("../src/io/ithoughts");
+    const back = fromIthoughts(new Uint8Array(await downloads[0].blob.arrayBuffer()));
+    expect(back.root.topic).toBe("**Bold** ==Highlight== __Under__");
   });
 });
 

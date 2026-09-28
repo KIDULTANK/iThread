@@ -95,7 +95,9 @@ describe("supportsFileSystemAccess", () => {
 });
 
 describe("isNativeExt", () => {
-  it("treats .mmst and .json as native (case-insensitive)", () => {
+  it("treats .ithread, legacy .mmst and .json as native (case-insensitive)", () => {
+    expect(isNativeExt("plan.ithread")).toBe(true);
+    expect(isNativeExt("PLAN.ITHREAD")).toBe(true);
     expect(isNativeExt("plan.mmst")).toBe(true);
     expect(isNativeExt("PLAN.MMST")).toBe(true);
     expect(isNativeExt("export.json")).toBe(true);
@@ -148,6 +150,15 @@ describe("ensureWritePermission", () => {
 });
 
 describe("openMapFile / pickSaveHandle", () => {
+  it("openMapFile reads a native .ithread as kind 'native'", async () => {
+    const { handle } = fakeHandle("open.ithread", { content: serializeDoc(docOf("Opened")) });
+    window.showOpenFilePicker = vi.fn(async () => [handle]);
+    const res = await openMapFile();
+    expect(res?.kind).toBe("native");
+    if (res?.kind !== "native") throw new Error("expected native");
+    expect(res.doc.title).toBe("Opened");
+  });
+
   it("openMapFile reads a native .mmst as kind 'native' with the doc + handle", async () => {
     const { handle } = fakeHandle("open.mmst", { content: serializeDoc(docOf("Opened")) });
     window.showOpenFilePicker = vi.fn(async () => [handle]);

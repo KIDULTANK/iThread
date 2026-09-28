@@ -753,7 +753,7 @@ export function App() {
 
   // --- disk files (open / save / save-as / autosave-to-file) -----------------
   // The whole File System Access layer lives in useDiskFile (the library/IndexedDB copy is always the
-  // safety net; this adds real `.mmst` files on disk, with download/import fallbacks where the API is
+  // safety net; this adds real `.ithread` files on disk, with download/import fallbacks where the API is
   // absent). App wires the deps and consumes the returned handlers + the handle cache.
   const {
     handleCache,
@@ -846,7 +846,7 @@ export function App() {
   }, [view, saveFile, saveFileAs, openFile]);
 
   // File-association launch (installed PWA, Windows/ChromeOS): when the app is opened by double-clicking
-  // a `.mmst`, the OS hands us file handles here. Registered once; see vite.config.ts `file_handlers`.
+  // an `.ithread`/legacy `.mmst`, the OS hands us file handles here. See Vite `file_handlers`.
   useEffect(() => {
     const queue = window.launchQueue;
     if (!queue) return;
@@ -855,7 +855,7 @@ export function App() {
       if (!handle) return;
       void (async () => {
         try {
-          // `.mmst`/`.json` open natively (bound for save-back); `.mmap` imports one-way.
+          // `.ithread`/legacy `.mmst`/`.json` open natively; `.mmap` imports one-way.
           if (isNativeExt(handle.name))
             await adoptOpenedFile(await readMapFromHandle(handle), handle);
           else await importForeignFile(handle);
@@ -1214,6 +1214,7 @@ export function App() {
     exportXmind,
     exportSmmx,
     exportMmap,
+    exportIthoughts,
     exportOpml,
     exportFreemind,
     exportPng,
@@ -1591,6 +1592,7 @@ export function App() {
       exportXmind,
       exportSmmx,
       exportMmap,
+      exportIthoughts,
       exportOpml,
       exportFreemind,
       exportPng,

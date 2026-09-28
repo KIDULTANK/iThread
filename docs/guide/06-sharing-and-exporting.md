@@ -177,8 +177,8 @@ been building for weeks, it's a quietly satisfying way to see how the thinking t
 ## A map as a file on disk
 
 Between "lives in the browser" and "exported once" there's a third way to keep a map: link it to
-a **file on disk**. MindMap Studio's native file is **`.mmst`** (the lossless JSON format under a
-distinct extension). **Open file...** (Ctrl+O) opens one; **Save to file** (Ctrl+S) and **Save
+a **file on disk**. iThread's native file is **`.ithread`** (the lossless JSON format under a
+distinct extension; legacy `.mmst` files still open). **Open file...** (Ctrl+O) opens one; **Save to file** (Ctrl+S) and **Save
 as...** write one; an **Open recent** list brings back the files you use often. Once a map is
 linked to its file, the same continuous autosave **writes through to disk** as you edit -- so a
 map kept in a synced folder (Dropbox, OneDrive, a git repo) stays current without a Save

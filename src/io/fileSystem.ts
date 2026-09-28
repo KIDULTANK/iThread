@@ -2,13 +2,13 @@ import { t } from "../i18n/registry";
 // Native file open / save / autosave, on top of the lossless JSON serializer.
 //
 // iThread's library always lives in IndexedDB (the safety net — see store/mapStore).
-// This module adds *disk* files: a user can Open a `.mmst` from anywhere, Save back to it
+// This module adds *disk* files: a user can Open an `.ithread` from anywhere, Save back to it
 // with no dialog, and have edits autosaved through to that same file. It's a thin wrapper
 // over the File System Access API (Chromium desktop) with a download/upload fallback for
 // browsers that lack it, so the rest of the app can stay oblivious to which path is live.
 //
-// `.mmst` ("MindMap STudio") is our native extension; the bytes are exactly the same
-// schema-v1 JSON that `serializeDoc` produces, so a `.mmst` is also a valid `.json` import.
+// `.ithread` is our native extension; the bytes are exactly the same schema-v1 JSON that
+// `serializeDoc` produces. The former `.mmst` extension and plain `.json` remain losslessly readable.
 
 import type { MindMapDoc } from "../model/types";
 import { downloadBlob } from "./download";
@@ -16,16 +16,18 @@ import { safeFileStem } from "./fileName";
 import { parseDoc, serializeDoc } from "./json";
 
 /** Native file extension (a custom extension is what lets Windows associate the PWA with it). */
-export const NATIVE_EXT = ".mmst";
+export const NATIVE_EXT = ".ithread";
+/** Former native extension. Kept indefinitely so existing user files never become stranded. */
+export const LEGACY_NATIVE_EXT = ".mmst";
 /** MIME type recorded for the native file — the content is JSON. */
 export const NATIVE_MIME = "application/json";
 
 /** Extensions we can open *natively* (parse losslessly + bind for save-back): our own format + JSON. */
-const NATIVE_EXTS = [NATIVE_EXT, ".json"];
+const NATIVE_EXTS = [NATIVE_EXT, LEGACY_NATIVE_EXT, ".json"];
 /** Extensions we open as a one-way *import* (converted to a library map, never written back). */
 const IMPORT_EXTS = [".mmap", ".mmp"];
 
-/** Picker filter: Save offers only `.mmst`; Open accepts native files + importable MindManager files. */
+/** Picker filter: Save offers `.ithread`; Open also accepts legacy `.mmst` and JSON files. */
 // FUNCTIONS, not consts: these are read when the picker opens, and a module-scope t() would freeze
 // the description at import.
 const saveTypes = (): FilePickerAcceptType[] => [
@@ -39,7 +41,7 @@ const openTypes = (): FilePickerAcceptType[] => [
   },
 ];
 
-/** True for a file we open natively (`.mmst`/`.json`) vs one we import one-way (`.mmap`). */
+/** True for a file we open natively (`.ithread`/`.mmst`/`.json`) vs a one-way import. */
 export function isNativeExt(name: string): boolean {
   const lower = name.toLowerCase();
   return NATIVE_EXTS.some((ext) => lower.endsWith(ext));
@@ -54,12 +56,12 @@ export function supportsFileSystemAccess(): boolean {
   );
 }
 
-/** A filesystem-safe filename for a doc: its title, stripped of illegal characters, + `.mmst`. */
+/** A filesystem-safe filename for a doc: its title, stripped of illegal characters, + `.ithread`. */
 export function suggestedFileName(doc: MindMapDoc): string {
   return `${safeFileStem(doc.title)}${NATIVE_EXT}`;
 }
 
-/** Parse a `.mmst`/`.json` File into a doc (throws on anything that isn't an iThread map). */
+/** Parse an `.ithread`/`.mmst`/`.json` File into a doc. */
 export async function readMapFile(file: File): Promise<MindMapDoc> {
   return parseDoc(await file.text());
 }
@@ -86,7 +88,7 @@ export async function ensureWritePermission(
 
 /**
  * The picker can return either kind of file, known only after the user picks:
- * - `native`  — `.mmst`/`.json`: parsed losslessly here, and the handle is bound for save-back.
+ * - `native`  — `.ithread`/`.mmst`/`.json`: parsed losslessly and bound for save-back.
  * - `import`  — `.mmap`/`.mmp`: a one-way MindManager import; the caller converts the handle's bytes
  *   into a new library map (no save-back binding). Parsing is deferred so the importer stays lazy.
  */
@@ -141,7 +143,7 @@ export async function writeMapToHandle(
   }
 }
 
-/** Fallback download (browsers without the save picker): emit the doc as a `.mmst` download. */
+/** Fallback download (browsers without the save picker): emit the doc as an `.ithread` download. */
 export function downloadMapFile(doc: MindMapDoc): void {
   const blob = new Blob([serializeDoc(doc)], { type: NATIVE_MIME });
   downloadBlob(blob, suggestedFileName(doc));

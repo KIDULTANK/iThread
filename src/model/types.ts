@@ -397,7 +397,7 @@ export interface MindMapDoc {
      *  Off by default. Lossless in .json, ignored by flat exporters. */
     legend?: boolean;
     /** Bookmarked perspectives on this map (viewport + drill target + filter). Stored on the doc
-     *  rather than in localStorage so they travel with a `.json`/`.mmst` export and across machines;
+     *  rather than in localStorage so they travel with a `.json`/`.ithread` export and across machines;
      *  a view references this map's own topic ids, so it belongs to the document. Migrated once from
      *  the old per-map `mindmap-views:<id>` localStorage key. Lossless in .json, ignored by flat
      *  exporters. */

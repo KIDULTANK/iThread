@@ -11,7 +11,7 @@ import { parseDoc } from "./json";
 // Per-format "what didn't come across" notes. Every non-native importer converts a foreign model into
 // our schema and necessarily drops something (styling, relationships, images, layout); surfacing a
 // single honest line per format sets correct expectations so a user doesn't trust a faithful round-trip
-// and delete their source. `.json`/`.mmst` are our own lossless schema (no note); `.mmap` returns its
+// and delete their source. `.ithread`/`.mmst`/`.json` are our lossless schema (no note); `.mmap` returns its
 // own richer, content-specific warnings (so it's not in this table).
 // A FUNCTION, not a const: a module-scope t() freezes at import, and these are the one line a user
 // reads about what their import lost.
@@ -70,8 +70,8 @@ export async function parseImport(
     const { fromMermaid } = await import("./mermaid");
     return { doc: fromMermaid(await file.text()), warnings: [await lossyNote("mermaid")] };
   }
-  if (name.endsWith(".json") || name.endsWith(".mmst")) {
-    // `.mmst` is iThread's native file — the same lossless schema-v1 JSON (no lossy note).
+  if (name.endsWith(".json") || name.endsWith(".ithread") || name.endsWith(".mmst")) {
+    // `.ithread` is native; `.mmst` is its fully supported legacy name (same schema-v1 JSON).
     return { doc: parseDoc(await file.text()), warnings: [] };
   }
   if (name.endsWith(".opml")) {

@@ -15,7 +15,7 @@ import type { MindMapDoc } from "../model/types";
 import { loadMapHandle, noteRecentFile, saveMapHandle } from "../store/mapStore";
 
 // Disk-file binding (open / save / save-as / silent autosave-to-file) via the File System Access API.
-// The IndexedDB library is always the safety net; this layer adds real `.mmst` files on disk. On a
+// The IndexedDB library is always the safety net; this layer adds real `.ithread` files on disk. On a
 // browser without the API (Firefox/Safari/mobile) Open falls back to the import <input> and Save to a
 // plain download — feature-detected so the menu items always do *something*. Lifted out of App so the
 // shell isn't carrying the file plumbing inline; App wires the deps and consumes the returned handlers.
@@ -105,7 +105,7 @@ export function useDiskFile({
   // Open a foreign file (a MindManager `.mmap`) as a one-way import: convert its bytes into a fresh
   // library map via the shared import dispatcher and DON'T bind a handle — there's no save-back to
   // `.mmap` (lossy by design). The map autosaves to IndexedDB like any other; the leading banner note
-  // + toast tell the user to Save as… a `.mmst` to keep it as a file.
+  // + toast tell the user to Save as… an `.ithread` to keep it as a file.
   const importForeignFile = useCallback(
     async (handle: FileSystemFileHandle) => {
       const bytes = new Uint8Array(await (await handle.getFile()).arrayBuffer());
@@ -123,7 +123,7 @@ export function useDiskFile({
 
   const openFile = useCallback(async () => {
     if (!supportsFileSystemAccess()) {
-      // No native picker — reuse the import <input>, which already accepts .mmst/.json/.mmap and more.
+      // No native picker — reuse the import input, which accepts .ithread/.mmst/.json/.mmap and more.
       document.getElementById("mmap-input")?.click();
       return;
     }

@@ -1,9 +1,10 @@
 # iThread
 
-**Current preview: v0.1.1** · Windows 11 focused · Local-first · Apache-2.0
+**Current preview: v0.2.0** · Windows 11 focused · Local-first · Apache-2.0
 
 > iThread 是独立社区项目，与 iThoughts 及其原作者不存在隶属、授权或背书关系。
 
+[在线体验](https://kidultank.github.io/iThread/) ·
 [下载 Windows 预览版](https://github.com/KIDULTANK/iThread/releases) ·
 [中文快速上手](docs/QUICKSTART.zh-CN.md) ·
 [已知限制](docs/KNOWN_LIMITATIONS.zh-CN.md) ·
@@ -26,17 +27,17 @@ under the Apache License 2.0. The upstream copyright, licence and notices are pr
 
 ## Windows 11 desktop app
 
-Download the portable `iThread-0.1.1-Windows-x64.exe` from the
+Download the portable `iThread-0.2.0-Windows-x64.exe` from the
 [releases page](https://github.com/KIDULTANK/iThread/releases). It runs as a standalone
 Windows application and does not require an installer. Windows may show a SmartScreen notice because
 the community build is not code-signed; verify the SHA-256 value published with the release before
 running it.
 
 > [!IMPORTANT]
-> iThoughts `.itmz` support is currently **import-only**. iThread never overwrites the source file,
-> but edits cannot yet be exported back to an iThoughts-readable `.itmz`. Save ongoing work as
-> `.mmst`, keep the original `.itmz`, and read the [known limitations](docs/KNOWN_LIMITATIONS.zh-CN.md)
-> before testing important maps.
+> iThread can import iThoughts `.itmz` files and export a new iThoughts-compatible `.itmz`. It never
+> overwrites the source file. Keep day-to-day work in the lossless native `.ithread` format, retain
+> the original `.itmz`, and use **Export → `.itmz`** when a copy must reopen in iThoughts. Legacy
+> `.mmst` files remain fully readable.
 
 To build the desktop executable from source:
 
@@ -183,16 +184,17 @@ The local agent/automation interface is documented in [docs/CLI.md](docs/CLI.md)
   capped at 30, stored in IndexedDB, deleted with the map.
 - **Autosave + reload** — every change persists to IndexedDB; your last map is restored on
   startup. Works fully offline.
-- **Work with files (`.mmst`)** — open and save maps as real files on disk, like a desktop app:
+- **Work with files (`.ithread`)** — open and save maps as real files on disk, like a desktop app:
   **Open file…** (Ctrl+O), **Save** (Ctrl+S, writes back to the same file with no dialog), and
   **Save as…** (Ctrl+Shift+S). Once a map is linked to a file, edits **autosave through to it** and
-  the title bar shows a ● until the file is up to date. A `.mmst` is the same lossless schema as
+  the title bar shows a ● until the file is up to date. An `.ithread` is the same lossless schema as
   `.json`. On Chromium desktop (Chrome/Edge), an **installed** copy can be set as the default app for
-  `.mmst`, so double-clicking one in Windows Explorer opens it here. Browsers without the File System
+  `.ithread`, so double-clicking one in Windows Explorer opens it here. Existing `.mmst` files remain
+  losslessly readable. Browsers without the File System
   Access API (Firefox/Safari) fall back to a download/upload, and IndexedDB autosave still applies.
   An installed copy also registers for MindManager **`.mmap`** files: double-clicking (or **Open
   file…**) one **imports** it into the library (the import is one-way + lossy, and an opened `.mmap`
-  isn't bound for autosave — use *Save as… `.mmst`* to keep working in a linked file). You can still
+  isn't bound for autosave — use *Save as iThread file…* to keep working in a linked file). You can still
   **Export → `.mmap`** to write a map back out for MindManager.
 - **Relationships** — draw a labelled, **directional** arrow (arrowhead at the target) between two
   nodes: right-click a node → **Link to…**, then click the target (with an optional label). Give it a
@@ -212,7 +214,7 @@ The local agent/automation interface is documented in [docs/CLI.md](docs/CLI.md)
   the changes round-trip back into the model.
 - **Export** — native `.json` (lossless — the format for backup/transfer), Markdown
   (`.md`), OPML (`.opml`), **FreeMind/Freeplane `.mm`**, **Mermaid** (`.mmd`), **XMind `.xmind`**,
-  **SimpleMind `.smmx`**, **MindManager `.mmap`** (round-trips topics/notes/links/icons, tags,
+  **SimpleMind `.smmx`**, **iThoughts-compatible `.itmz`**, **MindManager `.mmap`** (round-trips topics/notes/links/icons, tags,
   task metadata, and embedded images — the inverse of the importer), PNG (with **2×/4× scale** and
   **transparent background** options), SVG, a self-contained HTML file, a standalone HTML
   **slide deck** and a **PowerPoint** (`.pptx`) deck (both render **each branch as its actual map
@@ -258,7 +260,7 @@ replaceable:
   by the canvas (`ShapeLayer.tsx`) and the exporters so screen and export always match.
 - `src/io/` — the interchange adapters (Markdown, native-JSON, OPML, FreeMind, Mermaid, XMind,
   SimpleMind, docx/xlsx, …) plus self-contained-HTML/print I/O.
-- `src/io/fileSystem.ts` — native `.mmst` open/save/autosave via the File System Access API
+- `src/io/fileSystem.ts` — native `.ithread` open/save/autosave plus legacy `.mmst` compatibility
   (download/upload fallback + Windows file association through the PWA manifest `file_handlers`).
 - `src/useMapExports.ts` — the header's export handlers (json/md/png/svg/html/pdf).
 - `src/store/mapStore.ts` — IndexedDB-backed multi-map library (autosave + last-opened + file handles).
@@ -302,11 +304,12 @@ images through our own importer.
 
 ## Status
 
-**v0.1.1** is the current public-preview release. It includes `.itmz` import validated against large
-real-world maps, a Windows/iPad-style keyboard workflow, right-growing layouts, Chinese and English
-UI, rich Markdown rendering, animated branch transitions, multi-topic selection, per-topic and
-map-wide typography, and the localhost-only CLI bridge. The app remains local-first and usable
-without a mandatory network connection.
+**v0.2.0** is the current public-preview release. It adds the native `.ithread` extension (while
+keeping `.mmst` readable) and iThoughts-compatible `.itmz` export. Its `.itmz` importer/exporter is
+regression-tested against five large real-world maps and 31,389 topics. The app also includes a
+Windows/iPad-style keyboard workflow, right-growing layouts, Chinese and English UI, rich Markdown
+rendering, animated branch transitions, multi-topic selection, typography controls, and the
+localhost-only CLI bridge. It remains local-first and usable without a mandatory network connection.
 
 ## The book
 

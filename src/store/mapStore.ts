@@ -30,7 +30,7 @@ interface MindMapDB extends DBSchema {
   meta: { key: string; value: string };
   versions: { key: string; value: VersionRecord; indexes: { "by-map": string } };
   // Disk-file binding per map: a FileSystemFileHandle (structured-cloneable) so a map opened from /
-  // saved to a `.mmst` reconnects to it across reloads. Permission is re-checked on use, not here.
+  // saved to an `.ithread` (or legacy `.mmst`) reconnects across reloads. Permission is re-checked.
   handles: { key: string; value: FileSystemFileHandle };
   // Recently-opened disk files (Open Recent), keyed by map id; the handle comes from `handles`.
   recentFiles: { key: string; value: RecentFile };
@@ -131,8 +131,8 @@ export async function emptyTrash(): Promise<void> {
 }
 
 // --- disk-file handles -----------------------------------------------------
-// A map opened from / saved to a `.mmst` keeps a FileSystemFileHandle here, so a later session can
-// reconnect and Save back to the same file. Handles are structured-cloneable, so IndexedDB stores
+// A map opened from / saved to an `.ithread` or legacy `.mmst` keeps its FileSystemFileHandle here,
+// so it can reconnect and Save back to the same file. Handles are structured-cloneable, so IndexedDB stores
 // them directly. Permission is NOT persisted by the browser for tab sessions (re-requested on use);
 // an installed PWA can be granted persistent permission.
 

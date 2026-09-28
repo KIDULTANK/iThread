@@ -5,6 +5,20 @@ phase-based. Open work lives in `NEXT_STEPS.md`, not here.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-28
+
+### Added
+
+- iThoughts-compatible `.itmz` export, including map XML, style and plist metadata, preview image,
+  relationships, floating topics, task state and embedded image assets.
+- Real-file import → export → import regression coverage across five iThoughts maps and 31,389 topics.
+
+### Changed
+
+- The native file extension is now `.ithread`; legacy `.mmst` and `.json` maps remain losslessly
+  readable and can be resaved under the new extension.
+- File and export menus now distinguish native iThread saving from iThoughts-compatible export.
+
 ## [0.1.1] - 2026-09-28
 
 ### Added

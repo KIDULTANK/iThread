@@ -355,6 +355,7 @@ export const CORE_EN = {
   "cmd.export.xmind": ".xmind (XMind)",
   "cmd.export.smmx": ".smmx (SimpleMind)",
   "cmd.export.mmap": ".mmap (MindManager)",
+  "cmd.export.ithoughts": ".itmz (iThoughts compatible)",
   "cmd.export.png": ".png (image)",
   "cmd.export.png2x": ".png @2× (sharp)",
   "cmd.export.png4x": ".png @4× (print)",
@@ -378,8 +379,8 @@ export const CORE_EN = {
   // Composed labels carry a NAMED placeholder so word order belongs to the translator — `Layout: {name}`
   // can become `{name}-layout` where a language needs it, which string concatenation could never allow.
   "cmd.open-file": "Open file…",
-  "cmd.save-file": "Save to file",
-  "cmd.save-file-as": "Save to file as…",
+  "cmd.save-file": "Save iThread file",
+  "cmd.save-file-as": "Save as iThread file…",
   "cmd.present": "Present",
   "cmd.duplicate-map": "Duplicate map",
   "cmd.delete-map": "Delete map",
@@ -527,7 +528,7 @@ export const CORE_EN = {
   "toolbar.examples": "Examples",
   "toolbar.searchAllMaps": "Search across every map in your library",
   "toolbar.findReplace": "Find & replace (Ctrl/⌘+F)",
-  "toolbar.saveAs": "Save as…",
+  "toolbar.saveAs": "Save as iThread file (.ithread)…",
   "toolbar.boardKanban": "Board (Kanban)",
   "toolbar.guidedWalk": "Guided walk (step through topics)",
   "toolbar.outlineNumbering": "Outline numbering",
@@ -1254,7 +1255,7 @@ export const CORE_EN = {
   "app.restoreThisVersion": "Restore this version?",
   "app.yourCurrentMapIsSaved": "Your current map is saved to history first, so you can undo.",
   "app.importedFromMindmanagerSavedTo":
-    "Imported from MindManager — saved to your library. You can't save back to .mmap; use “Save as…” to keep it as a .mmst file.",
+    "Imported from MindManager — saved to your library. You can't save back to .mmap; use “Save as…” to keep it as an .ithread file.",
   "app.thatFileIsNoLonger": "That file is no longer available — its handle was lost.",
   "app.couldnTOpenPermissionTo": "Couldn't open — permission to access the file was denied.",
   "app.couldnTSavePermissionTo": "Couldn't save — permission to write the file was denied.",
@@ -1304,7 +1305,7 @@ export const CORE_EN = {
   "app.meetingAgenda": "Meeting agenda",
   "app.actionItems": "Action items",
   "app.nextSteps": "Next steps",
-  "hint.importedUseSaveAs": "Imported {name} — use “Save as…” to keep it as a .mmst file.",
+  "hint.importedUseSaveAs": "Imported {name} — use “Save as…” to keep it as an .ithread file.",
   "dialog.fileChanged.body":
     "“{name}” was modified since you opened it (edited elsewhere, or synced). Overwrite it with this version? Your map stays in the library either way.",
   "hint.fileChangedOnDisk":

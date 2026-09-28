@@ -72,6 +72,7 @@ export interface MapExports {
   exportXmind: () => Promise<void>;
   exportSmmx: () => Promise<void>;
   exportMmap: () => Promise<void>;
+  exportIthoughts: () => Promise<void>;
   exportPng: (opts?: PngOptions) => Promise<void>;
   /** Copy the rendered map to the system clipboard as a PNG image (no file download). */
   copyPng: (opts?: PngOptions) => Promise<void>;
@@ -209,6 +210,14 @@ export function useMapExports(
         new Blob([bytes], { type: "application/vnd.mindjet.mindmanager" }),
         `${baseName()}.mmap`,
       );
+    },
+    // iThoughts .itmz — a ZIP containing mapdata.xml plus the companion metadata/style files and
+    // embedded assets used by the final iThoughts release. This is a compatibility export; normal
+    // iThread editing should stay in the native `.ithread` format.
+    async exportIthoughts() {
+      const { toIthoughts } = await import("./io/ithoughts");
+      const bytes = toIthoughts(getDoc()) as BlobPart;
+      downloadBlob(new Blob([bytes], { type: "application/octet-stream" }), `${baseName()}.itmz`);
     },
     // png/svg/html/pdf all embed the rendered SVG via cleanSvg() (sanitize + native-text).
     async exportPng(opts) {

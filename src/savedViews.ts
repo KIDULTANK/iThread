@@ -6,7 +6,7 @@ import type { MindMapDoc, SavedView } from "./model/types";
 //
 // These live on the DOCUMENT (`doc.meta.savedViews`), not in localStorage. A view captures a viewport
 // and a drilled-in topic id, both meaningless outside their own map, so storing them per-browser meant
-// they didn't survive a `.json`/`.mmst` export, didn't reach a second machine, and vanished with a
+// they didn't survive a `.json`/`.ithread` export, didn't reach a second machine, and vanished with a
 // cleared library. Maps carried from the old `mindmap-views:<id>` key are migrated once, on open.
 //
 // The array ops stay pure (unit-tested); `setSavedViews` is the doc transform, applied through the

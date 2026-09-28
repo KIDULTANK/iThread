@@ -41,8 +41,11 @@ What goes in, what comes out, and what survives the trip. For the day-to-day gui
   LibreOffice, Pages, and Google Docs.
 - **PDF** -- written directly as a real file (fit-to-map, A4, or Letter), or via the browser's
   print path when you want its options.
-- **`.mmst`** -- not an export but the native *file* format (the lossless JSON under the app's
-  own extension), for keeping a map on disk with autosave writing through to it (Chapter 6).
+- **`.ithread`** -- the native *file* format (lossless JSON under the app's own extension), for
+  keeping a map on disk with autosave writing through to it (Chapter 6). Legacy `.mmst` remains
+  readable.
+- **iThoughts `.itmz`** -- compatibility export for reopening a copy in iThoughts; carries the topic
+  tree, notes, web links, folded state, task progress, relationships, floating topics and images.
 
 ## Import formats
 
@@ -58,7 +61,7 @@ What goes in, what comes out, and what survives the trip. For the day-to-day gui
 - **TextBundle / TextPack** (`.textpack`) -- the bundle's Markdown (`text.md`) becomes the map;
   what Bear, Ulysses, and iA Writer export.
 - **iThoughts `.itmz`**, **MindMeister `.mind`**, **Word `.docx`**, **Excel `.xlsx`** -- topic
-  tree (and notes, where the format carries them).
+  tree (and notes, where the format carries them). iThoughts also has the compatibility export above.
 - **MindManager `.mmap`** -- one-way, lossy (see below).
 - **Batch import** -- select several files at once to create several maps in one step.
 

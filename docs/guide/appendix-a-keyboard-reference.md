@@ -51,7 +51,7 @@ is generated from the bindings themselves, so it can't drift.)
 
 ## Files and app
 
-- **Ctrl+O** -- open a `.mmst` / `.json` / `.mmap` file; **Ctrl+S** -- save to the linked
+- **Ctrl+O** -- open an `.ithread` / legacy `.mmst` / `.json` / `.mmap` file; **Ctrl+S** -- save to the linked
   file; **Ctrl+Shift+S** -- save as.
 - **Ctrl+,** -- Settings and preferences.
 
