@@ -1,0 +1,29 @@
+name: 功能建议
+description: 建议新的工作流、兼容能力或体验改进
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 使用场景
+      description: 请先描述你要完成什么，而不仅是希望增加哪个按钮。
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: 当前做法及困难
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+    validations:
+      required: true
+  - type: textarea
+    id: ithoughts
+    attributes:
+      label: iThoughts 中的对应行为（如有）
+      description: 可附快捷键、截图或录屏，但请勿上传受版权保护的完整手册。

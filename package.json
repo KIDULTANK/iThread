@@ -1,7 +1,7 @@
 {
   "name": "ithread",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "desktop/main.cjs",
   "type": "module",
   "packageManager": "pnpm@11.0.9",
@@ -85,6 +85,7 @@
     },
     "files": ["dist/**/*", "desktop/**/*", "package.json"],
     "win": {
+      "icon": "build/icon.png",
       "target": [
         {
           "target": "portable",

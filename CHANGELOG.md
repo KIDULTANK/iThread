@@ -5,7 +5,22 @@ phase-based. Open work lives in `NEXT_STEPS.md`, not here.
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-09-25
+## [0.1.1] - 2026-09-28
+
+### Added
+
+- Public-preview documentation in Chinese, including a five-minute quick start, known limitations,
+  privacy/security guidance and structured GitHub feedback forms.
+- A branded Windows application icon and SHA-256 checksum generation in the public release build.
+
+### Changed
+
+- Public messaging now explicitly describes iThoughts `.itmz` support as import-only and recommends
+  preserving the original file while saving editable work as `.mmst`.
+- The Windows release is positioned as a pre-release until `.itmz` round-trip export and trusted code
+  signing are available.
+
+## [0.1.0] - 2026-09-28
 
 ### Added
 

@@ -1,6 +1,13 @@
 # iThread
 
-**Current release: v0.1.0** · Windows 11 focused · Local-first · Apache-2.0
+**Current preview: v0.1.1** · Windows 11 focused · Local-first · Apache-2.0
+
+> iThread 是独立社区项目，与 iThoughts 及其原作者不存在隶属、授权或背书关系。
+
+[下载 Windows 预览版](https://github.com/KIDULTANK/iThread/releases) ·
+[中文快速上手](docs/QUICKSTART.zh-CN.md) ·
+[已知限制](docs/KNOWN_LIMITATIONS.zh-CN.md) ·
+[问题反馈](https://github.com/KIDULTANK/iThread/issues/new/choose)
 
 iThread 是一款面向 Windows 的本地优先思维导图应用，重点兼容 iThoughts `.itmz` 文件，
 提供流畅的大型导图浏览、键盘操作、中英文界面和可供智能体调用的本地 CLI。应用无需账号，
@@ -15,13 +22,21 @@ This repository is derived from
 [Dann Bleeker Pedersen's MindMap Studio](https://github.com/dannbleeker/mindmap-studio)
 under the Apache License 2.0. The upstream copyright, licence and notices are preserved.
 
+![iThread Windows 界面](docs/images/ithread-windows.png)
+
 ## Windows 11 desktop app
 
-Download the portable `iThread-0.1.0-Windows-x64.exe` from the
-[latest release](https://github.com/KIDULTANK/iThread/releases/latest). It runs as a standalone
+Download the portable `iThread-0.1.1-Windows-x64.exe` from the
+[releases page](https://github.com/KIDULTANK/iThread/releases). It runs as a standalone
 Windows application and does not require an installer. Windows may show a SmartScreen notice because
 the community build is not code-signed; verify the SHA-256 value published with the release before
 running it.
+
+> [!IMPORTANT]
+> iThoughts `.itmz` support is currently **import-only**. iThread never overwrites the source file,
+> but edits cannot yet be exported back to an iThoughts-readable `.itmz`. Save ongoing work as
+> `.mmst`, keep the original `.itmz`, and read the [known limitations](docs/KNOWN_LIMITATIONS.zh-CN.md)
+> before testing important maps.
 
 To build the desktop executable from source:
 
@@ -287,7 +302,7 @@ images through our own importer.
 
 ## Status
 
-**v0.1.0** is the first public iThread release. It includes `.itmz` import validated against large
+**v0.1.1** is the current public-preview release. It includes `.itmz` import validated against large
 real-world maps, a Windows/iPad-style keyboard workflow, right-growing layouts, Chinese and English
 UI, rich Markdown rendering, animated branch transitions, multi-topic selection, per-topic and
 map-wide typography, and the localhost-only CLI bridge. The app remains local-first and usable
