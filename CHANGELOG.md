@@ -5,6 +5,21 @@ phase-based. Open work lives in `NEXT_STEPS.md`, not here.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-29
+
+### Changed
+
+- Confirmed an exported `.itmz` opens successfully in the original iThoughts application.
+- Large visible maps now skip full-canvas position tweening while smaller branch operations keep
+  their smooth transition.
+- Connector obstacle routing now uses a spatial index on large maps instead of scanning every topic
+  for every branch.
+
+### Added
+
+- An opt-in private-corpus benchmark that measures import, folded layout and fully expanded layout
+  without committing the user's source maps.
+
 ## [0.2.0] - 2026-09-28
 
 ### Added

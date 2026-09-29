@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  LAYOUT_ANIM_NODE_LIMIT,
   easeInOutCubic,
   easeOutQuint,
   lerp,
   prefersReducedMotion,
+  shouldAnimateLayout,
 } from "../src/mindmap/flow/animateLayout";
 
 // Pure math behind the layout-transition tween (#16). The rAF loop itself lives in FlowMindMap and is
@@ -51,5 +53,12 @@ describe("prefersReducedMotion", () => {
   it("returns true where matchMedia is unavailable (so callers never animate there)", () => {
     // The node test env has no window.matchMedia → animation is skipped by default.
     expect(prefersReducedMotion()).toBe(true);
+  });
+});
+
+describe("shouldAnimateLayout", () => {
+  it("keeps local transitions but skips whole-map tweening for large projections", () => {
+    expect(shouldAnimateLayout(LAYOUT_ANIM_NODE_LIMIT)).toBe(true);
+    expect(shouldAnimateLayout(LAYOUT_ANIM_NODE_LIMIT + 1)).toBe(false);
   });
 });

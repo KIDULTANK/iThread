@@ -10,6 +10,7 @@ import {
 } from "./floating";
 import { computeLayout, estimateSizeOf } from "./layout";
 import { project } from "./project";
+import { indexBoxes } from "./spatialBoxes";
 import type { EdgeData, FlowEdge, TopicNode } from "./types";
 
 // The PURE core of FlowMindMap.sync(): turn the canonical model into the React Flow node + edge arrays
@@ -91,6 +92,20 @@ export function buildFlowState(args: BuildFlowStateArgs): {
   const rectOf = (id: string): Box | null => boxById.get(id) ?? null;
   const axisByParent = computeAxisByParent(proj.edges, rectOf, axisForLayoutKind(kind));
   const allBoxes = [...boxById.entries()].map(([id, box]) => ({ id, box }));
+  // bowToClear performs exact geometry checks. On a large map, first narrow its candidates through a
+  // conservative grid query; otherwise every branch scans every topic (quadratic growth). 368 is the
+  // router's maximum 360px bow plus its default 8px clearance margin.
+  const boxIndex = allBoxes.length >= 250 ? indexBoxes(allBoxes) : null;
+  const obstaclesNear = (a: Box, b: Box) => {
+    if (!boxIndex) return allBoxes;
+    const pad = 368;
+    return boxIndex.query(
+      Math.min(a.cx - a.w / 2, b.cx - b.w / 2) - pad,
+      Math.min(a.cy - a.h / 2, b.cy - b.h / 2) - pad,
+      Math.max(a.cx + a.w / 2, b.cx + b.w / 2) + pad,
+      Math.max(a.cy + a.h / 2, b.cy + b.h / 2) + pad,
+    );
+  };
   const edges: FlowEdge[] = proj.edges.map((e) => {
     let data = e.data;
     if (!e.data?.crosslink) {
@@ -101,7 +116,7 @@ export function buildFlowState(args: BuildFlowStateArgs): {
       // Only the tapered ribbon honours the bow → skip the work for elbow/straight/curved/dashed.
       const attachBow =
         pb && cb && attachSide && isTaperBranch(e.data ?? {})
-          ? bowToClear(pb, cb, attachSide, allBoxes, e.source, e.target)
+          ? bowToClear(pb, cb, attachSide, obstaclesNear(pb, cb), e.source, e.target)
           : 0;
       data = { ...(e.data as EdgeData), attachSide, attachBow };
     }

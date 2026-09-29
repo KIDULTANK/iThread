@@ -30,3 +30,14 @@ export function prefersReducedMotion(): boolean {
 
 /** The animation duration (ms) for a layout transition. */
 export const LAYOUT_ANIM_MS = 300;
+
+/**
+ * Above this many visible topics, rebuilding the full React Flow node array on every animation
+ * frame costs more than the tween helps. Small/local expansions keep the iPad-like transition;
+ * very large projections land immediately and remain responsive.
+ */
+export const LAYOUT_ANIM_NODE_LIMIT = 600;
+
+export function shouldAnimateLayout(nodeCount: number): boolean {
+  return nodeCount <= LAYOUT_ANIM_NODE_LIMIT;
+}

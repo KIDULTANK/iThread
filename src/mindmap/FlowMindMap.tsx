@@ -63,7 +63,13 @@ import { NodePopover } from "./flow/NodePopover";
 import { ShapeLayer } from "./flow/ShapeLayer";
 import { Summaries } from "./flow/Summaries";
 import { TopicNode } from "./flow/TopicNode";
-import { LAYOUT_ANIM_MS, easeOutQuint, lerp, prefersReducedMotion } from "./flow/animateLayout";
+import {
+  LAYOUT_ANIM_MS,
+  easeOutQuint,
+  lerp,
+  prefersReducedMotion,
+  shouldAnimateLayout,
+} from "./flow/animateLayout";
 import { type BraceGroup, computeBraces } from "./flow/brace";
 import { buildFlowState } from "./flow/buildFlowState";
 import { resolveDropTarget } from "./flow/dropTarget";
@@ -554,6 +560,7 @@ function FlowInner({
       const entering = new Set(from ? nodes.filter((n) => !from.has(n.id)).map((n) => n.id) : []);
       const moves =
         !!from &&
+        shouldAnimateLayout(nodes.length) &&
         !prefersReducedMotion() &&
         (entering.size > 0 ||
           nodes.some((n) => {
