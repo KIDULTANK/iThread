@@ -1,7 +1,7 @@
 {
   "name": "ithread",
   "private": true,
-  "version": "0.3.1",
+  "version": "0.4.0",
   "main": "desktop/main.cjs",
   "type": "module",
   "packageManager": "pnpm@11.0.9",

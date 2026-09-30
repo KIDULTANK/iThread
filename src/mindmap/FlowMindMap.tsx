@@ -71,11 +71,16 @@ import {
   shouldAnimateLayout,
 } from "./flow/animateLayout";
 import { type BraceGroup, computeBraces } from "./flow/brace";
-import { buildFlowState } from "./flow/buildFlowState";
+import { type BuildFlowStateResult, buildFlowState } from "./flow/buildFlowState";
 import { resolveDropTarget } from "./flow/dropTarget";
 import { EditingContext } from "./flow/editing";
 import { type NodeRect, buildFlowSvg } from "./flow/exportSvg";
 import { nodeAtPoint } from "./flow/floating";
+import {
+  buildFlowStateFallback,
+  shouldBuildFlowStateInWorker,
+  startFlowStateWorkerBuild,
+} from "./flow/flowStateWorkerClient";
 import {
   type History,
   createHistory,
@@ -84,7 +89,6 @@ import {
   undo as undoHistory,
 } from "./flow/history";
 import { keyIntent } from "./flow/keyIntent";
-import { computeLayout, estimateSizeOf } from "./flow/layout";
 import type { LinkCandidate } from "./flow/linkAutocomplete";
 import { LinkEditContext } from "./flow/linkEdit";
 import { countDescendants, subtreeIds, walkTree as walkNodeTree } from "./flow/nodeWalk";
@@ -203,7 +207,6 @@ import {
   viewDoc,
 } from "./flow/ops";
 import type { NodeSizes } from "./flow/ops";
-import { project } from "./flow/project";
 import {
   type OverlaySelect,
   resolveSelectedEdge,
@@ -339,29 +342,37 @@ function FlowInner({
   // the full doc unchanged when not drilled, so the normal path is untouched; edits still run on the
   // full doc (docRef), making drilling a pure view transform.
   const viewOf = useMemo(() => viewDoc(doc, drillId), [doc, drillId]);
-  const projected = useMemo(
-    () =>
-      project(
-        viewOf,
-        palette,
-        numbered,
-        viewOf.meta?.freeform ? "freeform" : direction,
-        new Map(libraryMaps.map((m) => [m.id, m.title])),
-      ),
-    [viewOf, palette, numbered, direction, libraryMaps],
-  );
-  const initialNodes = useMemo(() => {
-    const pos = computeLayout(
-      projected.nodes,
-      projected.edges,
-      estimateSizeOf(projected.nodes),
-      direction,
-    );
-    return projected.nodes.map((n) => ({ ...n, position: pos.get(n.id) ?? n.position }));
-    // direction included so a fresh mount honours it; live changes handled by the effect below.
-  }, [projected, direction]);
-  const [nodes, setNodes, onNodesChange] = useNodesState<TopicNodeT>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdge>(projected.edges);
+  // Avoid doing the expensive first projection/layout during React render. Small maps still paint in
+  // the first frame; a fully expanded large map starts empty and is populated by sync()'s worker.
+  const deferInitialFlow = useMemo(() => shouldBuildFlowStateInWorker(viewOf), [viewOf]);
+  const initialFlow = useMemo<BuildFlowStateResult>(() => {
+    if (deferInitialFlow) return { nodes: [], edges: [] };
+    return buildFlowState({
+      doc: viewOf,
+      palette,
+      numbered,
+      kind: viewOf.meta?.freeform ? "freeform" : direction,
+      measured: [],
+      selectedIds: new Set(),
+      selectedEdgeId: null,
+      litIds,
+      hideUnmatched,
+      highlightIds,
+      rollupTitles: new Map(libraryMaps.map((m) => [m.id, m.title])),
+    });
+  }, [
+    deferInitialFlow,
+    viewOf,
+    palette,
+    numbered,
+    direction,
+    litIds,
+    hideUnmatched,
+    highlightIds,
+    libraryMaps,
+  ]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<TopicNodeT>(initialFlow.nodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdge>(initialFlow.edges);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Multi-selection: this set drives the canvas selection flags; `selectedId` is the anchor (the
   // last-touched node) that every single-node behaviour — keyboard, popover, per-item edits — keeps
@@ -477,6 +488,7 @@ function FlowInner({
   const litIdsRef = useLatestRef(litIds);
   const hideUnmatchedRef = useLatestRef(hideUnmatched);
   const highlightIdsRef = useLatestRef(highlightIds);
+  const libraryMapsRef = useLatestRef(libraryMaps);
   const selectedRef = useLatestRef(selectedId);
   const selectedIdsRef = useLatestRef(selectedIds);
   const selectedEdgeIdRef = useLatestRef(selectedEdgeId);
@@ -512,10 +524,18 @@ function FlowInner({
   // Layout-transition tween bookkeeping (#16): the in-flight rAF id + the loop's start timestamp.
   const layoutRaf = useRef<number | null>(null);
   const layoutStart = useRef<number | null>(null);
-  // Cancel a running tween if the canvas unmounts mid-animation.
+  // At most one large-map worker is alive. A later edit terminates it before starting the next build;
+  // the generation check is a second guard against a late message overwriting a newer document.
+  const flowBuildRef = useRef<ReturnType<typeof startFlowStateWorkerBuild>>(null);
+  const flowGenerationRef = useRef(0);
+  const pendingInitialFitRef = useRef(deferInitialFlow && !mountSession.current?.viewport);
+  // Cancel running visual/background work if the canvas unmounts mid-calculation.
   useEffect(
     () => () => {
       if (layoutRaf.current != null) cancelAnimationFrame(layoutRaf.current);
+      flowGenerationRef.current += 1;
+      flowBuildRef.current?.cancel();
+      flowBuildRef.current = null;
     },
     [],
   );
@@ -542,88 +562,132 @@ function FlowInner({
       // Free-canvas mode overrides the picked layout: nodes sit at their own `pos`. The kind also
       // drives project()'s org-chart elbow stamping, so compute it before projecting.
       const kind = newDoc.meta?.freeform ? "freeform" : directionRef.current;
+      const measured = getNodes();
       // The whole model→canvas transform (project → layout → attachSide/attachBow → selection/dimming
-      // flags) is the pure, unit-tested buildFlowState(); sync() only owns the React side effects.
-      const { nodes, edges } = buildFlowState({
+      // flags) is pure. Only measured dimensions cross the worker boundary — React node data can hold
+      // values that structured cloning cannot safely copy.
+      const args = {
         doc: view,
         palette: paletteRef.current,
         numbered: numberedRef.current,
         kind,
-        measured: getNodes(),
-        selectedIds: selectedIdsRef.current,
+        measured: measured.map(({ id, measured }) => ({ id, measured })),
+        selectedIds: new Set(selectedIdsRef.current),
         selectedEdgeId: selectedEdgeIdRef.current,
-        litIds: litIdsRef.current,
+        litIds: litIdsRef.current ? new Set(litIdsRef.current) : null,
         hideUnmatched: hideUnmatchedRef.current,
-        highlightIds: highlightIdsRef.current,
-      });
-      const from = animate ? new Map(getNodes().map((n) => [n.id, n.position])) : null;
-      const entering = new Set(from ? nodes.filter((n) => !from.has(n.id)).map((n) => n.id) : []);
-      const moves =
-        !!from &&
-        shouldAnimateLayout(nodes.length) &&
-        !prefersReducedMotion() &&
-        (entering.size > 0 ||
-          nodes.some((n) => {
-            const f = from.get(n.id);
-            return f && (f.x !== n.position.x || f.y !== n.position.y);
-          }));
-      if (!moves) {
-        setEdges(edges);
-        setNodes(nodes);
-        return;
-      }
-      const nodeById = new Map(nodes.map((n) => [n.id, n]));
-      const parentById = new Map(
-        edges
-          .filter((edge) => !edge.data?.crosslink)
-          .map((edge) => [edge.target, edge.source] as const),
-      );
-      const originFor = (id: string) => {
-        const parentId = parentById.get(id);
-        return parentId
-          ? (from.get(parentId) ?? nodeById.get(parentId)?.position)
-          : nodeById.get(id)?.position;
+        highlightIds: highlightIdsRef.current ? new Set(highlightIdsRef.current) : null,
+        rollupTitles: new Map(libraryMapsRef.current.map((m) => [m.id, m.title])),
       };
-      const nodesAt = (e: number) =>
-        nodes.map((n) => {
-          const f = from.get(n.id) ?? originFor(n.id);
-          return {
-            ...n,
-            position: f
-              ? { x: lerp(f.x, n.position.x, e), y: lerp(f.y, n.position.y, e) }
-              : n.position,
-            data: entering.has(n.id) ? { ...n.data, motionProgress: e } : n.data,
-          };
-        });
-      const edgesAt = (e: number): FlowEdge[] =>
-        edges.map((edge) => {
-          if (!entering.has(edge.target) || !edge.data) return edge;
-          return { ...edge, data: { ...edge.data, motionProgress: e } };
-        });
-      // Put the first frame into the DOM immediately, then glide to the computed layout. A newly
-      // revealed topic starts at its parent's anchor, fading/scaling in as its branch grows outward.
-      setNodes(nodesAt(0));
-      setEdges(edgesAt(0));
-      const tick = (now: number) => {
-        if (layoutStart.current == null) layoutStart.current = now;
-        const t = Math.min(1, (now - layoutStart.current) / LAYOUT_ANIM_MS);
-        const e = easeOutQuint(t);
-        setNodes(nodesAt(e));
-        if (entering.size > 0) setEdges(edgesAt(e));
-        if (t < 1) {
-          layoutRaf.current = requestAnimationFrame(tick);
-        } else {
-          setNodes(nodes);
-          setEdges(edges);
-          layoutRaf.current = null;
-          layoutStart.current = null;
+      const from = animate ? new Map(measured.map((n) => [n.id, n.position])) : null;
+      const commit = ({ nodes, edges }: BuildFlowStateResult) => {
+        // A deferred first paint needs an explicit fit: React Flow's mount-time fit ran while the
+        // canvas was empty. Restored tab sessions keep their saved viewport and never enter this path.
+        if (pendingInitialFitRef.current && nodes.length > 0) {
+          pendingInitialFitRef.current = false;
+          requestAnimationFrame(() =>
+            fitView({ duration: reducedMotionRef.current ? 0 : motion.dur.fit }),
+          );
         }
+        const entering = new Set(from ? nodes.filter((n) => !from.has(n.id)).map((n) => n.id) : []);
+        const moves =
+          !!from &&
+          shouldAnimateLayout(nodes.length) &&
+          !prefersReducedMotion() &&
+          (entering.size > 0 ||
+            nodes.some((n) => {
+              const f = from.get(n.id);
+              return f && (f.x !== n.position.x || f.y !== n.position.y);
+            }));
+        if (!moves) {
+          setEdges(edges);
+          setNodes(nodes);
+          return;
+        }
+        const nodeById = new Map(nodes.map((n) => [n.id, n]));
+        const parentById = new Map(
+          edges
+            .filter((edge) => !edge.data?.crosslink)
+            .map((edge) => [edge.target, edge.source] as const),
+        );
+        const originFor = (id: string) => {
+          const parentId = parentById.get(id);
+          return parentId
+            ? (from.get(parentId) ?? nodeById.get(parentId)?.position)
+            : nodeById.get(id)?.position;
+        };
+        const nodesAt = (e: number) =>
+          nodes.map((n) => {
+            const f = from.get(n.id) ?? originFor(n.id);
+            return {
+              ...n,
+              position: f
+                ? { x: lerp(f.x, n.position.x, e), y: lerp(f.y, n.position.y, e) }
+                : n.position,
+              data: entering.has(n.id) ? { ...n.data, motionProgress: e } : n.data,
+            };
+          });
+        const edgesAt = (e: number): FlowEdge[] =>
+          edges.map((edge) => {
+            if (!entering.has(edge.target) || !edge.data) return edge;
+            return { ...edge, data: { ...edge.data, motionProgress: e } };
+          });
+        // Put the first frame into the DOM immediately, then glide to the computed layout. A newly
+        // revealed topic starts at its parent's anchor, fading/scaling in as its branch grows outward.
+        setNodes(nodesAt(0));
+        setEdges(edgesAt(0));
+        const tick = (now: number) => {
+          if (layoutStart.current == null) layoutStart.current = now;
+          const t = Math.min(1, (now - layoutStart.current) / LAYOUT_ANIM_MS);
+          const e = easeOutQuint(t);
+          setNodes(nodesAt(e));
+          if (entering.size > 0) setEdges(edgesAt(e));
+          if (t < 1) {
+            layoutRaf.current = requestAnimationFrame(tick);
+          } else {
+            setNodes(nodes);
+            setEdges(edges);
+            layoutRaf.current = null;
+            layoutStart.current = null;
+          }
+        };
+        layoutStart.current = null;
+        layoutRaf.current = requestAnimationFrame(tick);
       };
-      layoutStart.current = null;
-      layoutRaf.current = requestAnimationFrame(tick);
+
+      const generation = ++flowGenerationRef.current;
+      flowBuildRef.current?.cancel();
+      flowBuildRef.current = null;
+      if (shouldBuildFlowStateInWorker(view)) {
+        const build = startFlowStateWorkerBuild(generation, args);
+        if (build) {
+          flowBuildRef.current = build;
+          void build.promise
+            .then((state) => {
+              if (generation !== flowGenerationRef.current) return;
+              flowBuildRef.current = null;
+              commit(state);
+            })
+            .catch(() => {
+              if (generation !== flowGenerationRef.current) return;
+              flowBuildRef.current = null;
+              // Worker creation/runtime failure must not strand the canvas; pay the synchronous cost
+              // once, while retaining the same freshness guard.
+              commit(buildFlowStateFallback(args));
+            });
+          return;
+        }
+      }
+      commit(buildFlowStateFallback(args));
     },
-    [getNodes, setNodes, setEdges],
+    [getNodes, setNodes, setEdges, fitView],
   );
+
+  // Large first mounts deliberately skipped render-time layout above. Start their worker after React
+  // commits, keeping the browser responsive enough to paint the app shell immediately.
+  useEffect(() => {
+    if (deferInitialFlow) sync(docRef.current);
+  }, [deferInitialFlow, sync]);
 
   // Re-project + refit when the drill target changes (enter / exit / switch). Skips the initial mount
   // so it doesn't fight the restored-session viewport; thereafter a drill change re-roots and fits.
@@ -1448,10 +1512,12 @@ function FlowInner({
   // One-time refine once React Flow has measured the nodes (better sizing than estimates).
   const refined = useRef(false);
   useEffect(() => {
-    if (!initialized || refined.current) return;
+    // A deferred large-map mount starts with zero nodes; do not consume the one refinement pass until
+    // the worker's estimated layout has actually landed and React Flow has measured its topics.
+    if (!initialized || nodes.length === 0 || refined.current) return;
     refined.current = true;
     sync(docRef.current);
-  }, [initialized, sync]);
+  }, [initialized, nodes.length, sync]);
 
   // Delete a node and its branch immediately — no blocking "Are you sure?" modal (#9). The delete is
   // a normal undoable edit, and App turns the onDelete report into a "… deleted — Undo" toast wired

@@ -5,6 +5,22 @@ phase-based. Open work lives in `NEXT_STEPS.md`, not here.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-30
+
+### Changed
+
+- Projection, full-map layout and connector geometry for maps with at least 600 visible topics now
+  run in a Web Worker. The current canvas stays interactive while the newest layout is calculated.
+- Superseded background layouts are terminated and generation-checked, preventing a slow old result
+  from overwriting a newer edit.
+- IndexedDB saves are serialized so an older slow write cannot finish after and replace newer content.
+- Pending debounced edits now flush on both `visibilitychange` and `pagehide`, covering more window and
+  installed-app shutdown paths.
+
+### Added
+
+- Worker threshold, collapsed-branch visibility, cancellation, save-order and shutdown-flush tests.
+
 ## [0.3.1] - 2026-09-30
 
 ### Changed

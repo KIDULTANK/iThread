@@ -42,18 +42,22 @@ export interface BuildFlowStateArgs {
   hideUnmatched?: boolean;
   /** Find-result set: these nodes get a highlight ring. null = no active search. */
   highlightIds?: ReadonlySet<string> | null;
+  /** Optional local-library titles used by roll-up badges. */
+  rollupTitles?: ReadonlyMap<string, string>;
 }
 
-export function buildFlowState(args: BuildFlowStateArgs): {
+export interface BuildFlowStateResult {
   nodes: TopicNode[];
   edges: FlowEdge[];
-} {
+}
+
+export function buildFlowState(args: BuildFlowStateArgs): BuildFlowStateResult {
   const { doc, palette, numbered, kind, measured, selectedIds, selectedEdgeId, litIds } = args;
   const highlightIds = args.highlightIds ?? null;
   // "Hide" filter mode: when on, non-lit nodes/edges are removed from the canvas (React Flow `hidden`)
   // instead of dimmed. Matches keep their layout positions, so the map reads as a spotlight.
   const hideUnmatched = !!args.hideUnmatched && !!litIds;
-  const proj = project(doc, palette, numbered, kind);
+  const proj = project(doc, palette, numbered, kind, args.rollupTitles);
   const est = estimateSizeOf(proj.nodes);
   // Index the live nodes by id ONCE; sizeOf is called a multiple of N times per layout pass.
   const measuredById = new Map(measured.map((n) => [n.id, n]));

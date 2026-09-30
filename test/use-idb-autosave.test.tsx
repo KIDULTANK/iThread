@@ -31,7 +31,11 @@ function setup(d: MindMapDoc = doc()) {
   return { ...renderHook(() => useIdbAutosave(deps)), deps };
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocked.saveMap.mockResolvedValue(undefined);
+  mocked.setLastOpened.mockResolvedValue(undefined);
+});
 
 describe("useIdbAutosave — persist", () => {
   it("writes the doc, records last-opened, and refreshes the library", async () => {
@@ -62,6 +66,36 @@ describe("useIdbAutosave — persist", () => {
     });
     expect(deps.maybeSnapshot).not.toHaveBeenCalled(); // threw before the snapshot, but didn't propagate
     expect(result.current.saveState).toBe("error");
+  });
+
+  it("serializes overlapping writes so an older slow save cannot finish last", async () => {
+    let releaseFirst: (() => void) | undefined;
+    mocked.saveMap
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            releaseFirst = resolve;
+          }),
+      )
+      .mockResolvedValueOnce(undefined);
+    const { result } = setup();
+    let first!: Promise<void>;
+    let second!: Promise<void>;
+    act(() => {
+      first = result.current.persist(doc("older"));
+      second = result.current.persist(doc("newer"));
+    });
+    await act(async () => {});
+    expect(mocked.saveMap).toHaveBeenCalledTimes(1);
+    expect(mocked.saveMap.mock.calls[0][0].id).toBe("older");
+    expect(result.current.saveState).toBe("saving");
+
+    releaseFirst?.();
+    await act(async () => {
+      await Promise.all([first, second]);
+    });
+    expect(mocked.saveMap.mock.calls.map(([saved]) => saved.id)).toEqual(["older", "newer"]);
+    expect(result.current.saveState).toBe("saved");
   });
 });
 
@@ -121,6 +155,19 @@ describe("useIdbAutosave — scheduleSave + lifecycle", () => {
     });
     await act(async () => {});
     expect(mocked.saveMap).not.toHaveBeenCalled();
+  });
+
+  it("flushes a pending save on pagehide even without a visibility event", async () => {
+    const { result } = setup(doc("closing"));
+    act(() => result.current.scheduleSave());
+    act(() => window.dispatchEvent(new Event("pagehide")));
+    await act(async () => {});
+    expect(mocked.saveMap).toHaveBeenCalledTimes(1);
+    expect(mocked.saveMap).toHaveBeenCalledWith(expect.objectContaining({ id: "closing" }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(mocked.saveMap).toHaveBeenCalledTimes(1);
   });
 });
 

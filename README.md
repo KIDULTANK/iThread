@@ -1,6 +1,6 @@
 # iThread
 
-**Current preview: v0.3.1** · Windows 11 focused · Local-first · Apache-2.0
+**Current preview: v0.4.0** · Windows 11 focused · Local-first · Apache-2.0
 
 > iThread 是独立社区项目，与 iThoughts 及其原作者不存在隶属、授权或背书关系。
 
@@ -28,7 +28,7 @@ under the Apache License 2.0. The upstream copyright, licence and notices are pr
 
 ## Windows 11 desktop app
 
-Download the portable `iThread-0.3.1-Windows-x64.exe` from the
+Download the portable `iThread-0.4.0-Windows-x64.exe` from the
 [releases page](https://github.com/KIDULTANK/iThread/releases). It runs as a standalone
 Windows application and does not require an installer. Windows may show a SmartScreen notice because
 the community build is not code-signed; verify the SHA-256 value published with the release before
@@ -305,12 +305,14 @@ images through our own importer.
 
 ## Status
 
-**v0.3.1** is the current public-preview release. It includes the native `.ithread` extension (while
+**v0.4.0** is the current public-preview release. It includes the native `.ithread` extension (while
 keeping `.mmst` readable) and iThoughts-compatible `.itmz` export. Its `.itmz` importer/exporter is
 regression-tested against five large real-world maps and 31,389 topics, and an exported file has been
-manually reopened in the original iThoughts application. Large `.itmz` archives are parsed in a
-background worker; branch visibility commands structurally share unchanged subtrees; connector routing
-is spatially indexed; and full-canvas tweening is avoided when it would hurt responsiveness. The app also includes a
+manually reopened in the original iThoughts application. Large `.itmz` archives and layouts with 600+
+visible topics are processed in background workers; branch visibility commands structurally share
+unchanged subtrees; connector routing is spatially indexed; and full-canvas tweening is avoided when it
+would hurt responsiveness. Local saves are ordered to prevent a late old write replacing newer work,
+and pending edits flush when the app is hidden or closed. The app also includes a
 Windows/iPad-style keyboard workflow, right-growing layouts, Chinese and English UI, rich Markdown
 rendering, animated branch transitions, multi-topic selection, typography controls, and the
 localhost-only CLI bridge. It remains local-first and usable without a mandatory network connection.
