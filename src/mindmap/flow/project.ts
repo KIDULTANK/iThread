@@ -1,6 +1,6 @@
 import type { MapNode, MindMapDoc } from "../../model/types";
 import { outlineNumbers } from "../../outline";
-import { type ProgressInfo, progressMap } from "../../progress";
+import { cachedNodeProgress } from "../../progress";
 import { conditionalActions, conditionalStyle, relationshipTypeIndex } from "../../rules";
 import type { LayoutKind } from "../contract";
 import { CROSSLINK_COLOR, fontScaleFactor } from "./style";
@@ -87,9 +87,6 @@ export function project(
   // Auto-numbering is a view concern: numbers are computed from the tree and shown as a prefix,
   // never written into the model's `topic` (so exports/search/outline stay clean).
   const numbers = numbered ? outlineNumbers(doc.root, doc.meta?.numberStyle) : undefined;
-  // Task progress rolls up per subtree; compute once for the central tree + each floating root.
-  const progress = new Map<string, ProgressInfo>(progressMap(doc.root));
-  for (const f of doc.floatingTopics ?? []) for (const [k, v] of progressMap(f)) progress.set(k, v);
   // Conditional formatting: a view-only style layered *under* each node's own style.
   const rules = doc.rules ?? [];
   // Per-node relationship-type sets, so a "relationshipType" rule can match endpoints — whether it's
@@ -117,6 +114,7 @@ export function project(
     // dense fans so the shared origin doesn't blob.
     parentFan = 0,
   ): void => {
+    const progress = cachedNodeProgress(node);
     // Conditional-formatting *actions* (view-only, like condStyle): rule-applied markers + branch
     // colour. Merged into the projected `icons` / `branchColor` here, so TopicNode AND the SVG export
     // (both read this projected data) render them identically — canvas == export, nothing baked into
@@ -124,7 +122,7 @@ export function project(
     const actions = conditionalActions(
       node,
       rules,
-      progress.get(node.id)?.progress,
+      progress?.progress,
       undefined,
       relTypes?.get(node.id),
     );
@@ -165,7 +163,7 @@ export function project(
         condStyle: conditionalStyle(
           node,
           rules,
-          progress.get(node.id)?.progress,
+          progress?.progress,
           undefined,
           relTypes?.get(node.id),
         ),
@@ -180,7 +178,7 @@ export function project(
         hasChildren: node.children.length > 0,
         hiddenCount: node.collapsed ? node.children.length : undefined,
         childTitles: node.collapsed ? node.children.slice(0, 6).map((c) => c.topic) : undefined,
-        progress: progress.get(node.id),
+        progress,
         due: node.task?.due,
         start: node.task?.start,
         durationDays: node.task?.durationDays,

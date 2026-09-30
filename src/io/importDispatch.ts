@@ -111,9 +111,9 @@ export async function parseImport(
     };
   }
   if (name.endsWith(".itmz")) {
-    const { fromIthoughts } = await import("./ithoughts");
+    const { parseIthoughtsBytes } = await import("./ithoughtsWorkerClient");
     return {
-      doc: fromIthoughts(new Uint8Array(await file.arrayBuffer())),
+      doc: await parseIthoughtsBytes(await file.arrayBuffer()),
       warnings: [await lossyNote("ithoughts")],
     };
   }

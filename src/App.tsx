@@ -892,6 +892,7 @@ export function App() {
   /** Import a set of files (shared by the file <input> and the start screen's drop zone). */
   async function processFiles(files: File[]) {
     if (files.length === 0) return;
+    showHint(t("hint.importingMaps", { n: files.length }));
     // A single .json that is a whole-library backup restores every map at once.
     if (files.length === 1 && files[0].name.toLowerCase().endsWith(".json")) {
       const text = await files[0].text();

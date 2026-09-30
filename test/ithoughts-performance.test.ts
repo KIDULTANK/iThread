@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { fromIthoughts } from "../src/io/ithoughts";
 import { buildFlowState } from "../src/mindmap/flow/buildFlowState";
+import { toggleCollapse } from "../src/mindmap/flow/ops";
 import type { MapNode, MindMapDoc } from "../src/model/types";
 
 const samples = [
@@ -25,6 +26,15 @@ function expandAll(node: MapNode): void {
 function expandDocument(doc: MindMapDoc): void {
   expandAll(doc.root);
   for (const floating of doc.floatingTopics ?? []) expandAll(floating);
+}
+
+function firstCollapsedBranch(node: MapNode): MapNode | null {
+  if (node.collapsed && node.children.length > 0) return node;
+  for (const child of node.children) {
+    const found = firstCollapsedBranch(child);
+    if (found) return found;
+  }
+  return null;
 }
 
 function build(doc: MindMapDoc) {
@@ -55,6 +65,14 @@ describeSamples("real iThoughts large-map performance", () => {
       const folded = build(doc);
       const foldedMs = performance.now() - foldedStart;
 
+      const branch = firstCollapsedBranch(doc.root);
+      const branchStart = performance.now();
+      const branchDoc = branch ? toggleCollapse(doc, branch.id).doc : doc;
+      const branchOpMs = performance.now() - branchStart;
+      const branchLayoutStart = performance.now();
+      const branchLayout = build(branchDoc);
+      const branchLayoutMs = performance.now() - branchLayoutStart;
+
       expandDocument(doc);
       const expandedStart = performance.now();
       const expanded = build(doc);
@@ -63,12 +81,16 @@ describeSamples("real iThoughts large-map performance", () => {
       console.info(
         `[iThread benchmark] ${file}: import=${importMs.toFixed(1)}ms, ` +
           `folded=${folded.nodes.length} nodes/${foldedMs.toFixed(1)}ms, ` +
+          `branch-op=${branchOpMs.toFixed(2)}ms, ` +
+          `branch-layout=${branchLayout.nodes.length} nodes/${branchLayoutMs.toFixed(1)}ms, ` +
           `expanded=${expanded.nodes.length} nodes/${expandedMs.toFixed(1)}ms`,
       );
 
       expect(expanded.nodes).toHaveLength(topics);
       expect(importMs).toBeLessThan(buildLimitMs);
       expect(foldedMs).toBeLessThan(buildLimitMs);
+      expect(branchOpMs).toBeLessThan(100);
+      expect(branchLayoutMs).toBeLessThan(buildLimitMs);
       expect(expandedMs).toBeLessThan(buildLimitMs);
     }, 90_000);
   }

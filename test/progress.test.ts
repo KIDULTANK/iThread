@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { MapNode } from "../src/model/types";
 import {
+  cachedNodeProgress,
   checkPath,
   cycleTaskProgress,
   hasTaskDescendants,
@@ -93,6 +94,17 @@ describe("nodeProgress", () => {
       derived: false,
     });
     expect(nodeProgress(n("plain"))).toBeUndefined();
+  });
+});
+
+describe("cachedNodeProgress", () => {
+  it("reuses immutable subtrees while a path-copied ancestor still gets a fresh roll-up", () => {
+    const child = n("task", { task: { progress: 0.5 } });
+    const first = n("root", { children: [child] });
+    expect(cachedNodeProgress(first)?.progress).toBe(0.5);
+    const second = { ...first, children: [child, n("done", { task: { progress: 1 } })] };
+    expect(cachedNodeProgress(second)?.progress).toBe(0.75);
+    expect(cachedNodeProgress(child)?.progress).toBe(0.5);
   });
 });
 

@@ -682,6 +682,10 @@ export const CORE_EN = {
     one: "Imported {n} of {total} maps{failed}.",
     other: "Imported {n} of {total} maps{failed}.",
   },
+  "hint.importingMaps": {
+    one: "Importing {n} map in the background…",
+    other: "Importing {n} maps in the background…",
+  },
   "hint.importFailedSuffix": { one: " ({n} failed)", other: " ({n} failed)" },
   "hint.importFailed": "Import failed — {error}",
   "hint.noReadableMaps": "no readable maps",

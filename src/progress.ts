@@ -20,6 +20,30 @@ export interface ProgressInfo {
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
+// Editor operations preserve unchanged node objects. Cache each subtree's roll-up summary by object
+// identity so expanding one branch only recomputes its ancestor path, not every hidden topic in a
+// 10,000-node map. WeakMap keeps removed documents/subtrees collectible.
+const progressSummaryCache = new WeakMap<MapNode, ProgressInfo | null>();
+
+export function cachedNodeProgress(node: MapNode): ProgressInfo | undefined {
+  if (progressSummaryCache.has(node)) return progressSummaryCache.get(node) ?? undefined;
+  const childInfos = node.children
+    .map(cachedNodeProgress)
+    .filter((x): x is ProgressInfo => x !== undefined);
+  let info: ProgressInfo | undefined;
+  if (childInfos.length > 0) {
+    const total = childInfos.reduce((sum, child) => sum + child.total, 0);
+    const done = childInfos.reduce((sum, child) => sum + child.done, 0);
+    const progress = childInfos.reduce((sum, child) => sum + child.progress * child.total, 0);
+    info = { progress: total > 0 ? progress / total : 0, done, total, derived: true };
+  } else if (node.task?.progress !== undefined) {
+    const progress = clamp01(node.task.progress);
+    info = { progress, done: progress >= 1 ? 1 : 0, total: 1, derived: false };
+  }
+  progressSummaryCache.set(node, info ?? null);
+  return info;
+}
+
 /** Compute task-progress info for every task-bearing node in a tree, keyed by node id. Pure. */
 export function progressMap(root: MapNode): Map<string, ProgressInfo> {
   const map = new Map<string, ProgressInfo>();
@@ -55,7 +79,7 @@ export function progressMap(root: MapNode): Map<string, ProgressInfo> {
 
 /** Progress info for a single node, rolled up from its own subtree. Pure. */
 export function nodeProgress(node: MapNode): ProgressInfo | undefined {
-  return progressMap(node).get(node.id);
+  return cachedNodeProgress(node);
 }
 
 /** Does this node have any task-bearing descendant? (Then its progress is derived/read-only.) Pure. */

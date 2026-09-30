@@ -5,6 +5,23 @@ phase-based. Open work lives in `NEXT_STEPS.md`, not here.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-30
+
+### Changed
+
+- `.itmz` archives of at least 512 KiB now parse in a Web Worker, keeping pointer, keyboard and paint
+  work on the main UI thread responsive during import. Smaller files and unsupported environments use
+  the existing synchronous fallback.
+- Single-branch collapse/detail-level commands now path-copy only the changed branch and its ancestors
+  instead of cloning the complete document.
+- Task-progress rollups are cached by immutable subtree identity, so an unchanged hidden branch is not
+  traversed again whenever another branch expands.
+
+### Added
+
+- Background-import status messaging in English and Simplified Chinese.
+- Worker transfer/error tests and real-file branch-operation benchmarks.
+
 ## [0.3.0] - 2026-09-29
 
 ### Changed

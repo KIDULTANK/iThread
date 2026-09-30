@@ -91,6 +91,45 @@ function isDescendant(node: MapNode, id: string): boolean {
   return node.children.some((c) => c.id === id || isDescendant(c, id));
 }
 
+/** Path-copy one node: unchanged sibling subtrees retain object identity instead of cloning the
+ * complete document. This is the structural-sharing primitive used by branch visibility commands. */
+function updateTreePath(
+  root: MapNode,
+  id: string,
+  update: (node: MapNode) => MapNode,
+): { node: MapNode; found: boolean } {
+  if (root.id === id) return { node: update(root), found: true };
+  for (let i = 0; i < root.children.length; i++) {
+    const result = updateTreePath(root.children[i], id, update);
+    if (!result.found) continue;
+    if (result.node === root.children[i]) return { node: root, found: true };
+    const children = root.children.slice();
+    children[i] = result.node;
+    return { node: { ...root, children }, found: true };
+  }
+  return { node: root, found: false };
+}
+
+function updateAnyTreePath(
+  doc: MindMapDoc,
+  id: string,
+  update: (node: MapNode) => MapNode,
+): { doc: MindMapDoc; found: boolean } {
+  const central = updateTreePath(doc.root, id, update);
+  if (central.found)
+    return { doc: central.node === doc.root ? doc : { ...doc, root: central.node }, found: true };
+  const floating = doc.floatingTopics ?? [];
+  for (let i = 0; i < floating.length; i++) {
+    const result = updateTreePath(floating[i], id, update);
+    if (!result.found) continue;
+    if (result.node === floating[i]) return { doc, found: true };
+    const floatingTopics = floating.slice();
+    floatingTopics[i] = result.node;
+    return { doc: { ...doc, floatingTopics }, found: true };
+  }
+  return { doc, found: false };
+}
+
 /** Find a node by id (read-only convenience). */
 export function findNode(doc: MindMapDoc, id: string): MapNode | null {
   return locate(doc.root, id)?.node ?? null;
@@ -693,11 +732,11 @@ export function setTopicRich(
 
 /** Toggle a node's collapsed state (no-op for a leaf). */
 export function toggleCollapse(doc: MindMapDoc, id: string): OpResult {
-  const next = structuredClone(doc);
-  const node = findAnyNode(next, id);
-  if (!node || node.children.length === 0) return { doc };
-  node.collapsed = !node.collapsed;
-  return { doc: next };
+  return {
+    doc: updateAnyTreePath(doc, id, (node) =>
+      node.children.length > 0 ? { ...node, collapsed: !node.collapsed } : node,
+    ).doc,
+  };
 }
 
 /** Toggle a node's locked (pinned-in-place) flag. Any node can be locked; clears the flag rather than
@@ -754,17 +793,17 @@ export function setExpandedToLevel(doc: MindMapDoc, level: number): OpResult {
  *  level 2 reveals one tier further, and so on. Level 0 expands the complete selected branch. Topics
  *  outside the branch are deliberately untouched — this is the iThoughts digit-key behaviour. */
 export function setBranchExpandedToLevel(doc: MindMapDoc, id: string, level: number): OpResult {
-  const source = findAnyNode(doc, id);
-  if (!source || source.children.length === 0) return { doc };
-  const next = structuredClone(doc);
-  const root = findAnyNode(next, id);
-  if (!root) return { doc };
   const showAll = Math.trunc(level) === 0;
   const lvl = Math.max(1, Math.trunc(level));
-  walkTree(root, (node, depth) => {
-    if (node.children.length > 0) node.collapsed = showAll ? false : depth >= lvl;
+  const result = updateAnyTreePath(doc, id, (source) => {
+    if (source.children.length === 0) return source;
+    const root = structuredClone(source);
+    walkTree(root, (node, depth) => {
+      if (node.children.length > 0) node.collapsed = showAll ? false : depth >= lvl;
+    });
+    return root;
   });
-  return { doc: next, selectId: id };
+  return result.found && result.doc !== doc ? { doc: result.doc, selectId: id } : { doc };
 }
 
 /** Set the note on a node (empty or whitespace-only clears it). */

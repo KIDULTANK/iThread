@@ -421,8 +421,16 @@ describe("flow ops — content", () => {
   });
 
   it("toggleCollapse flips a parent and is a no-op for a leaf", () => {
-    expect(findNode(toggleCollapse(base(), "a").doc, "a")?.collapsed).toBe(true);
-    expect(findNode(toggleCollapse(base(), "b").doc, "b")?.collapsed).toBeUndefined();
+    const source = base();
+    const oldA = source.root.children[0];
+    const oldB = source.root.children[1];
+    const toggled = toggleCollapse(source, "a").doc;
+    expect(findNode(toggled, "a")?.collapsed).toBe(true);
+    expect(toggled).not.toBe(source);
+    expect(toggled.root.children[0]).not.toBe(oldA);
+    expect(toggled.root.children[0].children).toBe(oldA.children);
+    expect(toggled.root.children[1]).toBe(oldB); // unrelated branch is structurally shared
+    expect(toggleCollapse(source, "b").doc).toBe(source); // leaf = true no-op
   });
 
   it("setAllExpanded collapses/expands every non-root branch", () => {
@@ -703,6 +711,7 @@ describe("flow ops — content", () => {
     expect(findNode(level1.doc, "a1")?.collapsed).toBe(true);
     expect(findNode(level1.doc, "a11")?.collapsed).toBe(true);
     expect(findNode(level1.doc, "b")?.collapsed).toBe(true); // unrelated branch is unchanged
+    expect(level1.doc.root.children[1]).toBe(b); // and is not deep-cloned
 
     const level2 = setBranchExpandedToLevel(doc, "a", 2).doc;
     expect(findNode(level2, "a")?.collapsed).toBe(false);

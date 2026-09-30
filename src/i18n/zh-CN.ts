@@ -390,6 +390,7 @@ export const ZH_CN: Catalogue = {
   "app.focusingBranch": "正在聚焦分支：{topic}",
   "app.drilledInto": "已进入主题：{topic}",
   "app.importFailed": "导入失败：{error}",
+  "hint.importingMaps": { other: "正在后台导入 {n} 个导图…" },
   "app.versionSaved": "版本已保存。",
   "app.restoreThisVersion": "恢复到此版本？",
   "app.fileChangedOnDisk": "磁盘上的文件已发生更改",

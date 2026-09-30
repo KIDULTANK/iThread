@@ -1,3 +1,4 @@
+import { strToU8, zipSync } from "fflate";
 import { describe, expect, it, vi } from "vitest";
 import { parseImport } from "../src/io/importDispatch";
 import type { MindMapDoc } from "../src/model/types";
@@ -80,6 +81,17 @@ describe("parseImport — extension routing", () => {
     });
     const { doc } = await parseImport(file("m.mup", mup), stubMmap(nativeDoc("x")));
     expect(doc.root.topic).toBe("Up");
+  });
+
+  it("routes a small .itmz through the synchronous fallback used when a worker is unnecessary", async () => {
+    const bytes = zipSync({
+      "mapdata.xml": strToU8(
+        '<?xml version="1.0"?><iThoughts><topics><topic uuid="root" text="iThoughts"><topic uuid="kid" text="Child" /></topic></topics></iThoughts>',
+      ),
+    });
+    const { doc } = await parseImport(new File([bytes], "sample.itmz"), stubMmap(nativeDoc("x")));
+    expect(doc.root.topic).toBe("iThoughts");
+    expect(doc.root.children[0]?.topic).toBe("Child");
   });
 
   it("falls back to the injected .mmap importer for an unrecognised/.mmap file and forwards its warnings", async () => {
