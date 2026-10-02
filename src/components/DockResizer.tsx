@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { DOCK_MAX, DOCK_MIN } from "../hooks/usePanels";
+import { t } from "../i18n";
 
 const clamp = (w: number) => Math.min(DOCK_MAX, Math.max(DOCK_MIN, w));
 
@@ -33,7 +34,7 @@ export function DockResizer({
       className="mm-dock-resizer"
       role="separator"
       aria-orientation="vertical"
-      aria-label="Resize side panels"
+      aria-label={t("panel.resizeSidePanels")}
       aria-valuenow={width}
       aria-valuemin={DOCK_MIN}
       aria-valuemax={DOCK_MAX}

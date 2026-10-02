@@ -53,27 +53,16 @@ export function About({ onCheckForUpdates }: { onCheckForUpdates?: () => void })
         <h2 className="st-section-title">{t("cmd.about")}</h2>
       </section>
       <div className="st-card" style={{ padding: 20 }}>
-        <p className="st-prose">
-          <strong>{t("about.appName")}</strong> is a local-first, offline mind-mapping studio — a
-          self-hosted alternative to MindManager. Your maps live in your browser (IndexedDB) and on
-          disk; there are no accounts, no servers, and no telemetry. Nothing leaves this device.
-        </p>
-        <p className="st-prose">
-          It's <strong>format-agnostic</strong>: a single canonical model underneath, with importers
-          and exporters for MindManager, Markdown, OPML, FreeMind, Mermaid, XMind and more — so your
-          work is never locked in. Install it as a PWA to use it fully offline.
-        </p>
+        <p className="st-prose">{t("start.aboutLocalFirst", { app: t("about.appName") })}</p>
+        <p className="st-prose">{t("start.aboutFormats")}</p>
         <p className="st-prose">{t("start.openSourceAndASibling")}</p>
       </div>
 
       <section>
         <h3 className="st-section-title" style={{ fontSize: 13, color: "var(--st-muted)" }}>
-          Read &amp; reference
+          {t("start.readAndReference")}
         </h3>
-        <p className="st-section-sub">
-          The companion book <strong>{t("start.thinkingInMaps")}</strong>, the user guide, and more
-          — each opens in a new tab.
-        </p>
+        <p className="st-section-sub">{t("start.referenceBlurb")}</p>
         <div className="st-card" style={{ padding: 16, marginTop: 10 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
             {LINKS.map((l) => (
@@ -95,9 +84,7 @@ export function About({ onCheckForUpdates }: { onCheckForUpdates?: () => void })
         <h3 className="st-section-title" style={{ fontSize: 13, color: "var(--st-muted)" }}>
           {t("start.updates")}
         </h3>
-        <p className="st-section-sub">
-          Installed as a PWA, iThread updates itself; check here to pull a new version now.
-        </p>
+        <p className="st-section-sub">{t("start.updateBlurb")}</p>
         <div className="st-card" style={{ padding: 16, marginTop: 10 }}>
           <button type="button" className="st-btn" onClick={() => onCheckForUpdates?.()}>
             {t("about.checkUpdates")}

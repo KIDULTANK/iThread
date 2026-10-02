@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useRef } from "react";
+import { t } from "../i18n";
 import { DockResizer } from "./DockResizer";
 
 // The left dock — the read-mostly side panels share ONE tabbed column instead of stacking as N 250px
@@ -48,7 +49,7 @@ export function PanelDock({
   if (entries.length === 0 || !activeEntry) return null;
   return (
     <div className="mm-dock" style={width ? { width } : undefined}>
-      <div className="mm-dock-tabs" role="tablist" aria-label="Side panels">
+      <div className="mm-dock-tabs" role="tablist" aria-label={t("panel.sidePanels")}>
         {entries.map((e) => (
           <span
             key={e.key}
@@ -68,7 +69,7 @@ export function PanelDock({
             <button
               type="button"
               className="mm-dock-tab-close"
-              aria-label={`Close ${e.label}`}
+              aria-label={t("common.closeNamed", { name: e.label })}
               onClick={e.onClose}
             >
               ×

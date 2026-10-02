@@ -144,7 +144,7 @@ const SCRIPT = `
     body.classList.toggle('mode-visual', visual);
     body.classList.toggle('mode-outline', !visual);
     if (modeBtn) {
-      modeBtn.textContent = visual ? 'Outline view' : 'Visual map';
+      modeBtn.textContent = visual ? body.dataset.outlineLabel : body.dataset.visualLabel;
       modeBtn.setAttribute('aria-pressed', visual ? 'false' : 'true');
     }
   }
@@ -217,7 +217,8 @@ const SCRIPT = `
         li.classList.add('hidden');
       }
     });
-    count.textContent = hits + (hits === 1 ? ' match' : ' matches');
+    var pattern = hits === 1 ? body.dataset.matchOne : body.dataset.matchOther;
+    count.textContent = (pattern || '{n}').replace('{n}', String(hits));
   }
   q.addEventListener('input', runSearch);
   q.addEventListener('keydown', function (e) { if (e.key === 'Escape') { q.value = ''; runSearch(); } });
@@ -267,7 +268,7 @@ export function buildInteractiveHtml(doc: MindMapDoc, svg?: string): string {
 <title>${escapeHtml(title)}</title>
 <style>${CSS}</style>
 </head>
-<body class="${hasVisual ? "mode-visual" : "mode-outline"}">
+<body class="${hasVisual ? "mode-visual" : "mode-outline"}" data-outline-label="${escapeHtml(t("io.html.outlineView"))}" data-visual-label="${escapeHtml(t("io.html.visualMap"))}" data-match-one="${escapeHtml(t("io.html.matchCountOne"))}" data-match-other="${escapeHtml(t("io.html.matchCountOther"))}">
 <header>
 <h1>${escapeHtml(title)}</h1>
 <span class="spacer"></span>

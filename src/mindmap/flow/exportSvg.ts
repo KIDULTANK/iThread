@@ -1,3 +1,4 @@
+import { t } from "../../i18n/registry";
 import { markerImage } from "../../icons";
 import { buildLegend } from "../../legend";
 import type { MapNode, MindMapDoc } from "../../model/types";
@@ -791,7 +792,7 @@ function emitLegend(doc: MindMapDoc, vbX: number, vbY: number): string {
   const h = 22 + entries.length * rowH;
   const out: string[] = [
     `<rect x="${r2(x)}" y="${r2(y)}" width="${r2(w)}" height="${r2(h)}" rx="6" fill="#ffffff" stroke="rgba(0,0,0,0.18)" stroke-width="1"/>`,
-    `<text x="${r2(x + 9)}" y="${r2(y + 15)}" font-family="sans-serif" font-size="11" font-weight="600" fill="#6b6b6b">Legend</text>`,
+    `<text x="${r2(x + 9)}" y="${r2(y + 15)}" font-family="sans-serif" font-size="11" font-weight="600" fill="#6b6b6b">${esc(t("toolbar.legend"))}</text>`,
   ];
   entries.forEach((e, i) => {
     const ry = y + 24 + i * rowH;

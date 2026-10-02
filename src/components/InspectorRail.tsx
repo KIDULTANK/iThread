@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { EditorIcon } from "./EditorIcons";
 
 // The minimized Topic-info inspector: a thin strip on the right edge that re-expands the panel.
@@ -5,12 +6,12 @@ import { EditorIcon } from "./EditorIcons";
 // feel. Shown when the inspector is collapsed (panels.infoMinimized); styled via .mm-inspector-rail.
 export function InspectorRail({ onExpand }: { onExpand: () => void }) {
   return (
-    <aside className="mm-inspector-rail" aria-label="Topic info (minimized)">
+    <aside className="mm-inspector-rail" aria-label={t("panel.topicInfoMinimized")}>
       <button
         type="button"
         className="mm-rail-btn"
-        title="Show topic info"
-        aria-label="Show topic info"
+        title={t("panel.showTopicInfo")}
+        aria-label={t("panel.showTopicInfo")}
         onClick={onExpand}
       >
         <EditorIcon name="note" size={19} />

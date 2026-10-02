@@ -3,6 +3,12 @@
 // styling + show/hide-on-desktop live in mobile.css (.mm-sheet-scrim).
 export function MobileSheetScrim({ onClose }: { onClose: () => void }) {
   return (
-    <button type="button" className="mm-sheet-scrim" aria-label="Close panel" onClick={onClose} />
+    <button
+      type="button"
+      className="mm-sheet-scrim"
+      aria-label={t("panel.closePanel")}
+      onClick={onClose}
+    />
   );
 }
+import { t } from "../i18n";

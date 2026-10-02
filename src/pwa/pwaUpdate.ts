@@ -1,4 +1,8 @@
 import { registerSW } from "virtual:pwa-register";
+import { registerMessages } from "../i18n/registry";
+import { PWA_EN } from "./messages";
+
+registerMessages("en", PWA_EN);
 
 // Self-update for the PWA: when a new build is deployed, the waiting service worker
 // triggers a non-intrusive "New version available — Refresh now" toast; clicking it
@@ -23,15 +27,20 @@ export type ShowToast = (kind: ToastKind, message: string, opts?: ToastOptions) 
 let registered = false;
 let cachedUpdateSW: ((reloadPage?: boolean) => Promise<void>) | null = null;
 let toast: ShowToast | null = null;
+let messages = {
+  updateAvailable: "A new version is available.",
+  refreshNow: "Refresh now",
+  offlineReady: "Ready to use offline.",
+};
 
 /** Canonical "New version… Refresh now" prompt. Shared by the plugin's
  *  onNeedRefresh callback and the manual-check already-waiting branch. */
 const showUpdateAvailableToast = (): void => {
   const refresh = cachedUpdateSW;
-  toast?.("info", "A new version is available.", {
+  toast?.("info", messages.updateAvailable, {
     action: refresh
       ? {
-          label: "Refresh now",
+          label: messages.refreshNow,
           run: () => {
             void refresh(true);
           },
@@ -42,15 +51,19 @@ const showUpdateAvailableToast = (): void => {
 };
 
 /** Register the SW once and wire its update/offline callbacks to the app's toast. */
-export const initPwaUpdateToast = (showToast: ShowToast): void => {
+export const initPwaUpdateToast = (
+  showToast: ShowToast,
+  translatedMessages?: Partial<typeof messages>,
+): void => {
   if (registered || typeof window === "undefined") return;
   registered = true;
   toast = showToast;
+  messages = { ...messages, ...translatedMessages };
   // registerSW() registers the generated SW and returns updateSW(reload?); we hoist
   // it to module scope so the manual "Check for updates" path can drive it too.
   cachedUpdateSW = registerSW({
     onNeedRefresh: () => showUpdateAvailableToast(),
-    onOfflineReady: () => toast?.("success", "Ready to use offline."),
+    onOfflineReady: () => toast?.("success", messages.offlineReady),
   });
 };
 
@@ -91,4 +104,9 @@ export const __resetPwaUpdateForTest = (): void => {
   registered = false;
   cachedUpdateSW = null;
   toast = null;
+  messages = {
+    updateAvailable: "A new version is available.",
+    refreshNow: "Refresh now",
+    offlineReady: "Ready to use offline.",
+  };
 };

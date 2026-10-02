@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Input } from "../design/primitives";
 import { colors, space } from "../design/tokens";
+import { t } from "../i18n";
 import { Dialog } from "./Dialog";
 
 // Themed prompt / confirm for the editor canvas — replacing the native window.prompt / window.confirm
@@ -120,7 +121,7 @@ export function DialogHost() {
             marginTop: space.xxxl,
           }}
         >
-          <Button onClick={() => close(null)}>Cancel</Button>
+          <Button onClick={() => close(null)}>{t("common.cancel")}</Button>
           <Button
             onClick={() => close(inputRef.current?.value ?? "")}
             style={{
@@ -129,7 +130,7 @@ export function DialogHost() {
               border: `1px solid ${colors.accent}`,
             }}
           >
-            {opts.confirmText ?? "OK"}
+            {opts.confirmText ?? t("common.ok")}
           </Button>
         </div>
       </Dialog>
@@ -139,7 +140,11 @@ export function DialogHost() {
   const { opts } = req.r;
   return (
     <Dialog open onClose={() => close(false)} title={opts.title} style={surface}>
-      {opts.body && <p style={{ margin: 0, color: colors.muted, lineHeight: 1.45 }}>{opts.body}</p>}
+      {opts.body && (
+        <p style={{ margin: 0, color: colors.muted, lineHeight: 1.45, whiteSpace: "pre-line" }}>
+          {opts.body}
+        </p>
+      )}
       <div
         style={{
           display: "flex",
@@ -148,7 +153,7 @@ export function DialogHost() {
           marginTop: space.xxxl,
         }}
       >
-        <Button onClick={() => close(false)}>Cancel</Button>
+        <Button onClick={() => close(false)}>{t("common.cancel")}</Button>
         <Button
           onClick={() => close(true)}
           style={
@@ -165,7 +170,7 @@ export function DialogHost() {
                 }
           }
         >
-          {opts.confirmText ?? "OK"}
+          {opts.confirmText ?? t("common.ok")}
         </Button>
       </div>
     </Dialog>

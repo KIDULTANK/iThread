@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { t } from "../i18n";
 import { setTabSession } from "../store/mapStore";
 
 // Top-level safety net. An uncaught error during render would otherwise tear down the React tree and
@@ -47,22 +48,18 @@ export class ErrorBoundary extends Component<Props, State> {
           <div style={{ fontSize: 32, marginBottom: 8 }} aria-hidden="true">
             🧭
           </div>
-          <h1 style={h1}>Something went wrong</h1>
-          <p style={p}>
-            The editor hit an unexpected error.{" "}
-            <strong>Your maps are saved safely on this device</strong> — nothing was lost. Reloading
-            usually fixes it.
-          </p>
+          <h1 style={h1}>{t("errorBoundary.title")}</h1>
+          <p style={p}>{t("errorBoundary.body")}</p>
           <div style={row}>
             <button type="button" onClick={this.reload} style={primaryBtn}>
-              Reload
+              {t("errorBoundary.reload")}
             </button>
             <button type="button" onClick={this.startFresh} style={btn}>
-              Start fresh
+              {t("errorBoundary.startFresh")}
             </button>
           </div>
           <details style={{ marginTop: 18, textAlign: "left" }}>
-            <summary style={summary}>Error details</summary>
+            <summary style={summary}>{t("errorBoundary.details")}</summary>
             <pre style={pre}>{String(error.stack ?? error.message ?? error)}</pre>
           </details>
         </div>

@@ -4,6 +4,7 @@ import { t } from "../i18n";
 import {
   downloadMapFile,
   ensureWritePermission,
+  isNativeExt,
   openMapFile,
   pickSaveHandle,
   readMapFromHandle,
@@ -11,6 +12,7 @@ import {
   supportsFileSystemAccess,
   writeMapToHandle,
 } from "../io/fileSystem";
+import { serializeDoc } from "../io/json";
 import type { MindMapDoc } from "../model/types";
 import { loadMapHandle, noteRecentFile, saveMapHandle } from "../store/mapStore";
 
@@ -122,6 +124,21 @@ export function useDiskFile({
   );
 
   const openFile = useCallback(async () => {
+    const desktop = window.iThreadDesktop;
+    if (desktop) {
+      try {
+        const payload = await desktop.openFileDialog();
+        if (!payload) return;
+        const { createDesktopFileHandle } = await import("../io/desktopFileHandle");
+        const handle = createDesktopFileHandle(payload, desktop);
+        if (isNativeExt(handle.name))
+          await adoptOpenedFile(await readMapFromHandle(handle), handle);
+        else await importForeignFile(handle);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
     if (!supportsFileSystemAccess()) {
       // No native picker — reuse the import input, which accepts .ithread/.mmst/.json/.mmap and more.
       document.getElementById("mmap-input")?.click();
@@ -140,6 +157,23 @@ export function useDiskFile({
   // "Save As" — pick a destination, write it, and remember the handle for plain Saves afterwards.
   const saveFileAs = useCallback(async () => {
     const d = liveDocRef.current;
+    const desktop = window.iThreadDesktop;
+    if (desktop) {
+      try {
+        const payload = await desktop.saveFileDialog(suggestedFileName(d), serializeDoc(d));
+        if (!payload) return;
+        const { createDesktopFileHandle } = await import("../io/desktopFileHandle");
+        const handle = createDesktopFileHandle(payload, desktop);
+        await bindFileHandle(d.id, handle);
+        await recordMtime(d.id, handle);
+        await noteRecentFile(d.id, handle.name);
+        setDirty(false);
+        showHint(`Saved ${handle.name}`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
     if (!supportsFileSystemAccess()) {
       downloadMapFile(d);
       showHint(`Downloaded ${suggestedFileName(d)}`);
@@ -186,13 +220,13 @@ export function useDiskFile({
   // Save As / download. Prompts once for write permission if the browser dropped it this session.
   const saveFile = useCallback(async () => {
     const d = liveDocRef.current;
-    if (!supportsFileSystemAccess()) {
-      downloadMapFile(d);
-      showHint(`Downloaded ${suggestedFileName(d)}`);
-      return;
-    }
     const handle = handleCache.current.get(d.id);
     if (!handle) {
+      if (!supportsFileSystemAccess()) {
+        downloadMapFile(d);
+        showHint(`Downloaded ${suggestedFileName(d)}`);
+        return;
+      }
       await saveFileAs();
       return;
     }

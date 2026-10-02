@@ -106,6 +106,9 @@ export const IO_EN = {
   "io.html.toggleChildren": "Toggle children",
   "io.html.modeToggleTitle": "Switch between the visual map and the text outline",
   "io.html.outlineView": "Outline view",
+  "io.html.visualMap": "Visual map",
+  "io.html.matchCountOne": "{n} match",
+  "io.html.matchCountOther": "{n} matches",
   "io.html.filterTopics": "Filter topics",
   "io.html.filterTopicsPlaceholder": "Filter topics…",
   "io.html.expandAll": "Expand all",
@@ -122,6 +125,67 @@ export const IO_EN = {
 
   "io.deck.slides": "Slides",
   "io.deck.toggleNotes": "Toggle speaker notes (N)",
+  "io.deck.navigationHint": "← → or click to navigate · N for notes",
+  "io.itmzReport.title": "iThoughts compatibility report",
+  "io.itmzReport.summary": {
+    one: "This export contains {n} topic.",
+    other: "This export contains {n} topics.",
+  },
+  "io.itmzReport.preserved":
+    "Preserved: hierarchy, {notes} notes, {links} primary links, {assets} embedded assets, {tasks} task progress/priority entries, and {relationships} relationships.",
+  "io.itmzReport.noIssues": "No known unsupported iThread-only features were found.",
+  "io.itmzReport.attention": {
+    one: "Review the following {n} compatibility item:",
+    other: "Review the following {n} compatibility items:",
+  },
+  "io.itmzReport.keepNative":
+    "Keep the .ithread file as your editable master; use .itmz as the iThoughts exchange copy.",
+  "io.itmzReport.export": "Export .itmz",
+  "io.itmzReport.richTextConverted": {
+    one: "{n} rich-text topic is converted to inline Markdown.",
+    other: "{n} rich-text topics are converted to inline Markdown.",
+  },
+  "io.itmzReport.markersAndTags": {
+    one: "{n} marker or tag is not exported.",
+    other: "{n} markers or tags are not exported.",
+  },
+  "io.itmzReport.extraHyperlinks": {
+    one: "{n} additional hyperlink is not exported (the primary link is kept).",
+    other: "{n} additional hyperlinks are not exported (primary links are kept).",
+  },
+  "io.itmzReport.extraAssets": {
+    one: "{n} image or attachment cannot be embedded; iThoughts accepts one embedded asset per topic.",
+    other:
+      "{n} images or attachments cannot be embedded; iThoughts accepts one embedded asset per topic.",
+  },
+  "io.itmzReport.callouts": {
+    one: "{n} callout is not exported.",
+    other: "{n} callouts are not exported.",
+  },
+  "io.itmzReport.taskDetails": {
+    one: "{n} task date/resource field is not exported.",
+    other: "{n} task date/resource fields are not exported.",
+  },
+  "io.itmzReport.advancedTopicStyle": {
+    one: "{n} topic uses an advanced visual style that will be simplified.",
+    other: "{n} topics use advanced visual styles that will be simplified.",
+  },
+  "io.itmzReport.branchSettings": {
+    one: "{n} branch setting (layout, lock, line style, side, or roll-up) is not exported.",
+    other: "{n} branch settings (layout, lock, line style, side, or roll-up) are not exported.",
+  },
+  "io.itmzReport.mapObjects": {
+    one: "{n} boundary, summary, rule, backdrop, or canvas shape is not exported.",
+    other: "{n} boundaries, summaries, rules, backdrops, or canvas shapes are not exported.",
+  },
+  "io.itmzReport.relationshipStyle": {
+    one: "{n} relationship keeps its endpoints/label but loses advanced styling.",
+    other: "{n} relationships keep their endpoints/labels but lose advanced styling.",
+  },
+  "io.itmzReport.mapPresentation": {
+    one: "{n} map-level presentation setting is not exported.",
+    other: "{n} map-level presentation settings are not exported.",
+  },
 } as const satisfies Catalogue;
 
 export type IoKey = keyof typeof IO_EN;

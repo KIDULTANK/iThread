@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import type { MindMapDoc } from "../src/model/types";
 import {
   clearAllData,
+  clearRecoveryDraft,
+  clearRecoveryDraftThrough,
   createFolder,
   deleteFolder,
   deleteMap,
@@ -18,6 +20,7 @@ import {
   listTrashedMaps,
   loadMap,
   loadMapHandle,
+  loadRecoveryDraft,
   moveMapToFolder,
   noteRecentFile,
   renameFolder,
@@ -25,6 +28,7 @@ import {
   saveInbox,
   saveMap,
   saveMapHandle,
+  saveRecoveryDraft,
   saveVersion,
   setLastOpened,
   softDeleteMap,
@@ -55,6 +59,27 @@ describe("mapStore — cold boot", () => {
 
   it("getInbox returns an empty list before anything is captured", async () => {
     expect(await getInbox()).toEqual([]);
+  });
+});
+
+describe("mapStore — crash recovery", () => {
+  it("keeps an independent normalized draft until the stable save catches up", async () => {
+    const draft = docOf("recover-1", "Recovered title");
+    await saveRecoveryDraft(draft, 200);
+    const loaded = await loadRecoveryDraft("recover-1");
+    expect(loaded?.savedAt).toBe(200);
+    expect(loaded?.doc.title).toBe("Recovered title");
+
+    await clearRecoveryDraftThrough("recover-1", 199);
+    expect(await loadRecoveryDraft("recover-1")).not.toBeNull();
+    await clearRecoveryDraftThrough("recover-1", 200);
+    expect(await loadRecoveryDraft("recover-1")).toBeNull();
+  });
+
+  it("can explicitly discard a recovery draft", async () => {
+    await saveRecoveryDraft(docOf("recover-2", "Draft"), 300);
+    await clearRecoveryDraft("recover-2");
+    expect(await loadRecoveryDraft("recover-2")).toBeNull();
   });
 });
 

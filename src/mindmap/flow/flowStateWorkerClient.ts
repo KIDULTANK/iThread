@@ -61,46 +61,59 @@ function createBrowserWorker(): FlowStateWorkerLike | null {
   }
 }
 
-/**
- * Start one isolated background layout. The caller owns freshness: cancelling a superseded build
- * terminates its worker, so a late result can never mutate the current canvas.
- */
-export function startFlowStateWorkerBuild(
+let sharedWorker: FlowStateWorkerLike | null = null;
+
+function acquireSharedWorker(): FlowStateWorkerLike | null {
+  sharedWorker ??= createBrowserWorker();
+  return sharedWorker;
+}
+
+function terminateSharedWorker(worker: FlowStateWorkerLike): void {
+  worker.terminate();
+  if (sharedWorker === worker) sharedWorker = null;
+}
+
+function startBuild(
   requestId: number,
   args: BuildFlowStateArgs,
-  workerFactory: FlowStateWorkerFactory = createBrowserWorker,
-): FlowStateWorkerBuild | null {
-  const worker = workerFactory();
-  if (!worker) return null;
-
+  worker: FlowStateWorkerLike,
+  keepWarm: boolean,
+): FlowStateWorkerBuild {
   let settled = false;
   let rejectPromise: ((reason: Error) => void) | null = null;
-  const finish = () => {
+  const finish = (terminate: boolean) => {
     if (settled) return false;
     settled = true;
-    worker.terminate();
+    worker.onmessage = null;
+    worker.onerror = null;
+    if (terminate) {
+      if (keepWarm) terminateSharedWorker(worker);
+      else worker.terminate();
+    }
     return true;
   };
   const promise = new Promise<BuildFlowStateResult>((resolve, reject) => {
     rejectPromise = reject;
     worker.onmessage = (event) => {
-      if (!finish()) return;
-      if (event.data.requestId !== requestId) {
+      const mismatch = event.data.requestId !== requestId;
+      if (!finish(mismatch || !keepWarm)) return;
+      if (mismatch) {
         reject(new Error("Background layout returned a mismatched request"));
       } else if (event.data.ok) {
         resolve(event.data.state);
       } else {
+        if (keepWarm) terminateSharedWorker(worker);
         reject(new Error(event.data.error));
       }
     };
     worker.onerror = (event) => {
-      if (!finish()) return;
+      if (!finish(true)) return;
       reject(new Error(event.message || "Background layout failed"));
     };
     try {
       worker.postMessage({ requestId, args });
     } catch (error) {
-      finish();
+      finish(true);
       reject(error instanceof Error ? error : new Error(String(error)));
     }
   });
@@ -108,10 +121,29 @@ export function startFlowStateWorkerBuild(
   return {
     promise,
     cancel() {
-      if (!finish()) return;
+      // JavaScript workers cannot interrupt a running synchronous layout. Terminating only the
+      // superseded worker avoids a queue of stale maps, while completed builds reuse the warm worker.
+      if (!finish(true)) return;
       rejectPromise?.(new Error("Background layout cancelled"));
     },
   };
+}
+
+/**
+ * Start one isolated background layout. The caller owns freshness: cancelling a superseded build
+ * terminates its worker, so a late result can never mutate the current canvas.
+ */
+export function startFlowStateWorkerBuild(
+  requestId: number,
+  args: BuildFlowStateArgs,
+  workerFactory?: FlowStateWorkerFactory,
+): FlowStateWorkerBuild | null {
+  // Injected workers remain isolated for deterministic tests and embedders. Browser builds keep a
+  // successfully completed worker warm, preserving its layout cache across ordinary edits.
+  const keepWarm = workerFactory === undefined;
+  const worker = workerFactory ? workerFactory() : acquireSharedWorker();
+  if (!worker) return null;
+  return startBuild(requestId, args, worker, keepWarm);
 }
 
 /** Synchronous fallback used when Workers are unavailable or a background build fails. */

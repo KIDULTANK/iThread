@@ -27,6 +27,7 @@ import "../src/i18n/zh-CN";
 import { IO_EN } from "../src/io/messages";
 import { CANVAS_EN } from "../src/mindmap/flow/messages";
 import { PRESENT_EN } from "../src/present/presentMessages";
+import { PWA_EN } from "../src/pwa/messages";
 import { shortcutGroups } from "../src/shortcuts";
 
 // EVERY catalogue in the app, in load order (eager first). The duplicate checks below iterate this
@@ -48,6 +49,7 @@ const CATALOGUES = [
   { name: "THEME_EN", catalogue: THEME_EN as Catalogue },
   { name: "PRESENT_EN", catalogue: PRESENT_EN as Catalogue },
   { name: "IO_EN", catalogue: IO_EN as Catalogue },
+  { name: "PWA_EN", catalogue: PWA_EN as Catalogue },
 ] as const;
 
 beforeEach(() => {
@@ -378,7 +380,7 @@ describe("bundle locality", () => {
           // file the check was never about.
           if (rel.startsWith("src/i18n/")) continue;
           const registers = src.includes("registerMessages(");
-          const importsOne = /import "\.[^"]*messages";/.test(src);
+          const importsOne = /import "\.[^"]*[Mm]essages";/.test(src);
           if (registers || importsOne) found.push(rel);
         }
       }
@@ -503,24 +505,50 @@ describe("bundle locality", () => {
     // shipped into the Start screen before this existed, and three tests caught them only because
     // those particular components happened to be rendered by a test.
     const offenders: string[] = [];
-    const check = (dir: string, ownPrefix: string, foreignPrefixes: string[]) => {
-      const walk = (d: string) => {
-        for (const e of readdirSync(join(process.cwd(), d), { withFileTypes: true })) {
-          const rel = `${d}/${e.name}`;
-          if (e.isDirectory()) walk(rel);
-          else if (/\.(ts|tsx)$/.test(e.name) && e.name !== "messages.ts") {
-            const src = readFileSync(join(process.cwd(), rel), "utf8");
-            for (const foreign of foreignPrefixes)
-              for (const m of src.matchAll(new RegExp(`t\\("(${foreign}\\.[\\w.]+)"`, "g")))
-                offenders.push(`${rel} calls ${m[1]} — ${foreign} is a different lazy chunk`);
-          }
+    const areas = [
+      {
+        name: "start",
+        roots: ["src/components/start"],
+        catalogue: START_EN as Catalogue,
+      },
+      {
+        name: "canvas",
+        roots: ["src/mindmap/flow", "src/mindmap/FlowMindMap.tsx"],
+        catalogue: CANVAS_EN as Catalogue,
+      },
+      { name: "io", roots: ["src/io"], catalogue: IO_EN as Catalogue },
+      { name: "present", roots: ["src/present"], catalogue: PRESENT_EN as Catalogue },
+      {
+        name: "theme",
+        roots: ["src/components/ThemeDesignerDialog.tsx"],
+        catalogue: THEME_EN as Catalogue,
+      },
+    ];
+    const filesUnder = (root: string): string[] => {
+      if (/\.(ts|tsx)$/.test(root)) return [root];
+      const found: string[] = [];
+      const walk = (dir: string) => {
+        for (const entry of readdirSync(join(process.cwd(), dir), { withFileTypes: true })) {
+          const rel = `${dir}/${entry.name}`;
+          if (entry.isDirectory()) walk(rel);
+          else if (/\.(ts|tsx)$/.test(entry.name) && !/[Mm]essages\.ts$/.test(entry.name))
+            found.push(rel);
         }
       };
-      walk(dir);
-      void ownPrefix;
+      walk(root);
+      return found;
     };
-    check("src/components/start", "start", ["canvas"]);
-    check("src/mindmap/flow", "canvas", ["start"]);
+    for (const area of areas) {
+      for (const rel of area.roots.flatMap(filesUnder)) {
+        const src = read(rel);
+        for (const match of src.matchAll(/\bt(?:Nodes)?\(\s*"([^"]+)"/g)) {
+          const key = match[1];
+          const owner = areas.find((candidate) => key in candidate.catalogue);
+          if (owner && owner.name !== area.name)
+            offenders.push(`${rel} calls ${key} — it belongs to the ${owner.name} lazy chunk`);
+        }
+      }
+    }
     expect(offenders).toEqual([]);
   });
 

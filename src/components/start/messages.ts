@@ -24,6 +24,15 @@ export const START_EN = {
   // decodes, so "&amp;" captured from JSX source would have shipped to the user literally.
   "start.localAndPrivate":
     "Local & private — runs in your browser, works offline, nothing leaves this device.",
+  "start.aboutLocalFirst":
+    "{app} is a local-first, offline mind-mapping studio — a self-hosted alternative to MindManager. Your maps live in your browser (IndexedDB) and on disk; there are no accounts, no servers, and no telemetry. Nothing leaves this device.",
+  "start.aboutFormats":
+    "Format-agnostic: one canonical model, with importers and exporters for MindManager, Markdown, OPML, FreeMind, Mermaid, XMind and more — so your work is never locked in. Install it as a PWA to use it fully offline.",
+  "start.readAndReference": "Read & reference",
+  "start.referenceBlurb":
+    "The companion book Thinking in Maps, the user guide, and more — each opens in a new tab.",
+  "start.updateBlurb":
+    "Installed as a PWA, iThread updates itself; check here to pull a new version now.",
 
   "start.startYourOwn": "Start your own",
   "start.examplesExplain": {

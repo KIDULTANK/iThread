@@ -51,6 +51,53 @@ export interface BuildFlowStateResult {
   edges: FlowEdge[];
 }
 
+interface LayoutCacheEntry {
+  key: string;
+  positions: Map<string, { x: number; y: number }>;
+}
+
+// A warm worker survives completed builds, so keep its last geometry result too. Selection, notes,
+// colours, task state and relationship edits all re-project the document but do not need another
+// tree layout. The key intentionally contains only fields consumed by computeLayout/estimateSizeOf.
+let lastLayout: LayoutCacheEntry | null = null;
+
+function layoutKey(
+  nodes: TopicNode[],
+  edges: FlowEdge[],
+  measured: readonly MeasuredNode[],
+  kind: LayoutKind,
+): string {
+  const measuredById = new Map(measured.map((item) => [item.id, item.measured]));
+  return JSON.stringify([
+    kind,
+    nodes.map((node) => {
+      const data = node.data;
+      const actual = measuredById.get(node.id);
+      return [
+        node.id,
+        data.topic,
+        data.number,
+        Boolean(data.image),
+        data.icons?.length ?? 0,
+        data.tags?.length ?? 0,
+        data.style?.maxWidth,
+        data.layout,
+        data.isRoot,
+        data.depth,
+        data.side,
+        data.collapsed,
+        data.floating,
+        data.pos?.x,
+        data.pos?.y,
+        data.fontScale,
+        actual?.width,
+        actual?.height,
+      ];
+    }),
+    edges.filter((edge) => !edge.data?.crosslink).map((edge) => [edge.source, edge.target]),
+  ]);
+}
+
 export function buildFlowState(args: BuildFlowStateArgs): BuildFlowStateResult {
   const { doc, palette, numbered, kind, measured, selectedIds, selectedEdgeId, litIds } = args;
   const highlightIds = args.highlightIds ?? null;
@@ -67,7 +114,12 @@ export function buildFlowState(args: BuildFlowStateArgs): BuildFlowStateResult {
       ? { width: m.measured.width, height: m.measured.height }
       : est(id);
   };
-  const pos = computeLayout(proj.nodes, proj.edges, sizeOf, kind);
+  const geometryKey = layoutKey(proj.nodes, proj.edges, measured, kind);
+  const pos =
+    lastLayout?.key === geometryKey
+      ? lastLayout.positions
+      : computeLayout(proj.nodes, proj.edges, sizeOf, kind);
+  if (lastLayout?.key !== geometryKey) lastLayout = { key: geometryKey, positions: pos };
   const nodes: TopicNode[] = proj.nodes.map((n) => ({
     ...n,
     position: pos.get(n.id) ?? { x: 0, y: 0 },

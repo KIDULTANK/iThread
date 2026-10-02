@@ -276,16 +276,12 @@ const EMPTY_BOUNDARIES: readonly Boundary[] = Object.freeze([]);
 const EMPTY_SUMMARIES: readonly Summary[] = Object.freeze([]);
 const EMPTY_SHAPES: CanvasShape[] = [];
 
-// Keyboard hints shown right-aligned on the matching right-click menu rows (#2) — kept in step with
-// the canvas keydown handler + the cheat-sheet (src/shortcuts.ts).
-const MENU_SHORTCUT: Record<string, string> = {
-  "Add child": "Tab",
-  "Add sibling": "Enter",
-  Rename: "F2",
-  Delete: "Del",
-  "Copy branch": "Ctrl/⌘+C",
-  "Paste branch here": "Ctrl/⌘+Shift+V",
-  "Link to…": "Ctrl/⌘+Shift+L",
+type TopicMenuItem = {
+  id: string;
+  label: string;
+  run: () => void;
+  danger?: boolean;
+  shortcut?: string;
 };
 
 function themeVars(theme: MindMapProps["theme"]): CSSProperties {
@@ -2792,84 +2788,132 @@ function FlowInner({
                     />
                   );
                 }
-                const items: [string, () => void, boolean?][] = [
-                  [t("canvas.menu.addChild"), () => apply(addChild(docRef.current, id), true)],
-                  [t("canvas.menu.addSibling"), () => apply(addSibling(docRef.current, id), true)],
-                  [t("common.rename"), () => startEdit(id)],
-                  [
-                    t("canvas.menu.addNote"),
-                    () => {
+                const items: TopicMenuItem[] = [
+                  {
+                    id: "add-child",
+                    label: t("canvas.menu.addChild"),
+                    shortcut: "Tab",
+                    run: () => apply(addChild(docRef.current, id), true),
+                  },
+                  {
+                    id: "add-sibling",
+                    label: t("canvas.menu.addSibling"),
+                    shortcut: "Enter",
+                    run: () => apply(addSibling(docRef.current, id), true),
+                  },
+                  {
+                    id: "rename",
+                    label: t("common.rename"),
+                    shortcut: "F2",
+                    run: () => startEdit(id),
+                  },
+                  {
+                    id: "add-note",
+                    label: t("canvas.menu.addNote"),
+                    run: () => {
                       selectOnly(id);
                       fireSelect(id);
                       onOpenNoteRef.current?.();
                     },
-                  ],
-                  [t("canvas.menu.linkTo"), () => setLinkingFrom(id)],
-                  [t("canvas.menu.addCallout"), () => apply(addCallout(docRef.current, id))],
-                  [t("canvas.menu.groupInBoundary"), () => apply(groupBranch(docRef.current, id))],
-                  [t("canvas.menu.summarizeBranch"), () => apply(groupSummary(docRef.current, id))],
-                  [
-                    t("canvas.menu.copyBranch"),
-                    () => {
+                  },
+                  {
+                    id: "link",
+                    label: t("canvas.menu.linkTo"),
+                    shortcut: "Ctrl/⌘+Shift+L",
+                    run: () => setLinkingFrom(id),
+                  },
+                  {
+                    id: "callout",
+                    label: t("canvas.menu.addCallout"),
+                    run: () => apply(addCallout(docRef.current, id)),
+                  },
+                  {
+                    id: "boundary",
+                    label: t("canvas.menu.groupInBoundary"),
+                    run: () => apply(groupBranch(docRef.current, id)),
+                  },
+                  {
+                    id: "summary",
+                    label: t("canvas.menu.summarizeBranch"),
+                    run: () => apply(groupSummary(docRef.current, id)),
+                  },
+                  {
+                    id: "copy",
+                    label: t("canvas.menu.copyBranch"),
+                    shortcut: "Ctrl/⌘+C",
+                    run: () => {
                       const n = findAnyNode(docRef.current, id);
                       if (n) setBranches([structuredClone(n)]);
                     },
-                  ],
+                  },
                 ];
                 // Export this branch (B4): scoped export of the subtree, only for a non-leaf node
                 // (a lone topic has nothing to scope — the whole-map export already covers it).
                 if ((findAnyNode(docRef.current, id)?.children.length ?? 0) > 0)
-                  items.push([
-                    t("canvas.menu.exportBranch"),
-                    () => onExportBranchRef.current?.(id),
-                  ]);
+                  items.push({
+                    id: "export",
+                    label: t("canvas.menu.exportBranch"),
+                    run: () => onExportBranchRef.current?.(id),
+                  });
                 // Cross-map paste: show only when the branch clipboard has something (it persists in
                 // localStorage, so branches copied in another map show up here too).
                 const clips = getBranches();
                 if (clips.length)
-                  items.push([
-                    t("canvas.menu.pasteBranches", { n: clips.length }),
-                    () => apply(addSubtree(docRef.current, id, clips)),
-                  ]);
-                items.push([
-                  t("canvas.menu.collapseExpand"),
-                  () => apply(toggleCollapse(docRef.current, id)),
-                ]);
-                items.push([
-                  findAnyNode(docRef.current, id)?.locked
+                  items.push({
+                    id: "paste",
+                    label: t("canvas.menu.pasteBranches", { n: clips.length }),
+                    shortcut: "Ctrl/⌘+Shift+V",
+                    run: () => apply(addSubtree(docRef.current, id, clips)),
+                  });
+                items.push({
+                  id: "collapse",
+                  label: t("canvas.menu.collapseExpand"),
+                  run: () => apply(toggleCollapse(docRef.current, id)),
+                });
+                items.push({
+                  id: "lock",
+                  label: findAnyNode(docRef.current, id)?.locked
                     ? t("canvas.menu.unlockPosition")
                     : t("canvas.menu.lockPosition"),
-                  () => apply(toggleLocked(docRef.current, id)),
-                ]);
+                  run: () => apply(toggleLocked(docRef.current, id)),
+                });
                 // Detach a central-tree branch out to a floating topic; re-attach a floating one to
                 // the centre. (Either way you can also just drag it.)
                 const isFloatingTop = (docRef.current.floatingTopics ?? []).some(
                   (f) => f.id === id,
                 );
                 if (isFloatingTop)
-                  items.push([
-                    t("canvas.menu.reattach"),
-                    () => apply(reparent(docRef.current, id, docRef.current.root.id)),
-                  ]);
+                  items.push({
+                    id: "reattach",
+                    label: t("canvas.menu.reattach"),
+                    run: () => apply(reparent(docRef.current, id, docRef.current.root.id)),
+                  });
                 else if (id !== docRef.current.root.id)
-                  items.push([
-                    t("canvas.menu.detach"),
-                    () => apply(detachBranch(docRef.current, id)),
-                  ]);
-                items.push([t("common.delete"), () => deleteNodeWithUndo(id), true]);
+                  items.push({
+                    id: "detach",
+                    label: t("canvas.menu.detach"),
+                    run: () => apply(detachBranch(docRef.current, id)),
+                  });
+                items.push({
+                  id: "delete",
+                  label: t("common.delete"),
+                  shortcut: "Del",
+                  run: () => deleteNodeWithUndo(id),
+                  danger: true,
+                });
                 // Live marker/priority state so the quick-setters reflect the node (and toggle off).
                 const node = findAnyNode(docRef.current, id);
                 const activeMarkers = node?.icons ?? [];
                 const curPriority = node?.task?.priority;
                 return (
                   <>
-                    {items.map(([label, fn, danger]) => (
+                    {items.map((item) => (
                       <MenuItem
-                        key={label}
-                        label={label}
-                        danger={danger}
-                        shortcut={MENU_SHORTCUT[label]}
-                        onSelect={fn}
+                        key={item.id}
+                        label={item.label}
+                        danger={item.danger}
+                        shortcut={item.shortcut}
+                        onSelect={item.run}
                       />
                     ))}
                     <MenuSeparator />

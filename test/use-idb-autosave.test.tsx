@@ -6,7 +6,9 @@ import type { MindMapDoc } from "../src/model/types";
 // guard. The store is mocked so persistence is observed without a real IndexedDB.
 
 vi.mock("../src/store/mapStore", () => ({
+  clearRecoveryDraftThrough: vi.fn(async () => {}),
   saveMap: vi.fn(async () => {}),
+  saveRecoveryDraft: vi.fn(async () => {}),
   setLastOpened: vi.fn(async () => {}),
 }));
 
@@ -34,6 +36,8 @@ function setup(d: MindMapDoc = doc()) {
 beforeEach(() => {
   vi.clearAllMocks();
   mocked.saveMap.mockResolvedValue(undefined);
+  mocked.saveRecoveryDraft.mockResolvedValue(undefined);
+  mocked.clearRecoveryDraftThrough.mockResolvedValue(undefined);
   mocked.setLastOpened.mockResolvedValue(undefined);
 });
 
@@ -113,6 +117,38 @@ describe("useIdbAutosave — scheduleSave + lifecycle", () => {
     });
     expect(mocked.saveMap).toHaveBeenCalledTimes(1);
     expect(mocked.setLastOpened).toHaveBeenCalledWith("live");
+    expect(mocked.clearRecoveryDraftThrough).toHaveBeenCalledWith("live", expect.any(Number));
+  });
+
+  it("writes a throttled recovery checkpoint before the stable autosave", async () => {
+    const { result } = setup(doc("recoverable"));
+    act(() => result.current.scheduleSave());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(250);
+    });
+    expect(mocked.saveRecoveryDraft).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "recoverable" }),
+      expect.any(Number),
+    );
+    expect(mocked.saveMap).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(250);
+    });
+    expect(mocked.saveMap).toHaveBeenCalledTimes(1);
+  });
+
+  it("throttles continuous edits instead of postponing recovery until typing stops", async () => {
+    const { result } = setup(doc("typing"));
+    act(() => result.current.scheduleSave());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    act(() => result.current.scheduleSave());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(150);
+    });
+    expect(mocked.saveRecoveryDraft).toHaveBeenCalledTimes(1);
+    expect(mocked.saveMap).not.toHaveBeenCalled();
   });
 
   it("shows saveState='saving' as soon as an edit is pending, then 'saved' once it lands", async () => {

@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { INSPECTOR_MAX, INSPECTOR_MIN } from "../hooks/usePanels";
+import { t } from "../i18n";
 
 const clamp = (w: number) => Math.min(INSPECTOR_MAX, Math.max(INSPECTOR_MIN, w));
 
@@ -33,7 +34,7 @@ export function InspectorResizer({
       className="mm-inspector-resizer"
       role="separator"
       aria-orientation="vertical"
-      aria-label="Resize inspector"
+      aria-label={t("panel.resizeInspector")}
       aria-valuenow={width}
       aria-valuemin={INSPECTOR_MIN}
       aria-valuemax={INSPECTOR_MAX}

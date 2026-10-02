@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { controlStyle } from "../ui";
 
 /** A node on the path from the root to the selected topic. */
@@ -12,7 +13,7 @@ export interface Crumb {
 export function Breadcrumb({ crumbs, onPick }: { crumbs: Crumb[]; onPick: (id: string) => void }) {
   return (
     <nav
-      aria-label="Topic path"
+      aria-label={t("breadcrumb.topicPath")}
       style={{
         display: "flex",
         alignItems: "center",
@@ -33,7 +34,11 @@ export function Breadcrumb({ crumbs, onPick }: { crumbs: Crumb[]; onPick: (id: s
             <button
               type="button"
               onClick={() => onPick(c.id)}
-              title={last ? c.topic || "(untitled)" : `Go to “${c.topic || "(untitled)"}”`}
+              title={
+                last
+                  ? c.topic || t("common.untitled")
+                  : t("breadcrumb.goTo", { topic: c.topic || t("common.untitled") })
+              }
               aria-current={last ? "true" : undefined}
               style={{
                 ...controlStyle,

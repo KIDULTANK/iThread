@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { t } from "../i18n";
 import { useInstallPrompt } from "../pwa/useInstallPrompt";
 
 // A self-gating install affordance (O2): renders the in-app "Install iThread" button when the
@@ -46,13 +47,11 @@ export function InstallButton({ className }: { className?: string }) {
   if (state.kind === "ios-hint") {
     return (
       <div className={className} style={wrap} role="note">
-        <span>
-          Install: tap <strong>Share</strong> → <strong>Add to Home Screen</strong>.
-        </span>
+        <span>{t("install.iosHint")}</span>
         <button
           type="button"
           style={dismiss}
-          aria-label="Dismiss install hint"
+          aria-label={t("install.dismissHint")}
           onClick={state.dismiss}
         >
           ×
@@ -64,12 +63,12 @@ export function InstallButton({ className }: { className?: string }) {
   return (
     <div className={className} style={wrap}>
       <button type="button" style={btn} onClick={() => void state.promptInstall()}>
-        ⤓ Install iThread
+        ⤓ {t("install.action")}
       </button>
       <button
         type="button"
         style={dismiss}
-        aria-label="Dismiss install prompt"
+        aria-label={t("install.dismissPrompt")}
         onClick={state.dismiss}
       >
         ×

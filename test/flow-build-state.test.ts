@@ -80,6 +80,18 @@ describe("buildFlowState", () => {
     expect(sel.filter((e) => e.selected).length).toBe(1);
   });
 
+  it("reuses positions when an edit does not change geometry", () => {
+    const first = build();
+    const second = build({ selectedIds: new Set(["a"]) });
+    const firstById = new Map(first.nodes.map((node) => [node.id, node.position]));
+    for (const node of second.nodes) expect(node.position).toBe(firstById.get(node.id));
+
+    const changed = doc();
+    changed.root.children[0].topic = "A much longer topic that changes its estimated width";
+    const third = build({ doc: changed });
+    expect(third.nodes.find((node) => node.id === "a")?.position).not.toBe(firstById.get("a"));
+  });
+
   it("dims everything outside the lit set when a filter is active; no dimmed key when off", () => {
     const lit = build({ litIds: new Set(["r", "a"]) });
     const byId = new Map(lit.nodes.map((n) => [n.id, n]));

@@ -3246,7 +3246,7 @@ export function InfoPanel({
                     // Bulk: tri-state markers lead Details too (lit = on all, dashed = on some), so the
                     // control set doesn't reshuffle between single and multi select.
                     <>
-                      {sectionLabel("Markers")}
+                      {sectionLabel(t("common.markers"))}
                       <MarkerBar
                         markers={markers}
                         active={bulkMarkers?.all}
@@ -3258,7 +3258,7 @@ export function InfoPanel({
                   {!multi && (
                     <>
                       {/* Markers lead Details; the note moved to its own Notes tab (P3). */}
-                      {sectionLabel("Markers")}
+                      {sectionLabel(t("common.markers"))}
                       <MarkerBar markers={markers} active={node.icons} onToggle={onToggleMarker} />
                       {(() => {
                         const suggested = suggestNewMarkers(node.topic, node.icons ?? []);
@@ -3307,7 +3307,7 @@ export function InfoPanel({
                           </div>
                         ) : null;
                       })()}
-                      {sectionLabel("Tags")}
+                      {sectionLabel(t("common.tags"))}
                       <div
                         style={{ padding: "0 10px 4px", display: "flex", flexWrap: "wrap", gap: 4 }}
                       >
@@ -3359,7 +3359,7 @@ export function InfoPanel({
 
                   {multi && bulkTags && onBulkToggleTag ? (
                     <>
-                      {sectionLabel("Tags")}
+                      {sectionLabel(t("common.tags"))}
                       <div
                         style={{ padding: "0 10px 4px", display: "flex", flexWrap: "wrap", gap: 4 }}
                       >

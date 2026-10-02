@@ -1,7 +1,12 @@
 import type { RefObject } from "react";
+import { editorConfirm } from "./components/editorDialogs";
 import { t } from "./i18n";
 import { downloadBlob } from "./io/download";
 import { buildPrintDoc, wrapSvgHtml } from "./io/html";
+import type {
+  IthoughtsCompatibilityIssue,
+  IthoughtsCompatibilityReport,
+} from "./io/ithoughtsCompatibility";
 import { serializeDoc } from "./io/json";
 import { toMarkdown } from "./io/markdown";
 import { toMermaid } from "./io/mermaid";
@@ -19,6 +24,42 @@ export interface PngOptions {
   scale?: number;
   /** Skip the white background fill so the PNG has transparency (paste onto any colour). */
   transparent?: boolean;
+}
+
+function ithoughtsIssueText(code: IthoughtsCompatibilityIssue, count: number): string {
+  const keys: Record<IthoughtsCompatibilityIssue, Parameters<typeof t>[0]> = {
+    richTextConverted: "io.itmzReport.richTextConverted",
+    markersAndTags: "io.itmzReport.markersAndTags",
+    extraHyperlinks: "io.itmzReport.extraHyperlinks",
+    extraAssets: "io.itmzReport.extraAssets",
+    callouts: "io.itmzReport.callouts",
+    taskDetails: "io.itmzReport.taskDetails",
+    advancedTopicStyle: "io.itmzReport.advancedTopicStyle",
+    branchSettings: "io.itmzReport.branchSettings",
+    mapObjects: "io.itmzReport.mapObjects",
+    relationshipStyle: "io.itmzReport.relationshipStyle",
+    mapPresentation: "io.itmzReport.mapPresentation",
+  };
+  return t(keys[code], { n: count });
+}
+
+function ithoughtsReportText(report: IthoughtsCompatibilityReport): string {
+  const preserved = t("io.itmzReport.preserved", {
+    notes: report.notes,
+    links: report.primaryLinks,
+    assets: report.embeddedAssets,
+    tasks: report.taskProgress,
+    relationships: report.relationships,
+  });
+  const lines = [t("io.itmzReport.summary", { n: report.topics }), preserved];
+  if (report.issues.length === 0) lines.push(t("io.itmzReport.noIssues"));
+  else {
+    lines.push(t("io.itmzReport.attention", { n: report.issueItems }));
+    for (const issue of report.issues)
+      lines.push(`• ${ithoughtsIssueText(issue.code, issue.count)}`);
+  }
+  lines.push(t("io.itmzReport.keepNative"));
+  return lines.join("\n");
 }
 
 // Rasterise an SVG string to a PNG via an offscreen canvas. Safe because the exporter emits
@@ -216,7 +257,16 @@ export function useMapExports(
     // iThread editing should stay in the native `.ithread` format.
     async exportIthoughts() {
       const { toIthoughts } = await import("./io/ithoughts");
-      const bytes = toIthoughts(getDoc()) as BlobPart;
+      const { analyzeIthoughtsCompatibility } = await import("./io/ithoughtsCompatibility");
+      const current = getDoc();
+      const report = analyzeIthoughtsCompatibility(current);
+      const proceed = await editorConfirm({
+        title: t("io.itmzReport.title"),
+        body: ithoughtsReportText(report),
+        confirmText: t("io.itmzReport.export"),
+      });
+      if (!proceed) return;
+      const bytes = toIthoughts(current) as BlobPart;
       downloadBlob(new Blob([bytes], { type: "application/octet-stream" }), `${baseName()}.itmz`);
     },
     // png/svg/html/pdf all embed the rendered SVG via cleanSvg() (sanitize + native-text).

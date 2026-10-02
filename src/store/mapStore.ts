@@ -29,6 +29,9 @@ interface MindMapDB extends DBSchema {
   maps: { key: string; value: MindMapDoc };
   meta: { key: string; value: string };
   versions: { key: string; value: VersionRecord; indexes: { "by-map": string } };
+  // Short-lived, higher-frequency checkpoints. A successful normal autosave clears every recovery
+  // draft it supersedes; an abnormal shutdown leaves the newest draft here for the next boot.
+  recovery: { key: string; value: RecoveryDraft };
   // Disk-file binding per map: a FileSystemFileHandle (structured-cloneable) so a map opened from /
   // saved to an `.ithread` (or legacy `.mmst`) reconnects across reloads. Permission is re-checked.
   handles: { key: string; value: FileSystemFileHandle };
@@ -37,7 +40,7 @@ interface MindMapDB extends DBSchema {
 }
 
 const DB_NAME = "mindmap-studio";
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 /** Keep at most this many snapshots per map; older ones are pruned. */
 export const MAX_VERSIONS = 30;
 
@@ -56,6 +59,7 @@ function db(): Promise<IDBPDatabase<MindMapDB>> {
         if (!database.objectStoreNames.contains("handles")) database.createObjectStore("handles");
         if (!database.objectStoreNames.contains("recentFiles"))
           database.createObjectStore("recentFiles");
+        if (!database.objectStoreNames.contains("recovery")) database.createObjectStore("recovery");
       },
     });
   }
@@ -88,9 +92,47 @@ export async function loadMap(id: string): Promise<MindMapDoc | null> {
 
 export async function deleteMap(id: string): Promise<void> {
   await (await db()).delete("maps", id);
+  await clearRecoveryDraft(id);
   await deleteVersionsForMap(id); // a deleted map's history goes with it
   await deleteMapHandle(id); // and its disk-file binding
   await deleteRecentFile(id); // and its Open-Recent entry
+}
+
+// --- crash-recovery drafts -------------------------------------------------
+
+export interface RecoveryDraft {
+  mapId: string;
+  savedAt: number;
+  doc: MindMapDoc;
+}
+
+/** Write a high-frequency recovery checkpoint without changing the stable library copy. */
+export async function saveRecoveryDraft(doc: MindMapDoc, savedAt = Date.now()): Promise<void> {
+  const draft: RecoveryDraft = { mapId: doc.id, savedAt, doc: structuredClone(doc) };
+  await (await db()).put("recovery", draft, doc.id);
+}
+
+/** Read and normalize a map's pending recovery checkpoint. */
+export async function loadRecoveryDraft(mapId: string): Promise<RecoveryDraft | null> {
+  const draft = (await (await db()).get("recovery", mapId)) ?? null;
+  return draft ? { ...draft, doc: normalizeDoc(draft.doc) } : null;
+}
+
+/**
+ * Clear a checkpoint only when it is no newer than the stable save that just completed. This guards
+ * the race where an edit arrives while an older normal save is still in flight.
+ */
+export async function clearRecoveryDraftThrough(
+  mapId: string,
+  savedThrough: number,
+): Promise<void> {
+  const database = await db();
+  const draft = await database.get("recovery", mapId);
+  if (draft && draft.savedAt <= savedThrough) await database.delete("recovery", mapId);
+}
+
+export async function clearRecoveryDraft(mapId: string): Promise<void> {
+  await (await db()).delete("recovery", mapId);
 }
 
 // --- trash (soft-delete) ---------------------------------------------------

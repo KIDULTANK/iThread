@@ -27,7 +27,9 @@ export function SearchResults<T>({
 }) {
   if (rows.length === 0)
     return (
-      <p style={{ color: "var(--ed-muted)", fontSize: 13, margin: "12px 2px 0" }}>No matches.</p>
+      <p style={{ color: "var(--ed-muted)", fontSize: 13, margin: "12px 2px 0" }}>
+        {t("app.noMatches2")}
+      </p>
     );
   const faint = (fontSize: number) => ({
     display: "block" as const,
@@ -80,9 +82,10 @@ export function SearchResults<T>({
       ))}
       {rows.length > 50 && (
         <li style={{ color: "var(--ed-faint)", fontSize: 12, padding: "6px 8px" }}>
-          +{rows.length - 50} more — refine your search
+          {t("search.moreResults", { n: rows.length - 50 })}
         </li>
       )}
     </ul>
   );
 }
+import { t } from "../i18n";

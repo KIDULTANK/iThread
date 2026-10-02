@@ -10,7 +10,6 @@ import { render } from "@testing-library/react";
 import { ReactFlow, ReactFlowProvider } from "@xyflow/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { MarkerTagIndex } from "../src/Panels";
-import { Breadcrumb } from "../src/components/Breadcrumb";
 import { FirstRunCard } from "../src/components/FirstRunCard";
 import { CoachMark } from "../src/mindmap/flow/CanvasOverlays";
 import type { MapNode } from "../src/model/types";
@@ -28,9 +27,8 @@ import {
 //   - an UNMIGRATED component renders its hardcoded strings  → the harness can fail
 //
 // A harness that only ever reports zero is worse than none, because it certifies every future batch.
-// `Breadcrumb.tsx` is the negative control here on purpose: it is not on the migrated allowlist and
-// carries `aria-label="Topic path"` (:15) plus `"(untitled)"`. When Breadcrumb is migrated, this file's
-// positive/negative pair must be re-pointed at a still-unmigrated component — see the note on that test.
+// A deliberately hardcoded fixture is the negative control. Keeping the defect inside the test means
+// the harness stays proven without requiring production UI to remain untranslated forever.
 
 // The overlay is global mutable state — without this the next file to touch i18n inherits it.
 afterEach(restoreCatalogues);
@@ -54,15 +52,12 @@ describe("pseudo-locale harness", () => {
   });
 
   it("REPORTS the hardcoded strings in a component that has not been migrated", () => {
-    // The negative control. If this ever returns [] without Breadcrumb having been migrated, the
-    // harness has gone blind and every batch it certified needs re-checking.
+    // The negative control. If this returns [], the harness has gone blind.
     applyMarkerLocale();
-    const { container } = render(
-      <Breadcrumb crumbs={[{ id: "a", topic: "ZZDATA" }]} onPick={() => {}} />,
-    );
+    const { container } = render(<div aria-label="Hardcoded control">Hardcoded copy</div>);
     const found = unmarkedStrings(container, DATA);
     expect(found.length).toBeGreaterThan(0);
-    expect(found.join("\n")).toContain("Topic path");
+    expect(found.join("\n")).toContain("Hardcoded control");
   });
 
   // The markup-in-prose components. These are the ones the SCANNER cannot judge: no detector matches a

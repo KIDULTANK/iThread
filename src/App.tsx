@@ -32,13 +32,11 @@ import { CommandPalette, clearRecents } from "./components/CommandPalette";
 import { Dialog } from "./components/Dialog";
 import { DocumentTabs } from "./components/DocumentTabs";
 import { EdgeInspector } from "./components/EdgeInspector";
-import { FindReplaceOverlay } from "./components/FindReplaceOverlay";
 import { FirstRunCard } from "./components/FirstRunCard";
 import { IconRail } from "./components/IconRail";
 import { InspectorRail } from "./components/InspectorRail";
 import { MapPanel } from "./components/MapPanel";
 import { MobileSheetScrim } from "./components/MobileSheetScrim";
-import { OverlayInspector } from "./components/OverlayInspector";
 import { type DockEntry, PanelDock } from "./components/PanelDock";
 import { SearchResults } from "./components/SearchResults";
 import { ToastBar } from "./components/ToastBar";
@@ -68,7 +66,7 @@ import { usePasteOutline } from "./hooks/usePasteOutline";
 import { useSheetDrag } from "./hooks/useSheetDrag";
 import { useToast } from "./hooks/useToast";
 import { useVersionHistory } from "./hooks/useVersionHistory";
-import { t } from "./i18n";
+import { getLocale, t } from "./i18n";
 import { tNodes } from "./i18n/nodes";
 import { MARKER_PALETTE } from "./icons";
 import { fileToAttachment } from "./io/attachment";
@@ -108,7 +106,6 @@ import {
   outlineRows,
 } from "./outline";
 import { deckRows, hasCustomDeck } from "./present/slides";
-import { checkForUpdate, initPwaUpdateToast } from "./pwa/pwaUpdate";
 import { refreshRollups } from "./rollup";
 import { useSavedViews } from "./savedViews";
 import { type LibraryHit, findDocMatches, searchLibrary } from "./search";
@@ -119,7 +116,9 @@ import { clearAllLocalPreferences } from "./store/localPrefs";
 import {
   type MapSummary,
   type RecentFile,
+  type RecoveryDraft,
   clearAllData,
+  clearRecoveryDraft,
   findMapReferences,
   getAllMaps,
   getFolders,
@@ -128,6 +127,7 @@ import {
   listRecentFiles,
   loadMap,
   loadMapHandle,
+  loadRecoveryDraft,
   restoreMapFromTrash,
   saveFolders,
   saveMap,
@@ -195,6 +195,15 @@ const AltShortcutOverlay = lazy(() =>
 const InstallButton = lazy(() =>
   import("./components/InstallButton").then((m) => ({ default: m.InstallButton })),
 );
+const RecoveryDialog = lazy(() =>
+  import("./components/RecoveryDialog").then((m) => ({ default: m.RecoveryDialog })),
+);
+const OverlayInspector = lazy(() =>
+  import("./components/OverlayInspector").then((m) => ({ default: m.OverlayInspector })),
+);
+const FindReplaceOverlay = lazy(() =>
+  import("./components/FindReplaceOverlay").then((m) => ({ default: m.FindReplaceOverlay })),
+);
 
 // How many recently-used document tabs keep their canvas session (viewport + undo/redo) cached for
 // lossless switching; beyond this the least-recently-used session is dropped (that tab reopens fresh).
@@ -256,6 +265,10 @@ export function App() {
   // (the desktop layout wraps into a wall of rows on a narrow screen, burying the canvas).
   const isMobile = useIsMobile();
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [recoveryCandidate, setRecoveryCandidate] = useState<{
+    draft: RecoveryDraft;
+    stable: MindMapDoc;
+  } | null>(null);
   // The import-warnings banner collapses to the first note + "(+N more)"; this reveals the full list.
   const [warningsExpanded, setWarningsExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -493,7 +506,7 @@ export function App() {
     const arr = selectedOverlay.kind === "boundary" ? liveDoc.boundaries : liveDoc.summaries;
     const obj = arr?.find((o) => o.id === selectedOverlay.id);
     const n = obj?.nodeIds.length ?? 0;
-    return `${n} ${n === 1 ? "topic" : "topics"}`;
+    return t("count.topics", { n });
   }, [selectedOverlay, liveDoc]);
   // Auto-show the right-side inspector when a node is selected (the redesign's auto-show behaviour).
   // Sticky minimize wins: if the user has collapsed the inspector to its strip, selecting another
@@ -588,6 +601,7 @@ export function App() {
   });
   const [libDocs, setLibDocs] = useState<MindMapDoc[]>([]);
   const [libQuery, setLibQuery] = useState("");
+  const searchAllInputRef = useRef<HTMLInputElement>(null);
   const pendingFocus = useRef<string | null>(null);
   const selectedIdRef = useRef<string | null>(null);
   // Back/forward navigation history (map + focused node). One instance; the recording effect feeds it
@@ -619,13 +633,41 @@ export function App() {
   // Register the PWA self-updater once: a new deploy surfaces a "Refresh now" toast
   // through showToast (no-op in dev — the service worker is disabled there).
   useEffect(() => {
-    initPwaUpdateToast(showToast);
+    void import("./pwa/pwaUpdate").then(({ initPwaUpdateToast }) => {
+      initPwaUpdateToast(showToast, {
+        updateAvailable: t("hint.updateAvailable"),
+        refreshNow: t("hint.refreshNow"),
+        offlineReady: t("hint.offlineReady"),
+      });
+    });
   }, [showToast]);
 
   // Manual "Check for updates", shared by the editor's About dialog and the Start screen's About.
   // Maps the check result to a toast (the surface — ToastBar — is now mounted in both views, so the
   // result, and any re-surfaced "Refresh now" prompt, shows wherever the user triggered it).
   const checkForUpdates = useCallback(async () => {
+    // The lazy module also registers this feature's English catalogue before any update toast uses it.
+    const { checkForUpdate } = await import("./pwa/pwaUpdate");
+    const desktop = window.iThreadDesktop;
+    if (desktop) {
+      const result = await desktop.checkForUpdates();
+      if (result.status === "available") {
+        showToast("info", t("hint.desktopUpdateAvailable", { version: result.latestVersion }), {
+          action: {
+            label: t("hint.openDownloadPage"),
+            run: () => {
+              void desktop.openReleasePage(result.url);
+            },
+          },
+          durationMs: 15000,
+        });
+      } else if (result.status === "up-to-date") {
+        showToast("success", t("hint.upToDate"));
+      } else {
+        showToast("info", t("hint.desktopUpdateUnavailable"));
+      }
+      return;
+    }
     const result = await checkForUpdate();
     if (result === "up-to-date") {
       showToast("success", t("hint.upToDate"));
@@ -717,7 +759,7 @@ export function App() {
   }, []);
 
   const load = useCallback(
-    (next: MindMapDoc, nextWarnings: string[] = []) => {
+    (next: MindMapDoc, nextWarnings: string[] = [], persistNext = true) => {
       // Stash the outgoing map's canvas session (viewport + undo/redo) so switching back to it is
       // lossless. Captured here, while the old canvas is still mounted, before the doc swaps.
       const prev = liveDocRef.current;
@@ -743,7 +785,7 @@ export function App() {
       setError(null);
       setDoc(next);
       ensureOpen(next.id); // register/activate this map's tab (the registry follows the active map)
-      persist(next);
+      if (persistNext) persist(next);
     },
     [persist, ensureOpen],
   );
@@ -970,6 +1012,26 @@ export function App() {
     }
   }
 
+  // The desktop shell queues a double-clicked file until this listener is ready.
+  // Importing creates an independent library copy; it does not silently overwrite the source file.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: register once; processFiles reads live refs.
+  useEffect(() => {
+    const desktop = window.iThreadDesktop;
+    if (!desktop) return;
+    return desktop.onOpenFile((payload) => {
+      void (async () => {
+        if (payload.writable && isNativeExt(payload.name)) {
+          const { createDesktopFileHandle } = await import("./io/desktopFileHandle");
+          const handle = createDesktopFileHandle(payload, desktop);
+          await adoptOpenedFile(await readMapFromHandle(handle), handle);
+          return;
+        }
+        await processFiles([new File([new Uint8Array(payload.bytes)], payload.name)]);
+        setView("editor");
+      })().catch((error) => setError(error instanceof Error ? error.message : String(error)));
+    });
+  }, []);
+
   async function handleImage(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -1084,7 +1146,7 @@ export function App() {
       await saveMap(liveDocRef.current); // flush the source map's edits before switching
       await saveMap(fresh);
       load(fresh);
-      showHint(`Promoted "${fresh.title}" to a new map.`);
+      showHint(t("hint.branchPromoted", { name: fresh.title }));
     } catch {
       showHint(t("hint.promoteFailed"));
     }
@@ -1108,7 +1170,7 @@ export function App() {
         return;
       }
       const ok = mapRef.current?.addSubtreeToSelected([src.root]);
-      showHint(ok ? `Merged "${src.title}" under the selection.` : t("hint.selectTopicFirst"));
+      showHint(ok ? t("hint.mapMerged", { name: src.title }) : t("hint.selectTopicFirst"));
     } catch {
       showHint(t("hint.mergeFailed"));
     }
@@ -1139,14 +1201,16 @@ export function App() {
     try {
       const refs = await findMapReferences(deleted.id);
       if (refs.length > 0) {
-        const names = refs
-          .slice(0, 3)
-          .map((r) => `“${r.title || "Untitled"}”`)
-          .join(", ");
-        const more = refs.length > 3 ? `, and ${refs.length - 3} more` : "";
+        const visibleNames = refs.slice(0, 3).map((r) => `“${r.title || t("common.untitled")}”`);
+        if (refs.length > 3)
+          visibleNames.push(t("dialog.deleteMap.moreRefs", { n: refs.length - 3 }));
+        const names = new Intl.ListFormat(getLocale(), {
+          style: "long",
+          type: "conjunction",
+        }).format(visibleNames);
         const ok = await editorConfirm({
           title: t("dialog.deleteMap.title"),
-          body: t("dialog.deleteMapRefs", { n: refs.length, names: `${names}${more}` }),
+          body: t("dialog.deleteMapRefs", { n: refs.length, names }),
           confirmText: t("dialog.deleteMap.confirm"),
           danger: true,
         });
@@ -1277,6 +1341,7 @@ export function App() {
         activeId = openTabIds[0] ?? null;
       }
       const restored = activeId ? await loadMap(activeId).catch(() => null) : null;
+      const recovery = activeId ? await loadRecoveryDraft(activeId).catch(() => null) : null;
       if (cancelled) return;
       if (restored && activeId) {
         restoreSession({
@@ -1285,7 +1350,15 @@ export function App() {
         });
         // Focus the deep-linked node after the canvas mounts (the pendingFocus effect, keyed on doc).
         if (deepLinkNodeId) pendingFocus.current = deepLinkNodeId;
-        load(restored);
+        // A boot restore is read-only: persisting it here would clear a newer abnormal-exit
+        // checkpoint before the user has had a chance to choose which version to keep.
+        load(restored, [], false);
+        if (recovery && recovery.savedAt > (restored.meta?.updatedAt ?? 0)) {
+          setRecoveryCandidate({ draft: recovery, stable: restored });
+        } else if (recovery) {
+          // A checkpoint at or behind the stable save is stale housekeeping, never a recovery offer.
+          void clearRecoveryDraft(activeId).catch(() => {});
+        }
         setView("editor");
       } else {
         setView("start");
@@ -1679,11 +1752,11 @@ export function App() {
       canRedo,
       undo: () => {
         mapRef.current?.undo();
-        showHint("Undone");
+        showHint(t("hint.undone"));
       },
       redo: () => {
         mapRef.current?.redo();
-        showHint("Redone");
+        showHint(t("hint.redone"));
       },
     },
     showHint,
@@ -2298,7 +2371,9 @@ export function App() {
               {!firstRunSeen ? <FirstRunCard onDismiss={dismissFirstRun} /> : null}
               {/* Find & Replace overlay — top-right of the canvas, non-modal (Ctrl/⌘+F or "/"). */}
               {findOpen ? (
-                <FindReplaceOverlay find={toolbarProps.find} onClose={() => setFindOpen(false)} />
+                <Suspense fallback={null}>
+                  <FindReplaceOverlay find={toolbarProps.find} onClose={() => setFindOpen(false)} />
+                </Suspense>
               ) : null}
               {/* Kanban board overlays the canvas (the map stays mounted underneath). */}
               {panels.boardOpen && (
@@ -2388,21 +2463,23 @@ export function App() {
                 }}
               />
             ) : selectedOverlay ? (
-              <OverlayInspector
-                overlay={selectedOverlay}
-                caption={overlayCaption}
-                width={panels.inspectorWidth}
-                onResize={panels.setInspectorWidth}
-                onSetLabel={(label) => mapRef.current?.setOverlayLabel(label)}
-                onSetColor={(color) => mapRef.current?.setOverlayColor(color)}
-                onSetShape={(shape) => mapRef.current?.setOverlayShape(shape)}
-                onSetDash={(dash) => mapRef.current?.setOverlayDash(dash)}
-                onDelete={() => mapRef.current?.deleteOverlay()}
-                onMinimize={() => {
-                  panels.setInfoOpen(false);
-                  panels.setInfoMinimized(true);
-                }}
-              />
+              <Suspense fallback={null}>
+                <OverlayInspector
+                  overlay={selectedOverlay}
+                  caption={overlayCaption}
+                  width={panels.inspectorWidth}
+                  onResize={panels.setInspectorWidth}
+                  onSetLabel={(label) => mapRef.current?.setOverlayLabel(label)}
+                  onSetColor={(color) => mapRef.current?.setOverlayColor(color)}
+                  onSetShape={(shape) => mapRef.current?.setOverlayShape(shape)}
+                  onSetDash={(dash) => mapRef.current?.setOverlayDash(dash)}
+                  onDelete={() => mapRef.current?.deleteOverlay()}
+                  onMinimize={() => {
+                    panels.setInfoOpen(false);
+                    panels.setInfoMinimized(true);
+                  }}
+                />
+              </Suspense>
             ) : selected ? (
               <InfoPanel
                 selected={selected}
@@ -2581,7 +2658,7 @@ export function App() {
         open={searchAllOpen}
         onClose={() => setSearchAllOpen(false)}
         onOpen={() => {
-          (document.querySelector('input[aria-label="Search query"]') as HTMLInputElement)?.focus();
+          searchAllInputRef.current?.focus();
           (async () => {
             const all = await getAllMaps().catch(() => [] as MindMapDoc[]);
             const live = liveDocRef.current;
@@ -2609,6 +2686,7 @@ export function App() {
           </button>
         </div>
         <input
+          ref={searchAllInputRef}
           value={libQuery}
           onChange={(e) => setLibQuery(e.target.value)}
           placeholder={t("search.placeholder")}
@@ -2764,6 +2842,28 @@ export function App() {
       {/* Host for the imperative themed prompt/confirm (editorPrompt / editorConfirm) used across the
           canvas + panels in place of native window.prompt/confirm. */}
       <DialogHost />
+
+      {recoveryCandidate && (
+        <Suspense fallback={null}>
+          <RecoveryDialog
+            open
+            mapTitle={recoveryCandidate.draft.doc.title || recoveryCandidate.stable.title}
+            savedAt={recoveryCandidate.draft.savedAt}
+            onClose={() => setRecoveryCandidate(null)}
+            onRestore={() => {
+              const recovered = recoveryCandidate.draft.doc;
+              setRecoveryCandidate(null);
+              load(recovered, [], false);
+              void persist(recovered, true).then(() => showHint(t("hint.recoveryRestored")));
+            }}
+            onDiscard={() => {
+              const mapId = recoveryCandidate.draft.mapId;
+              setRecoveryCandidate(null);
+              void clearRecoveryDraft(mapId).then(() => showHint(t("hint.recoveryDiscarded")));
+            }}
+          />
+        </Suspense>
+      )}
 
       {settingsOpen && (
         <Suspense fallback={null}>

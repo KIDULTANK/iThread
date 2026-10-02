@@ -152,7 +152,7 @@ ${sections}
 <span id="counter"></span>
 <button type="button" id="next">${escapeHtml(t("common.next"))}</button>
 <button type="button" id="notes-toggle" aria-pressed="false" title="${escapeHtml(t("io.deck.toggleNotes"))}">${escapeHtml(t("panel.tab.notes"))}</button>
-<span class="hint">← → or click to navigate · N for notes</span>
+<span class="hint">${escapeHtml(t("io.deck.navigationHint"))}</span>
 </footer>
 </div>
 <script>${DECK_SCRIPT}</script>

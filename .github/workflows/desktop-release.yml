@@ -38,7 +38,7 @@ jobs:
       - name: Run quality gate
         run: pnpm gate
 
-      - name: Build unsigned Windows portable executable
+      - name: Build unsigned Windows installer and portable executable
         run: pnpm desktop:dist
 
       - name: Generate SHA-256 checksums

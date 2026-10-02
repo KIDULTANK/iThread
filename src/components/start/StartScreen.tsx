@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { t } from "../../i18n/registry";
 import type { MindMapDoc } from "../../model/types";
+import "./messages";
 import { CommandPalette } from "./CommandPalette";
 import { MapDialogs, type PendingMapAction } from "./MapDialogs";
 import { StartHeader } from "./StartHeader";
@@ -20,18 +22,21 @@ import type { StartContext, StartSection } from "./types";
 import { useLibrary } from "./useLibrary";
 import "./start.css";
 
-const TITLES: Record<StartSection, string> = {
-  start: "Start",
-  all: "All maps",
-  recent: "Recent",
-  templates: "Templates",
-  examples: "Examples",
-  layouts: "Layouts",
-  import: "Import",
-  learn: "Learn mind mapping",
-  about: "About",
-  trash: "Trash",
-};
+function sectionTitle(section: StartSection): string {
+  const key: Record<StartSection, Parameters<typeof t>[0]> = {
+    start: "start.start",
+    all: "toolbar.allMaps",
+    recent: "toolbar.recent",
+    templates: "toolbar.templates",
+    examples: "toolbar.examples",
+    layouts: "start.layouts",
+    import: "start.import",
+    learn: "start.learnMindMapping",
+    about: "start.about",
+    trash: "start.trash",
+  };
+  return t(key[section]);
+}
 
 export function StartScreen({
   dark,
@@ -97,7 +102,7 @@ export function StartScreen({
         onNewMap={() => onOpen(blankDoc())}
       />
       <div className="st-main">
-        <StartHeader title={TITLES[section]} onCommand={() => setCmdk(true)} />
+        <StartHeader title={sectionTitle(section)} onCommand={() => setCmdk(true)} />
         <div className="st-scroll">
           {section === "start" ? <StartHome ctx={ctx} /> : null}
           {section === "all" ? <AllMaps ctx={ctx} /> : null}

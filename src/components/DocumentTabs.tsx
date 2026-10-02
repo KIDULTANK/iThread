@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { t } from "../i18n";
 import { EditorIcon } from "./EditorIcons";
 
 // dataTransfer MIME tag identifying a document-tab drag. Carrying the source index on the drag (vs a
@@ -42,11 +43,11 @@ export function DocumentTabs({
     activeRef.current?.scrollIntoView?.({ inline: "nearest", block: "nearest" });
   }, [activeId]);
   return (
-    <div className="mm-doctabs" role="tablist" aria-label="Open documents">
+    <div className="mm-doctabs" role="tablist" aria-label={t("tabs.openDocuments")}>
       <div className="mm-doctabs-scroll">
         {docs.map((d, i) => {
           const active = d.id === activeId;
-          const label = d.title || "Untitled map";
+          const label = d.title || t("panel.untitledMap");
           return (
             <div
               key={d.id}
@@ -101,7 +102,7 @@ export function DocumentTabs({
               <button
                 type="button"
                 className="mm-doctab-x"
-                aria-label={`Close ${label}`}
+                aria-label={t("common.closeNamed", { name: label })}
                 onClick={() => onClose(d.id)}
               >
                 <span aria-hidden="true">×</span>
@@ -113,8 +114,8 @@ export function DocumentTabs({
       <button
         type="button"
         className="mm-doctab-new"
-        aria-label="New document"
-        title="New document"
+        aria-label={t("tabs.newDocument")}
+        title={t("tabs.newDocument")}
         onClick={onNew}
       >
         <EditorIcon name="plus" size={16} />

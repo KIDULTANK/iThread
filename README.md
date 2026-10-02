@@ -1,6 +1,6 @@
 # iThread
 
-**Current preview: v0.4.0** · Windows 11 focused · Local-first · Apache-2.0
+**Current preview: v0.5.0** · Windows 11 focused · Local-first · Apache-2.0
 
 > iThread 是独立社区项目，与 iThoughts 及其原作者不存在隶属、授权或背书关系。
 
@@ -28,11 +28,12 @@ under the Apache License 2.0. The upstream copyright, licence and notices are pr
 
 ## Windows 11 desktop app
 
-Download the portable `iThread-0.4.0-Windows-x64.exe` from the
-[releases page](https://github.com/KIDULTANK/iThread/releases). It runs as a standalone
-Windows application and does not require an installer. Windows may show a SmartScreen notice because
-the community build is not code-signed; verify the SHA-256 value published with the release before
-running it.
+Download either the assisted `iThread-*-Windows-x64-Setup.exe` installer or the no-install
+`iThread-*-Windows-x64-Portable.exe` from the
+[releases page](https://github.com/KIDULTANK/iThread/releases). The installer registers iThread's
+supported file types; the portable build leaves system associations untouched. Windows may show a
+SmartScreen notice while the community build is unsigned; verify the SHA-256 value published with
+the release before running it.
 
 > [!IMPORTANT]
 > iThread can import iThoughts `.itmz` files and export a new iThoughts-compatible `.itmz`. It never
@@ -184,14 +185,17 @@ The local agent/automation interface is documented in [docs/CLI.md](docs/CLI.md)
 - **Version history** — per-map snapshots (auto while editing + on demand) with one-click restore;
   capped at 30, stored in IndexedDB, deleted with the map.
 - **Autosave + reload** — every change persists to IndexedDB; your last map is restored on
-  startup. Works fully offline.
+  startup. A faster recovery checkpoint can restore edits after an abnormal exit when it is newer
+  than the stable autosave. Works fully offline.
 - **Work with files (`.ithread`)** — open and save maps as real files on disk, like a desktop app:
   **Open file…** (Ctrl+O), **Save** (Ctrl+S, writes back to the same file with no dialog), and
   **Save as…** (Ctrl+Shift+S). Once a map is linked to a file, edits **autosave through to it** and
   the title bar shows a ● until the file is up to date. An `.ithread` is the same lossless schema as
   `.json`. On Chromium desktop (Chrome/Edge), an **installed** copy can be set as the default app for
-  `.ithread`, so double-clicking one in Windows Explorer opens it here. Existing `.mmst` files remain
-  losslessly readable. Browsers without the File System
+  `.ithread`, so double-clicking one in Windows Explorer opens it here and binds Ctrl+S/autosave back
+  to that file. Existing `.mmst` files remain losslessly readable. A native file can live in a
+  OneDrive/Dropbox/other OS-synced folder; iThread stays offline-capable and warns before overwriting a
+  file changed by another device. Browsers without the File System
   Access API (Firefox/Safari) fall back to a download/upload, and IndexedDB autosave still applies.
   An installed copy also registers for MindManager **`.mmap`** files: double-clicking (or **Open
   file…**) one **imports** it into the library (the import is one-way + lossy, and an opened `.mmap`
@@ -262,7 +266,7 @@ replaceable:
 - `src/io/` — the interchange adapters (Markdown, native-JSON, OPML, FreeMind, Mermaid, XMind,
   SimpleMind, docx/xlsx, …) plus self-contained-HTML/print I/O.
 - `src/io/fileSystem.ts` — native `.ithread` open/save/autosave plus legacy `.mmst` compatibility
-  (download/upload fallback + Windows file association through the PWA manifest `file_handlers`).
+  (download/upload fallback, PWA file handlers, and a token-scoped Electron bridge for Windows).
 - `src/useMapExports.ts` — the header's export handlers (json/md/png/svg/html/pdf).
 - `src/store/mapStore.ts` — IndexedDB-backed multi-map library (autosave + last-opened + file handles).
 - `src/present/` — the Walk-Through presentation overlay.
@@ -305,14 +309,14 @@ images through our own importer.
 
 ## Status
 
-**v0.4.0** is the current public-preview release. It includes the native `.ithread` extension (while
-keeping `.mmst` readable) and iThoughts-compatible `.itmz` export. Its `.itmz` importer/exporter is
-regression-tested against five large real-world maps and 31,389 topics, and an exported file has been
-manually reopened in the original iThoughts application. Large `.itmz` archives and layouts with 600+
-visible topics are processed in background workers; branch visibility commands structurally share
-unchanged subtrees; connector routing is spatially indexed; and full-canvas tweening is avoided when it
-would hurt responsiveness. Local saves are ordered to prevent a late old write replacing newer work,
-and pending edits flush when the app is hidden or closed. The app also includes a
+**v0.5.0** is the current public-preview release. It adds crash-recovery drafts, an explicit `.itmz`
+compatibility report, substantially broader Chinese UI coverage, assisted + portable Windows packages,
+native desktop open/save/file associations and a user-initiated GitHub update check. Its `.itmz`
+importer/exporter remains regression-tested against five large real-world maps and 31,389 topics, and
+an exported file has been manually reopened in the original iThoughts application. Large `.itmz`
+archives and layouts with 600+ visible topics are processed in background workers; completed layout
+workers stay warm, geometry-neutral edits reuse cached positions, connector routing is spatially
+indexed, and full-canvas tweening is avoided when it would hurt responsiveness. The app also includes a
 Windows/iPad-style keyboard workflow, right-growing layouts, Chinese and English UI, rich Markdown
 rendering, animated branch transitions, multi-topic selection, typography controls, and the
 localhost-only CLI bridge. It remains local-first and usable without a mandatory network connection.

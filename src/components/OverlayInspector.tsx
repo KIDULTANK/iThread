@@ -9,17 +9,25 @@ import { SWATCHES, fieldLabel, seg, segRow } from "./inspectorControls";
 // overlay's label (boundary/summary) or text (callout) and deletes it, via the canvas's overlay
 // mutators. Styled via .mm-inspector* + --ed-* tokens so it re-themes with the chrome.
 
-const KIND_LABEL: Record<SelectedOverlay["kind"], string> = {
-  boundary: "Boundary",
-  summary: "Summary",
-  callout: "Callout",
-};
+function kindLabel(kind: SelectedOverlay["kind"]): string {
+  return t(
+    kind === "boundary"
+      ? "panel.kind.boundary"
+      : kind === "summary"
+        ? "panel.kind.summary"
+        : "panel.kind.callout",
+  );
+}
 
 /** A one-line context describing what the overlay covers — mirrors the node inspector's breadcrumb so
  *  every inspector reads the same way (P5). caption is already "N topics" for boundary/summary. */
 function overlayContext(kind: SelectedOverlay["kind"], caption: string): string {
-  if (kind === "callout") return caption ? t("panel.calloutOn", { caption }) : "Callout";
-  return `${KIND_LABEL[kind]} around ${caption || "0 topics"}`;
+  if (kind === "callout")
+    return caption ? t("panel.calloutOn", { caption }) : t("panel.kind.callout");
+  return t("panel.overlayAround", {
+    kind: kindLabel(kind),
+    caption: caption || t("count.topics", { n: 0 }),
+  });
 }
 
 const controlStyle: CSSProperties = {
@@ -34,13 +42,11 @@ const controlStyle: CSSProperties = {
   padding: "4px 7px",
 };
 
-const SHAPE_LABEL = {
-  roundRect: "Rounded",
-  rect: "Square",
-  ellipse: "Ellipse",
-  cloud: "Cloud",
-  polygon: "Polygon",
-} as const;
+function shapeLabel(shape: "roundRect" | "rect" | "ellipse" | "cloud" | "polygon"): string {
+  if (shape === "roundRect") return t("panel.rounded");
+  if (shape === "ellipse") return t("toolbar.ellipse");
+  return t(`panel.shape.${shape}`);
+}
 
 export function OverlayInspector({
   overlay,
@@ -66,7 +72,7 @@ export function OverlayInspector({
   onResize?: (next: number) => void;
 }) {
   const isCallout = overlay.kind === "callout";
-  const labelTitle = isCallout ? "Text" : "Label";
+  const labelTitle = isCallout ? t("panel.text") : t("panel.label");
   const current = overlay.color?.toLowerCase();
   return (
     <aside
@@ -81,7 +87,7 @@ export function OverlayInspector({
       >
         <div style={{ flex: 1, overflow: "hidden" }}>
           <div style={{ fontSize: 11.5, color: "var(--ed-muted)", marginBottom: 5 }}>
-            {KIND_LABEL[overlay.kind]}
+            {kindLabel(overlay.kind)}
           </div>
           <div
             style={{
@@ -94,7 +100,7 @@ export function OverlayInspector({
             }}
             title={caption}
           >
-            {caption || KIND_LABEL[overlay.kind]}
+            {caption || kindLabel(overlay.kind)}
           </div>
           {/* Faint context line under the title, matching the node + edge inspectors (P5). */}
           <div className="mm-inspector-path" title={overlayContext(overlay.kind, caption)}>
@@ -140,7 +146,7 @@ export function OverlayInspector({
             placeholder={
               overlay.kind === "boundary" ? t("panel.boundaryLabel") : t("panel.summaryLabel")
             }
-            aria-label={t("panel.overlayKindLabel", { kind: KIND_LABEL[overlay.kind] })}
+            aria-label={t("panel.overlayKindLabel", { kind: kindLabel(overlay.kind) })}
             style={controlStyle}
           />
         )}
@@ -222,7 +228,7 @@ export function OverlayInspector({
                     onClick={() => onSetShape?.(s)}
                     style={seg(active)}
                   >
-                    {SHAPE_LABEL[s]}
+                    {shapeLabel(s)}
                   </button>
                 );
               })}
@@ -239,7 +245,7 @@ export function OverlayInspector({
                     onClick={() => onSetDash?.(d)}
                     style={seg(active)}
                   >
-                    {d}
+                    {t(`panel.${d}`)}
                   </button>
                 );
               })}
@@ -264,7 +270,7 @@ export function OverlayInspector({
               padding: "6px 0",
             }}
           >
-            {t("panel.deleteKindLower", { kind: KIND_LABEL[overlay.kind].toLowerCase() })}
+            {t("panel.deleteKindLower", { kind: kindLabel(overlay.kind).toLowerCase() })}
           </button>
         ) : null}
       </div>

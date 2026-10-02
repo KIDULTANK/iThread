@@ -44,6 +44,9 @@ let lastBlob: Blob;
 
 beforeEach(() => {
   downloads = [];
+  // Export tests exercise the imperative hook without mounting DialogHost; accept its native
+  // compatibility confirmation unless a test overrides this spy.
+  vi.spyOn(window, "confirm").mockReturnValue(true);
   // jsdom implements neither URL.createObjectURL nor anchor downloads — assign stubs directly
   // (vi.spyOn can't wrap a method that doesn't exist) and capture what would have been written.
   URL.createObjectURL = vi.fn((b: Blob | MediaSource) => {
@@ -134,6 +137,13 @@ describe("useMapExports — filenames + MIME types", () => {
     const { fromIthoughts } = await import("../src/io/ithoughts");
     const back = fromIthoughts(new Uint8Array(await downloads[0].blob.arrayBuffer()));
     expect(back.root.topic).toBe("**Bold** ==Highlight== __Under__");
+  });
+
+  it("exportIthoughts does not write a file when the compatibility report is cancelled", async () => {
+    vi.mocked(window.confirm).mockReturnValue(false);
+    const ex = useMapExports(handleRef(SVG), () => docOf("Demo Map"));
+    await ex.exportIthoughts();
+    expect(downloads).toHaveLength(0);
   });
 });
 

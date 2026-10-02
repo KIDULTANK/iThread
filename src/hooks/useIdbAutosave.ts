@@ -1,6 +1,11 @@
 import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
 import type { MindMapDoc } from "../model/types";
-import { saveMap, setLastOpened } from "../store/mapStore";
+import {
+  clearRecoveryDraftThrough,
+  saveMap,
+  saveRecoveryDraft,
+  setLastOpened,
+} from "../store/mapStore";
 
 /** The live autosave status, surfaced in the toolbar badge so "Saved locally" can't lie: `saving`
  *  while a debounced/in-flight write is pending, `saved` once it lands, `error` if the write throws
@@ -28,31 +33,40 @@ interface Options {
 
 export function useIdbAutosave({ liveDocRef, dirtyRef, refreshMaps, maybeSnapshot }: Options) {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // IndexedDB calls are async. Without a queue, an older slow write can finish after a newer one and
   // silently put stale content back on top. Chaining every persist preserves edit order across manual
   // saves, map switches, lifecycle flushes, and the normal debounce.
   const writeTail = useRef<Promise<void>>(Promise.resolve());
+  const latestStableWrite = useRef(0);
   const [saveState, setSaveState] = useState<SaveState>("idle");
 
   const persist = useCallback(
     // `snapshot` is true only on edit-driven saves — opening/switching a map shouldn't create a
     // version, or pure reloads would spam the history.
     (d: MindMapDoc, snapshot = false): Promise<void> => {
+      if (draftTimer.current) {
+        clearTimeout(draftTimer.current);
+        draftTimer.current = null;
+      }
+      const requestedAt = Date.now();
+      const writeId = ++latestStableWrite.current;
       setSaveState("saving");
       const write = writeTail.current.then(async () => {
         try {
           await saveMap(d);
+          await clearRecoveryDraftThrough(d.id, requestedAt);
           await setLastOpened(d.id);
           await refreshMaps();
           // Edit-driven saves feed the version-history auto-snapshot (throttle lives inside that hook).
           if (snapshot) maybeSnapshot(d);
           // An older write completing while a newer one is queued must not flash a false "saved".
-          if (write === writeTail.current) setSaveState("saved");
+          if (writeId === latestStableWrite.current) setSaveState("saved");
         } catch {
           // Don't swallow it silently — a quota/private-mode failure must reach the badge so the user
           // doesn't trust "Saved locally" while nothing persisted. If a newer save is queued, its
           // eventual result becomes authoritative instead.
-          if (write === writeTail.current) setSaveState("error");
+          if (writeId === latestStableWrite.current) setSaveState("error");
         }
       });
       // The task handles its own error, so the tail always remains usable by the next queued write.
@@ -65,6 +79,19 @@ export function useIdbAutosave({ liveDocRef, dirtyRef, refreshMaps, maybeSnapsho
   const scheduleSave = useCallback(() => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     setSaveState("saving"); // a pending edit → show "Saving…" right away, before the debounce fires
+    // Recovery checkpoints are throttled, not debounced: continuous typing still leaves a recent
+    // recoverable state instead of postponing the draft forever. They share the stable-write queue,
+    // so a late draft can never resurrect itself after the stable save clears it.
+    if (!draftTimer.current) {
+      draftTimer.current = setTimeout(() => {
+        draftTimer.current = null;
+        const d = liveDocRef.current;
+        const savedAt = Date.now();
+        writeTail.current = writeTail.current
+          .then(() => saveRecoveryDraft(d, savedAt))
+          .catch(() => {});
+      }, 250);
+    }
     saveTimer.current = setTimeout(() => {
       saveTimer.current = null; // mark not-pending so the hidden-flush below skips an already-saved doc
       persist(liveDocRef.current, true);
@@ -92,6 +119,10 @@ export function useIdbAutosave({ liveDocRef, dirtyRef, refreshMaps, maybeSnapsho
       if (!saveTimer.current) return;
       clearTimeout(saveTimer.current);
       saveTimer.current = null;
+      if (draftTimer.current) {
+        clearTimeout(draftTimer.current);
+        draftTimer.current = null;
+      }
       void persist(liveDocRef.current, true);
     };
     document.addEventListener("visibilitychange", flushPending);
