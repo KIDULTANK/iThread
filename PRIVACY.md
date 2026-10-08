@@ -1,5 +1,7 @@
 # Privacy policy
 
+[简体中文](PRIVACY.zh-CN.md) | **English**
+
 Effective date: 2026-09-28
 
 iThread is a local-first mind-mapping application. It does not require an account and does not

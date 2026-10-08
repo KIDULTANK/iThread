@@ -1,29 +1,29 @@
-name: 功能建议
-description: 建议新的工作流、兼容能力或体验改进
+name: 功能建议 / Feature request
+description: 建议工作流、兼容能力或体验改进 / Suggest a workflow, compatibility or UX improvement
 title: "[Feature] "
 labels: [enhancement]
 body:
   - type: textarea
     id: scenario
     attributes:
-      label: 使用场景
-      description: 请先描述你要完成什么，而不仅是希望增加哪个按钮。
+      label: 使用场景 / Use case
+      description: 请描述你要完成什么，而不仅是希望增加哪个按钮。Describe the outcome you need, not only the button you want.
     validations:
       required: true
   - type: textarea
     id: current
     attributes:
-      label: 当前做法及困难
+      label: 当前做法及困难 / Current workaround and difficulty
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: 建议方案
+      label: 建议方案 / Proposed solution
     validations:
       required: true
   - type: textarea
     id: ithoughts
     attributes:
-      label: iThoughts 中的对应行为（如有）
-      description: 可附快捷键、截图或录屏，但请勿上传受版权保护的完整手册。
+      label: iThoughts 中的对应行为（如有）/ Equivalent iThoughts behaviour, if any
+      description: 可附快捷键、截图或录屏，但请勿上传受版权保护的完整手册。You may include shortcuts, screenshots or video, but not a copyrighted manual.

@@ -1,5 +1,5 @@
-name: Bug 报告
-description: 报告可以稳定复现的错误或 iThoughts 文件兼容问题
+name: Bug 报告 / Bug report
+description: 报告可复现错误或 iThoughts 兼容问题 / Report a reproducible bug or compatibility issue
 title: "[Bug] "
 labels: [bug]
 body:
@@ -7,61 +7,62 @@ body:
     attributes:
       value: |
         感谢反馈。请勿上传包含个人信息、案件材料或商业秘密的原始导图。
+        Thank you for reporting a problem. Do not upload maps containing personal data, legal case material or trade secrets.
   - type: input
     id: version
     attributes:
-      label: iThread 版本
-      placeholder: 例如 v0.1.1
+      label: iThread 版本 / Version
+      placeholder: 例如 / e.g. v0.6.0
     validations:
       required: true
   - type: input
     id: windows
     attributes:
-      label: Windows 版本
-      placeholder: 例如 Windows 11 24H2 x64
+      label: Windows 版本 / Windows version
+      placeholder: 例如 / e.g. Windows 11 24H2 x64
     validations:
       required: true
   - type: dropdown
     id: area
     attributes:
-      label: 问题类型
+      label: 问题类型 / Area
       options:
-        - iThoughts .itmz 导入
-        - 编辑与快捷键
-        - 布局与性能
-        - 保存或导出
-        - 启动或界面
-        - 其他
+        - iThoughts .itmz 导入 / Import
+        - 编辑与快捷键 / Editing and shortcuts
+        - 布局与性能 / Layout and performance
+        - 保存或导出 / Save or export
+        - 启动或界面 / Startup or interface
+        - 其他 / Other
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: 重现步骤
-      placeholder: 请按顺序列出操作步骤
+      label: 重现步骤 / Steps to reproduce
+      placeholder: 请按顺序列出操作步骤 / List the exact steps in order
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: 预期结果
+      label: 预期结果 / Expected result
     validations:
       required: true
   - type: textarea
     id: actual
     attributes:
-      label: 实际结果
+      label: 实际结果 / Actual result
     validations:
       required: true
   - type: textarea
     id: attachments
     attributes:
-      label: 截图、录屏或脱敏样本
-      description: 仅上传你有权公开且已经脱敏的文件。
+      label: 截图、录屏或脱敏样本 / Screenshots, video or sanitised sample
+      description: 仅上传你有权公开且已经脱敏的文件。Only upload files you may legally share and have sanitised.
   - type: checkboxes
     id: privacy
     attributes:
-      label: 隐私确认
+      label: 隐私确认 / Privacy confirmation
       options:
-        - label: 我确认公开内容不含个人信息、工作秘密或其他敏感资料。
+        - label: 我确认公开内容不含个人信息、工作秘密或其他敏感资料。I confirm that the public material contains no personal, confidential or sensitive information.
           required: true

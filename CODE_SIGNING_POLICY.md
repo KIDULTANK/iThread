@@ -1,5 +1,7 @@
 # Code signing policy
 
+[简体中文](CODE_SIGNING_POLICY.zh-CN.md) | **English**
+
 ## Provider and status
 
 iThread has applied for the SignPath Foundation open-source code-signing programme. Free code

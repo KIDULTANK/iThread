@@ -5,6 +5,13 @@ phase-based. Open work lives in `NEXT_STEPS.md`, not here.
 
 ## [Unreleased]
 
+### Changed
+
+- The GitHub landing page now provides equal Chinese and English entry points, with separate full
+  overviews, quick-start guides, known-limitations pages, CLI references and contribution guides.
+- Issue forms and current release notes are bilingual so users can report problems and understand
+  downloads without switching languages.
+
 ## [0.6.0] - 2026-10-08
 
 ### Added

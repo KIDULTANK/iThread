@@ -1,5 +1,7 @@
 # Contributing to iThread
 
+[简体中文](CONTRIBUTING.zh-CN.md) | **English**
+
 Thank you for helping improve iThread. Bug reports, reproducible compatibility samples and focused
 pull requests are welcome.
 

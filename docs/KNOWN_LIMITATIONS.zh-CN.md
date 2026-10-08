@@ -1,5 +1,7 @@
 # iThread 下一版本已知限制
 
+**简体中文 | [English](KNOWN_LIMITATIONS.en.md)**
+
 这是公开预览版本，适合用备份文件体验和反馈，不建议作为重要资料的唯一存储位置。
 
 ## iThoughts 兼容性
