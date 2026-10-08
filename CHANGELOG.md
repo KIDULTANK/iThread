@@ -5,6 +5,20 @@ phase-based. Open work lives in `NEXT_STEPS.md`, not here.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-08
+
+### Added
+
+- The installed Windows app now exposes the local CLI through a random loopback port and a
+  per-launch bearer token discovered from the current user's app-data directory.
+- CLI commands can open and export maps, import generated Markdown from standard input, and apply up
+  to 10,000 topic operations as one validated, atomic, undoable batch with an optional dry run.
+
+### Changed
+
+- CLI mutation responses are compact by default; `--include-map` restores the complete document when
+  a caller needs it. Both desktop and development bridges advertise protocol version and capabilities.
+
 ## [0.4.0] - 2026-09-30
 
 ### Changed

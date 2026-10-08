@@ -1,6 +1,6 @@
 # iThread
 
-**Current preview: v0.5.0** · Windows 11 focused · Local-first · Apache-2.0
+**Current preview: v0.6.0** · Windows 11 focused · Local-first · Apache-2.0
 
 > iThread 是独立社区项目，与 iThoughts 及其原作者不存在隶属、授权或背书关系。
 
@@ -283,10 +283,12 @@ pnpm build       # production build
 
 ## Local agent CLI
 
-With the development preview open, local scripts and agents can inspect and edit maps through the
-`pnpm ithread` command. It supports listing and reading maps, creating a map, and adding, renaming,
-moving, or explicitly deleting topics. Changes to the open map appear on the canvas immediately.
-The bridge listens only on the local preview and does not require an internet connection.
+With either the Windows app or the development preview open, local scripts and agents can inspect
+and edit maps through the `pnpm ithread` command. It supports listing, opening, importing, exporting
+and reading maps; creating a map; atomic batches; and adding, renaming, moving, or explicitly
+deleting topics. Changes to the open map appear on the canvas immediately. The packaged app uses a
+random loopback port plus a per-launch bearer token; the bridge never listens on the network and
+does not require an internet connection.
 
 See [`docs/CLI.md`](docs/CLI.md) for commands, examples, and safety rules.
 
@@ -309,8 +311,10 @@ images through our own importer.
 
 ## Status
 
-**v0.5.0** is the current public-preview release. It adds crash-recovery drafts, an explicit `.itmz`
-compatibility report, substantially broader Chinese UI coverage, assisted + portable Windows packages,
+**v0.6.0** is the current public-preview release. It makes the token-authenticated local CLI available
+to the installed Windows app, adds atomic batch edits, dry runs, direct open/export commands and
+Markdown import through standard input. It also includes the v0.5.0 crash-recovery drafts, explicit
+`.itmz` compatibility report, broader Chinese UI coverage, assisted + portable Windows packages,
 native desktop open/save/file associations and a user-initiated GitHub update check. Its `.itmz`
 importer/exporter remains regression-tested against five large real-world maps and 31,389 topics, and
 an exported file has been manually reopened in the original iThoughts application. Large `.itmz`
@@ -319,7 +323,7 @@ workers stay warm, geometry-neutral edits reuse cached positions, connector rout
 indexed, and full-canvas tweening is avoided when it would hurt responsiveness. The app also includes a
 Windows/iPad-style keyboard workflow, right-growing layouts, Chinese and English UI, rich Markdown
 rendering, animated branch transitions, multi-topic selection, typography controls, and the
-localhost-only CLI bridge. It remains local-first and usable without a mandatory network connection.
+loopback-only CLI bridge. It remains local-first and usable without a mandatory network connection.
 
 ## The book
 

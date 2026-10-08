@@ -11,6 +11,11 @@ export interface CommandResult {
   nodeId?: string;
 }
 
+export interface BatchCommandResult {
+  doc: MindMapDoc;
+  nodeIds: string[];
+}
+
 function walk(node: MapNode, visit: (node: MapNode) => boolean): boolean {
   if (visit(node)) return true;
   return node.children.some((child) => walk(child, visit));
@@ -59,9 +64,7 @@ function insert(parent: MapNode, node: MapNode, index?: number): void {
   parent.children.splice(at, 0, node);
 }
 
-/** Apply an agent command without mutating the caller's document. */
-export function applyDocumentCommand(source: MindMapDoc, command: DocumentCommand): CommandResult {
-  const doc = structuredClone(source);
+function applyMutable(doc: MindMapDoc, command: DocumentCommand): string | undefined {
   if (command.action === "addTopic") {
     const parent = findNode(doc, command.parentId);
     if (!parent) throw new Error(`Parent topic not found: ${command.parentId}`);
@@ -72,21 +75,23 @@ export function applyDocumentCommand(source: MindMapDoc, command: DocumentComman
     };
     if (findNode(doc, node.id)) throw new Error(`Topic id already exists: ${node.id}`);
     insert(parent, node, command.index);
-    return { doc, nodeId: node.id };
+    return node.id;
   }
   if (command.action === "updateTopic") {
     const node = findNode(doc, command.nodeId);
     if (!node) throw new Error(`Topic not found: ${command.nodeId}`);
     node.topic = command.topic;
     node.topicRich = undefined;
-    return { doc, nodeId: node.id };
+    return node.id;
   }
   if (command.action === "deleteTopic") {
     if (command.confirm !== true) throw new Error("deleteTopic requires explicit confirmation");
     if (command.nodeId === doc.root.id) throw new Error("The central topic cannot be deleted");
     if (!detach(doc, command.nodeId)) throw new Error(`Topic not found: ${command.nodeId}`);
-    return { doc };
+    return undefined;
   }
+  if (command.action !== "moveTopic")
+    throw new Error(`Unsupported document command: ${(command as { action?: unknown }).action}`);
   if (command.nodeId === doc.root.id) throw new Error("The central topic cannot be moved");
   const moving = findNode(doc, command.nodeId);
   const parent = findNode(doc, command.parentId);
@@ -96,7 +101,30 @@ export function applyDocumentCommand(source: MindMapDoc, command: DocumentComman
   const detached = detach(doc, command.nodeId);
   if (!detached) throw new Error(`Topic not found: ${command.nodeId}`);
   insert(parent, detached, command.index);
-  return { doc, nodeId: detached.id };
+  return detached.id;
+}
+
+/** Apply an agent command without mutating the caller's document. */
+export function applyDocumentCommand(source: MindMapDoc, command: DocumentCommand): CommandResult {
+  const doc = structuredClone(source);
+  return { doc, nodeId: applyMutable(doc, command) };
+}
+
+/** Apply a whole generated edit plan on one clone. If any operation fails, the caller's document and
+ * storage remain untouched, so agents can safely submit large trees as one undoable transaction. */
+export function applyDocumentCommands(
+  source: MindMapDoc,
+  commands: readonly DocumentCommand[],
+): BatchCommandResult {
+  if (commands.length === 0) throw new Error("A batch requires at least one operation");
+  if (commands.length > 10_000) throw new Error("A batch cannot exceed 10,000 operations");
+  const doc = structuredClone(source);
+  const nodeIds: string[] = [];
+  for (const command of commands) {
+    const nodeId = applyMutable(doc, command);
+    if (nodeId) nodeIds.push(nodeId);
+  }
+  return { doc, nodeIds };
 }
 
 export function createAgentMap(title: string, rootTopic = title): MindMapDoc {

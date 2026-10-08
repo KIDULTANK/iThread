@@ -44,6 +44,19 @@ self.addEventListener("activate", (event) => {
 function iThreadCliBridgePlugin(): Plugin {
   const queue: Record<string, unknown>[] = [];
   const results = new Map<string, unknown>();
+  const capabilities = [
+    "listMaps",
+    "getMap",
+    "openMap",
+    "createMap",
+    "importFile",
+    "exportMap",
+    "addTopic",
+    "updateTopic",
+    "moveTopic",
+    "deleteTopic",
+    "batchTopics",
+  ];
   let lastAppPoll = 0;
   const send = (res: import("node:http").ServerResponse, status: number, body?: unknown) => {
     res.statusCode = status;
@@ -69,6 +82,9 @@ function iThreadCliBridgePlugin(): Plugin {
       server.middlewares.use(async (req, res, next) => {
         const url = new URL(req.url ?? "/", "http://127.0.0.1");
         if (!url.pathname.startsWith("/__ithread_cli/v1/")) return next();
+        const remote = req.socket.remoteAddress ?? "";
+        if (!/^(127\.|::1$|::ffff:127\.)/.test(remote))
+          return send(res, 403, { error: "CLI access is restricted to this computer" });
         const origin = req.headers.origin;
         if (origin && !/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin))
           return send(res, 403, { error: "Cross-origin CLI access denied" });
@@ -76,10 +92,14 @@ function iThreadCliBridgePlugin(): Plugin {
           if (req.method === "GET" && url.pathname === "/__ithread_cli/v1/status")
             return send(res, 200, {
               name: "iThread",
+              protocolVersion: 1,
+              transport: "vite-loopback",
               appConnected: Date.now() - lastAppPoll < 2500,
               queued: queue.length,
+              capabilities,
             });
           if (req.method === "POST" && url.pathname === "/__ithread_cli/v1/commands") {
+            if (queue.length >= 100) return send(res, 429, { error: "CLI queue is full" });
             const body = (await readJson(req)) as Record<string, unknown>;
             if (typeof body.action !== "string") return send(res, 400, { error: "Missing action" });
             const id = crypto.randomUUID();

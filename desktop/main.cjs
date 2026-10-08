@@ -2,6 +2,7 @@ const { app, BrowserWindow, dialog, ipcMain, net, shell } = require("electron");
 const { readFile, stat, writeFile } = require("node:fs/promises");
 const { randomUUID } = require("node:crypto");
 const path = require("node:path");
+const { createCliBridgeServer } = require("./cli-bridge.cjs");
 
 const APP_ID = "com.ithread.desktop";
 const APP_ORIGIN = "file://";
@@ -15,6 +16,7 @@ app.setAppUserModelId(APP_ID);
 
 let mainWindow = null;
 let pendingOpenPath = null;
+let cliBridgeServer = null;
 const boundFiles = new Map();
 
 function requestedFile(argv) {
@@ -139,7 +141,7 @@ else {
     void sendOpenFile(filePath);
   });
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     app.on("web-contents-created", (_event, contents) => {
       contents.session.setPermissionRequestHandler((_webContents, _permission, callback) => {
         callback(false);
@@ -230,6 +232,21 @@ else {
       await writeFile(filePath, contents, "utf8");
       return true;
     });
+    try {
+      cliBridgeServer = await createCliBridgeServer({
+        userDataPath: app.getPath("userData"),
+        version: app.getVersion(),
+      });
+    } catch {
+      // CLI automation is optional. A loopback-port failure must never stop the editor opening.
+      cliBridgeServer = null;
+    }
+    ipcMain.handle("ithread:cli-next-command", () => cliBridgeServer?.nextCommand() ?? null);
+    ipcMain.handle("ithread:cli-post-result", (_event, id, payload) => {
+      if (!cliBridgeServer) throw new Error("CLI bridge is unavailable");
+      cliBridgeServer.completeCommand(id, payload);
+      return true;
+    });
 
     createWindow();
     app.on("activate", () => {
@@ -239,5 +256,8 @@ else {
 
   app.on("window-all-closed", () => {
     app.quit();
+  });
+  app.on("before-quit", () => {
+    cliBridgeServer?.close();
   });
 }

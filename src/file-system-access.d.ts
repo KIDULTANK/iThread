@@ -84,6 +84,8 @@ interface IThreadDesktopBridge {
   saveFileDialog(suggestedName: string, contents: string): Promise<DesktopOpenFilePayload | null>;
   readBoundFile(token: string): Promise<DesktopBoundFilePayload>;
   writeBoundFile(token: string, contents: string): Promise<boolean>;
+  cliNextCommand?(): Promise<Record<string, unknown> | null>;
+  cliPostResult?(id: string, payload: unknown): Promise<boolean>;
   onOpenFile(listener: (payload: DesktopOpenFilePayload) => void): () => void;
 }
 

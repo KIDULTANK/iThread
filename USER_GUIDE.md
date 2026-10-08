@@ -22,8 +22,9 @@ side panels you had open (Notes, Outline, Markers, Style) — is restored next t
 straight back into the editor. Press **⌂ Start** in the toolbar to return to the Start screen any
 time. It also works fully offline and can be installed (see [Install as an app](#install-as-an-app)).
 
-Local scripts and agents can also create or modify maps while the development preview is open. See
-the [iThread CLI guide](docs/CLI.md) for the supported commands and safety rules.
+Local scripts and agents can also create, inspect, batch-modify, import and export maps while either
+the Windows app or development preview is open. See the [iThread CLI guide](docs/CLI.md) for the
+supported commands and safety rules.
 
 ---
 

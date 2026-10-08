@@ -1,7 +1,7 @@
 {
   "name": "ithread",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "main": "desktop/main.cjs",
   "type": "module",
   "packageManager": "pnpm@11.0.9",
@@ -85,6 +85,16 @@
     "directories": {
       "output": "release/windows"
     },
+    "extraResources": [
+      {
+        "from": "scripts/ithread-cli.mjs",
+        "to": "ithread-cli.mjs"
+      },
+      {
+        "from": "scripts/ithread-cli.cmd",
+        "to": "ithread-cli.cmd"
+      }
+    ],
     "fileAssociations": [
       {
         "ext": ["ithread", "mmst", "itmz"],

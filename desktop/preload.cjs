@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld("iThreadDesktop", {
   readBoundFile: (token) => ipcRenderer.invoke("ithread:read-bound-file", token),
   writeBoundFile: (token, contents) =>
     ipcRenderer.invoke("ithread:write-bound-file", token, contents),
+  cliNextCommand: () => ipcRenderer.invoke("ithread:cli-next-command"),
+  cliPostResult: (id, payload) => ipcRenderer.invoke("ithread:cli-post-result", id, payload),
   onOpenFile: (listener) => {
     listeners.add(listener);
     for (const payload of pendingFiles.splice(0)) listener(payload);

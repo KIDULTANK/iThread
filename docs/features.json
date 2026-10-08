@@ -2286,7 +2286,7 @@
     },
     {
       "id": "local-agent-cli",
-      "name": "Local CLI for agent-controlled map creation, inspection, and topic editing",
+      "name": "Token-authenticated Windows/local CLI with atomic batches, map import/export, inspection, and topic editing",
       "area": "library",
       "since": "2026-09-11",
       "manual": true,

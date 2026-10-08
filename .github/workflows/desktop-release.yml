@@ -41,10 +41,16 @@ jobs:
       - name: Build unsigned Windows installer and portable executable
         run: pnpm desktop:dist
 
+      - name: Stage standalone CLI
+        shell: pwsh
+        run: |
+          Copy-Item scripts/ithread-cli.mjs release/windows/ithread-cli.mjs
+          Copy-Item scripts/ithread-cli.cmd release/windows/ithread-cli.cmd
+
       - name: Generate SHA-256 checksums
         shell: pwsh
         run: |
-          Get-ChildItem release/windows/*.exe | ForEach-Object {
+          Get-ChildItem release/windows/*.exe, release/windows/ithread-cli.* | ForEach-Object {
             $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             "$hash  $($_.Name)"
           } | Set-Content -Encoding ascii release/windows/SHA256SUMS.txt
@@ -55,6 +61,8 @@ jobs:
           name: iThread-windows-x64-unsigned
           path: |
             release/windows/*.exe
+            release/windows/ithread-cli.mjs
+            release/windows/ithread-cli.cmd
             release/windows/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
@@ -67,6 +75,7 @@ jobs:
         run: |
           $notes = "docs/releases/$env:GITHUB_REF_NAME.md"
           $assets = @(Get-ChildItem release/windows/*.exe | ForEach-Object { $_.FullName })
+          $assets += @(Get-ChildItem release/windows/ithread-cli.* | ForEach-Object { $_.FullName })
           $assets += (Resolve-Path release/windows/SHA256SUMS.txt).Path
           $arguments = @(
             "release", "create", $env:GITHUB_REF_NAME
