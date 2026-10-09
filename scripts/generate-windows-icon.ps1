@@ -1,57 +1,53 @@
 Add-Type -AssemblyName System.Drawing
-
-$size = 512
-$outputDir = Join-Path $PSScriptRoot "..\build"
-$outputPath = Join-Path $outputDir "icon.png"
-New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
-
-$bitmap = New-Object System.Drawing.Bitmap($size, $size)
-$graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-$graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-$graphics.Clear([System.Drawing.Color]::Transparent)
-
-$background = New-Object System.Drawing.SolidBrush([System.Drawing.ColorTranslator]::FromHtml("#26215c"))
-$path = New-Object System.Drawing.Drawing2D.GraphicsPath
-$radius = 96
-$diameter = $radius * 2
-$path.AddArc(0, 0, $diameter, $diameter, 180, 90)
-$path.AddArc($size - $diameter, 0, $diameter, $diameter, 270, 90)
-$path.AddArc($size - $diameter, $size - $diameter, $diameter, $diameter, 0, 90)
-$path.AddArc(0, $size - $diameter, $diameter, $diameter, 90, 90)
-$path.CloseFigure()
-$graphics.FillPath($background, $path)
-
-$linePen = New-Object System.Drawing.Pen([System.Drawing.ColorTranslator]::FromHtml("#cecbf6"), 14)
-$linePen.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
-$linePen.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
-$branches = @(
-  @(256, 256, 196, 212, 168, 184, 132, 156),
-  @(256, 256, 196, 300, 168, 328, 132, 356),
-  @(256, 256, 316, 212, 344, 184, 380, 156),
-  @(256, 256, 316, 300, 344, 328, 380, 356)
-)
-foreach ($branch in $branches) {
-  $curve = New-Object System.Drawing.Drawing2D.GraphicsPath
-  $curve.AddBezier($branch[0], $branch[1], $branch[2], $branch[3], $branch[4], $branch[5], $branch[6], $branch[7])
-  $graphics.DrawPath($linePen, $curve)
-  $curve.Dispose()
+$projectRoot = Join-Path $PSScriptRoot ".."
+$buildDir = Join-Path $projectRoot "build"
+$publicDir = Join-Path $projectRoot "public"
+$sourcePath = Join-Path $buildDir "icon-master.png"
+if (!(Test-Path -LiteralPath $sourcePath)) { throw "Missing icon-master.png" }
+$source = [System.Drawing.Image]::FromFile($sourcePath)
+function New-IconPng([int]$size, [string]$path) {
+  $bitmap = New-Object System.Drawing.Bitmap($size, $size)
+  $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+  $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+  $graphics.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
+  $graphics.DrawImage($source, 0, 0, $size, $size)
+  $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+  $graphics.Dispose()
+  $bitmap.Dispose()
 }
-
-$nodeBrush = New-Object System.Drawing.SolidBrush([System.Drawing.ColorTranslator]::FromHtml("#7f77dd"))
-foreach ($point in @(@(132, 156), @(132, 356), @(380, 156), @(380, 356))) {
-  $graphics.FillEllipse($nodeBrush, $point[0] - 30, $point[1] - 30, 60, 60)
+New-IconPng 512 (Join-Path $buildDir "icon.png")
+New-IconPng 512 (Join-Path $publicDir "icon-512.png")
+New-IconPng 192 (Join-Path $publicDir "icon-192.png")
+New-IconPng 180 (Join-Path $publicDir "apple-touch-icon.png")
+# Keep the textured brushwork in the SVG-compatible favicon without tracing it.
+$encoded = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes((Join-Path $publicDir "icon-512.png")))
+$svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="iThread"><image width="512" height="512" href="data:image/png;base64,' + $encoded + '"/></svg>'
+[System.IO.File]::WriteAllText((Join-Path $publicDir "icon.svg"), $svg, [System.Text.UTF8Encoding]::new($false))
+# PNG-compressed ICO frames retain detail at each Windows display scale.
+$sizes = @(16, 24, 32, 48, 64, 128, 256)
+$frames = @()
+foreach ($size in $sizes) {
+  $bitmap = New-Object System.Drawing.Bitmap($size, $size)
+  $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+  $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+  $graphics.DrawImage($source, 0, 0, $size, $size)
+  $stream = New-Object System.IO.MemoryStream
+  $bitmap.Save($stream, [System.Drawing.Imaging.ImageFormat]::Png)
+  $frames += ,$stream.ToArray()
+  $stream.Dispose(); $graphics.Dispose(); $bitmap.Dispose()
 }
-$centerBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
-$graphics.FillEllipse($centerBrush, 208, 208, 96, 96)
-
-$bitmap.Save($outputPath, [System.Drawing.Imaging.ImageFormat]::Png)
-
-$centerBrush.Dispose()
-$nodeBrush.Dispose()
-$linePen.Dispose()
-$path.Dispose()
-$background.Dispose()
-$graphics.Dispose()
-$bitmap.Dispose()
-
-Write-Output $outputPath
+$file = [System.IO.File]::Create((Join-Path $buildDir "icon.ico"))
+$writer = New-Object System.IO.BinaryWriter($file)
+$writer.Write([uint16]0); $writer.Write([uint16]1); $writer.Write([uint16]$sizes.Count)
+$offset = 6 + 16 * $sizes.Count
+for ($i=0; $i -lt $sizes.Count; $i++) {
+  $dimension = $sizes[$i] % 256
+  $writer.Write([byte]$dimension); $writer.Write([byte]$dimension)
+  $writer.Write([byte]0); $writer.Write([byte]0)
+  $writer.Write([uint16]1); $writer.Write([uint16]32)
+  $writer.Write([uint32]$frames[$i].Length); $writer.Write([uint32]$offset)
+  $offset += $frames[$i].Length
+}
+foreach ($frame in $frames) { $writer.Write([byte[]]$frame) }
+$writer.Dispose(); $source.Dispose()
+Write-Output "Updated iThread calligraphic icons (PNG, SVG and multi-resolution ICO)."

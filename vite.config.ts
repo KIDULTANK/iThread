@@ -304,7 +304,7 @@ export default defineConfig({
       // and we surface an explicit "Refresh now" toast (src/pwa/pwaUpdate.ts),
       // so a background reload never throws away in-flight edits.
       registerType: "prompt",
-      includeAssets: ["icon.svg", "apple-touch-icon.png"],
+      includeAssets: ["icon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png"],
       manifest: {
         // A manifest is BAKED AT BUILD TIME, so unlike `<html lang>` and the exporters it cannot follow
         // the locale the user picks at runtime — the install prompt and the OS launcher read this file
@@ -321,8 +321,8 @@ export default defineConfig({
         background_color: "#ffffff",
         display: "standalone",
         icons: [
-          { src: "icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-          { src: "icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
+          { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
         ],
         // Register the app as a handler for native `.ithread` + legacy `.mmst`, and MindManager
         // files (import-only — opening one converts it into a library map; see App.tsx launchQueue +

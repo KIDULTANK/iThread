@@ -84,7 +84,7 @@ function createWindow() {
     show: false,
     title: "iThread",
     backgroundColor: "#faf9f5",
-    icon: path.join(__dirname, "..", "public", "apple-touch-icon.png"),
+    icon: path.join(__dirname, "..", app.isPackaged ? "dist" : "public", "icon-512.png"),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
