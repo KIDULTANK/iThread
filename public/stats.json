@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-10-08T07:28:26.012Z",
-  "commit": "a618a02",
+  "generatedAt": "2026-10-09T01:48:41.137Z",
+  "commit": "1ba5d4c",
   "headline": {
     "linesTsJs": 91093,
     "tests": 2358,
-    "lineCoveragePct": 90.28,
-    "commits": 1239,
-    "ageDays": 118,
-    "trackedFiles": 606,
+    "lineCoveragePct": 90.33,
+    "commits": 1241,
+    "ageDays": 119,
+    "trackedFiles": 610,
     "featureManualPct": 100,
     "featureBookPct": 96.1,
     "featureExamplePct": 58.7
@@ -41,13 +41,13 @@
   ],
   "coverage": {
     "lines": {
-      "pct": 90.28,
-      "covered": 34712,
+      "pct": 90.33,
+      "covered": 34732,
       "total": 38449
     },
     "statements": {
-      "pct": 90.28,
-      "covered": 34712,
+      "pct": 90.33,
+      "covered": 34732,
       "total": 38449
     },
     "functions": {
@@ -56,35 +56,35 @@
       "total": 2615
     },
     "branches": {
-      "pct": 86.41,
-      "covered": 9786,
-      "total": 11325
+      "pct": 86.45,
+      "covered": 9795,
+      "total": 11330
     }
   },
   "tests": {
     "unit": 2358,
     "e2e": 0,
-    "durationMs": 118622,
+    "durationMs": 92680,
     "slowest": [
       {
         "file": "test/flowmindmap.test.tsx",
-        "ms": 29536
+        "ms": 22321
       },
       {
         "file": "test/app-integration.test.tsx",
-        "ms": 22121
+        "ms": 16358
       },
       {
         "file": "test/panels.test.tsx",
-        "ms": 9567
+        "ms": 7111
       },
       {
         "file": "test/toolbar.test.tsx",
-        "ms": 8795
+        "ms": 6515
       },
       {
         "file": "test/book-build.test.ts",
-        "ms": 6413
+        "ms": 4560
       }
     ]
   },
@@ -172,7 +172,7 @@
     "risky": [
       {
         "file": "App.tsx",
-        "pct": 57.42,
+        "pct": 58.14,
         "commits": 14
       },
       {
@@ -193,9 +193,9 @@
     "nonNull": 3
   },
   "bundle": {
-    "jsGzipKb": 617.2,
+    "jsGzipKb": 617.3,
     "cssGzipKb": 10.9,
-    "totalGzipKb": 628.1,
+    "totalGzipKb": 628.2,
     "entryGzipKb": 153.4,
     "firstLoadGzipKb": 184,
     "budgetKb": 184,
@@ -335,9 +335,9 @@
   },
   "git": {
     "born": "2026-06-11T20:30:20+02:00",
-    "ageDays": 118,
-    "commits": 1239,
-    "commits7d": 6,
+    "ageDays": 119,
+    "commits": 1241,
+    "commits7d": 8,
     "authors": [
       {
         "name": "Dann Bleeker Pedersen",
@@ -345,7 +345,7 @@
       },
       {
         "name": "github-actions[bot]",
-        "count": 558
+        "count": 559
       },
       {
         "name": "Claude",
@@ -353,12 +353,12 @@
       },
       {
         "name": "KIDULTANK",
-        "count": 12
+        "count": 13
       }
     ],
     "churn30d": {
-      "added": 12346,
-      "removed": 2966
+      "added": 12435,
+      "removed": 3074
     },
     "changelogEntries": 462
   }
