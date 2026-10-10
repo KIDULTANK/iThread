@@ -31,7 +31,7 @@ export function Examples({ ctx }: { ctx: StartContext }) {
   return (
     <div className="st-content">
       <section>
-        <h2 className="st-section-title">{t("toolbar.examples")}</h2>
+        <h2 className="st-section-title">{t("start.workedExamples")}</h2>
         <p className="st-section-sub">{t("start.examplesExplain", { n: built.length })}</p>
       </section>
       <input

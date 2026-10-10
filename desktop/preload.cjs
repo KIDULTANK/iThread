@@ -2,6 +2,10 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 const listeners = new Set();
 const pendingFiles = [];
+// Available before the renderer's first imports; no network or synchronous IPC is needed.
+const systemLocale = process.argv
+  .find((arg) => arg.startsWith("--ithread-system-locale="))
+  ?.split("=")[1];
 
 ipcRenderer.on("ithread:open-file", (_event, payload) => {
   if (listeners.size === 0) pendingFiles.push(payload);
@@ -9,6 +13,7 @@ ipcRenderer.on("ithread:open-file", (_event, payload) => {
 });
 
 contextBridge.exposeInMainWorld("iThreadDesktop", {
+  systemLocale: systemLocale === "zh-CN" || systemLocale === "en" ? systemLocale : undefined,
   checkForUpdates: () => ipcRenderer.invoke("ithread:check-for-updates"),
   openReleasePage: (url) => ipcRenderer.invoke("ithread:open-release-page", url),
   openFileDialog: () => ipcRenderer.invoke("ithread:open-file-dialog"),

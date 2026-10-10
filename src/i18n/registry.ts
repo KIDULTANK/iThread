@@ -1,7 +1,6 @@
 import type { MessageKey } from "./keys";
 
-// The localisation layer. English ships as the only locale; the point of this module is that adding a
-// second one is "write a JSON file", not "re-architect the app".
+// The localisation layer. English and Simplified Chinese share the same catalogue registry.
 //
 // WHY THIS IS A REGISTRY RATHER THAN ONE BIG CATALOGUE. The obvious design — a single eager object of
 // every string — would quietly move weight between bundles. `FlowMindMap` is a ~100 kB LAZY chunk and
@@ -59,17 +58,25 @@ export function registerMessages(locale: Locale, catalogue: Catalogue): void {
 
 let active: Locale = DEFAULT_LOCALE;
 
-/** Resolve the locale to use: an explicit stored choice wins, else the best `navigator.language` match,
- *  else the default. With one shipped locale this always lands on `en` — the path is real, not stubbed,
- *  so a second catalogue starts working the moment it's added. */
+/** A saved choice wins; otherwise use the OS language on desktop or browser preferences on the web.
+ *  Automatic detection is not saved, so a later system-language change still applies until the user
+ *  chooses an explicit language in Settings. */
 export function resolveLocale(): Locale {
   try {
     const stored = localStorage.getItem(LOCALE_PREF_KEY);
     if (stored && (LOCALES as readonly string[]).includes(stored)) return stored as Locale;
   } catch {
-    // storage unavailable — fall through to the browser's preference
+    // storage unavailable — fall through to automatic detection
   }
-  const preferred = typeof navigator === "undefined" ? [] : (navigator.languages ?? []);
+  const desktopLocale =
+    typeof window === "undefined" ? undefined : window.iThreadDesktop?.systemLocale;
+  if (desktopLocale && (LOCALES as readonly string[]).includes(desktopLocale)) return desktopLocale;
+  const preferred =
+    typeof navigator === "undefined"
+      ? []
+      : navigator.languages?.length
+        ? navigator.languages
+        : [navigator.language];
   for (const tag of preferred) {
     // Match both an exact tag and its base language, so zh-Hans/zh-SG resolve to zh-CN while
     // en-GB/en-US resolve to en.

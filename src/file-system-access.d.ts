@@ -78,6 +78,8 @@ type DesktopUpdateResult =
     };
 
 interface IThreadDesktopBridge {
+  /** Initial UI locale derived from the operating system, before the first render. */
+  readonly systemLocale?: "en" | "zh-CN";
   checkForUpdates(): Promise<DesktopUpdateResult>;
   openReleasePage(url: string): Promise<boolean>;
   openFileDialog(): Promise<DesktopOpenFilePayload | null>;

@@ -48,7 +48,7 @@ describe("StartSidebar", () => {
     );
     await u.click(screen.getByRole("button", { name: /new map/i }));
     expect(onNewMap).toHaveBeenCalledTimes(1);
-    await u.click(screen.getByRole("button", { name: /templates/i }));
+    await u.click(screen.getByRole("button", { name: /template library/i }));
     expect(onNavigate).toHaveBeenCalledWith("templates");
     expect(screen.queryByRole("button", { name: /^learn mind mapping/i })).toBeNull();
   });
@@ -63,7 +63,7 @@ describe("StartSidebar", () => {
       <StartSidebar active="start" mapCount={0} onNavigate={vi.fn()} onNewMap={vi.fn()} />,
     );
     // One inline SVG per navigation row; the selector excludes the brand artwork.
-    expect(container.querySelectorAll(".st-nav-item .st-nav-icon svg").length).toBe(9);
+    expect(container.querySelectorAll(".st-nav-item .st-nav-icon svg").length).toBe(8);
     expect(container.textContent).not.toContain("🕘"); // the old clock emoji is gone
   });
 });
@@ -75,7 +75,7 @@ describe("CommandPalette", () => {
     render(<CommandPalette ctx={ctx} onClose={onClose} />);
     expect(screen.getByText("New blank map")).toBeTruthy();
     expect(screen.getByText("Browse templates")).toBeTruthy();
-    expect(screen.getByText("Browse examples")).toBeTruthy();
+    expect(screen.queryByText("Browse examples")).toBeNull();
     await u.click(screen.getByText("New blank map"));
     expect(ctx.onOpen).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);

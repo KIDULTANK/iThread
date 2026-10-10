@@ -46,6 +46,7 @@ export function StartHome({ ctx }: { ctx: StartContext }) {
   const featured = pick(templates, FEATURED_TEMPLATES, TEMPLATE_DESCRIPTIONS, buildTemplate);
   const featuredExamples = pick(examples, FEATURED_EXAMPLES, EXAMPLE_DESCRIPTIONS, buildExample);
   const [newHereDismissed, setNewHereDismissed] = useState(false);
+  const [showExamples, setShowExamples] = useState(false);
   const touch = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
 
   return (
@@ -100,47 +101,69 @@ export function StartHome({ ctx }: { ctx: StartContext }) {
         </section>
       ) : null}
 
-      <section>
-        <div className="st-row">
-          <h2 className="st-section-title">{t("start.startFromATemplate")}</h2>
-          <button type="button" className="st-link" onClick={() => ctx.go("templates")}>
-            {t("start.browseAllTemplates")}
-          </button>
-        </div>
-        <div className="st-grid" style={{ marginTop: 12 }}>
-          {featured.map((t) => (
-            <TemplateCard
-              key={t.id}
-              name={t.name}
-              description={t.description}
-              doc={t.doc}
-              seed={t.id}
-              onOpen={() => ctx.onOpen(buildTemplate(t.id))}
-            />
-          ))}
-        </div>
-      </section>
+      <fieldset className="st-tabs" aria-label={t("start.templateLibrary")}>
+        <button
+          type="button"
+          className="st-tab"
+          aria-pressed={!showExamples}
+          onClick={() => setShowExamples(false)}
+        >
+          {t("start.structureTemplates")}
+        </button>
+        <button
+          type="button"
+          className="st-tab"
+          aria-pressed={showExamples}
+          onClick={() => setShowExamples(true)}
+        >
+          {t("start.workedExamples")}
+        </button>
+      </fieldset>
+      {!showExamples && (
+        <section>
+          <div className="st-row">
+            <h2 className="st-section-title">{t("start.startFromATemplate")}</h2>
+            <button type="button" className="st-link" onClick={() => ctx.go("templates")}>
+              {t("start.browseAllTemplates")}
+            </button>
+          </div>
+          <div className="st-grid" style={{ marginTop: 12 }}>
+            {featured.map((t) => (
+              <TemplateCard
+                key={t.id}
+                name={t.name}
+                description={t.description}
+                doc={t.doc}
+                seed={t.id}
+                onOpen={() => ctx.onOpen(buildTemplate(t.id))}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
-      <section>
-        <div className="st-row">
-          <h2 className="st-section-title">{t("start.orOpenAWorkedExample")}</h2>
-          <button type="button" className="st-link" onClick={() => ctx.go("examples")}>
-            {t("start.browseAllExamples")}
-          </button>
-        </div>
-        <div className="st-grid" style={{ marginTop: 12 }}>
-          {featuredExamples.map((e) => (
-            <TemplateCard
-              key={e.id}
-              name={e.name}
-              description={e.description}
-              doc={e.doc}
-              seed={e.id}
-              onOpen={() => ctx.onOpen(buildExample(e.id))}
-            />
-          ))}
-        </div>
-      </section>
+      {showExamples && (
+        <section>
+          <div className="st-row">
+            <h2 className="st-section-title">{t("start.orOpenAWorkedExample")}</h2>
+            <button type="button" className="st-link" onClick={() => ctx.go("examples")}>
+              {t("start.browseAllExamples")}
+            </button>
+          </div>
+          <div className="st-grid" style={{ marginTop: 12 }}>
+            {featuredExamples.map((e) => (
+              <TemplateCard
+                key={e.id}
+                name={e.name}
+                description={e.description}
+                doc={e.doc}
+                seed={e.id}
+                onOpen={() => ctx.onOpen(buildExample(e.id))}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       <AppTips onOpenCommandPalette={ctx.openCommandPalette} />
     </div>

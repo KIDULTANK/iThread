@@ -29,12 +29,6 @@ export function CommandPalette({ ctx, onClose }: { ctx: StartContext; onClose: (
         run: () => ctx.go("templates"),
       },
       {
-        id: "examples",
-        label: t("start.browseExamples"),
-        kind: "action",
-        run: () => ctx.go("examples"),
-      },
-      {
         id: "layouts",
         label: t("start.browseLayouts"),
         kind: "action",

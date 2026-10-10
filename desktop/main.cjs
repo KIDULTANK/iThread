@@ -3,6 +3,7 @@ const { readFile, stat, writeFile } = require("node:fs/promises");
 const { randomUUID } = require("node:crypto");
 const path = require("node:path");
 const { createCliBridgeServer } = require("./cli-bridge.cjs");
+const { selectSystemLocale } = require("./locale.cjs");
 
 const APP_ID = "com.ithread.desktop";
 const APP_ORIGIN = "file://";
@@ -88,6 +89,9 @@ function createWindow() {
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
+      additionalArguments: [
+        `--ithread-system-locale=${selectSystemLocale(app.getPreferredSystemLanguages())}`,
+      ],
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,

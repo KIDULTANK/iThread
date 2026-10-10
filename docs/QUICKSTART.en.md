@@ -46,6 +46,14 @@ Use **Appearance → Language** to switch between Chinese and English. Settings 
 theme, reduced motion, high contrast, Alt-hold hints and delay, and wheel pan/zoom mode and pan
 speed. Preferences are saved locally.
 
+On first launch, the Windows app uses the preferred system language: Chinese selects Simplified
+Chinese; other languages select English. The web app follows browser language preferences.
+No location lookup or separate language download is needed. A language you select in Settings
+is remembered and takes priority over automatic detection.
+
+The template library groups reusable structure templates and complete worked examples in one
+place. Opening either creates your own editable map without changing the built-in content.
+
 ## 5. Report a problem
 
 Use the bilingual [GitHub issue templates](https://github.com/KIDULTANK/iThread/issues/new/choose)

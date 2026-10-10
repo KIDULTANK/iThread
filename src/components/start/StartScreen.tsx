@@ -10,11 +10,10 @@ import { StartSidebar } from "./StartSidebar";
 import { blankDoc } from "./docBuilders";
 import { About } from "./sections/About";
 import { AllMaps } from "./sections/AllMaps";
-import { Examples } from "./sections/Examples";
 import { ImportView } from "./sections/ImportView";
 import { Layouts } from "./sections/Layouts";
 import { Recent } from "./sections/Recent";
-import { Templates } from "./sections/Templates";
+import { TemplateLibrary } from "./sections/TemplateLibrary";
 import { Trash } from "./sections/Trash";
 import { startThemeVars } from "./tokens";
 import type { StartContext, StartSection } from "./types";
@@ -27,8 +26,8 @@ function sectionTitle(section: StartSection): string {
     start: "start.start",
     all: "toolbar.allMaps",
     recent: "toolbar.recent",
-    templates: "toolbar.templates",
-    examples: "toolbar.examples",
+    templates: "start.templateLibrary",
+    examples: "start.templateLibrary",
     layouts: "start.layouts",
     import: "start.import",
     about: "start.about",
@@ -114,8 +113,9 @@ export function StartScreen({
           {section === "start" ? <StartHome ctx={ctx} /> : null}
           {section === "all" ? <AllMaps ctx={ctx} /> : null}
           {section === "recent" ? <Recent ctx={ctx} /> : null}
-          {section === "templates" ? <Templates ctx={ctx} /> : null}
-          {section === "examples" ? <Examples ctx={ctx} /> : null}
+          {section === "templates" || section === "examples" ? (
+            <TemplateLibrary ctx={ctx} examples={section === "examples"} />
+          ) : null}
           {section === "layouts" ? <Layouts ctx={ctx} /> : null}
           {section === "import" ? <ImportView ctx={ctx} /> : null}
           {section === "about" ? <About onCheckForUpdates={onCheckForUpdates} /> : null}

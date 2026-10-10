@@ -11,7 +11,7 @@ export function About({ onCheckForUpdates }: { onCheckForUpdates?: () => void })
       <div className="st-card" style={{ padding: 20 }}>
         <p className="st-prose">{t("start.aboutLocalFirst", { app: t("about.appName") })}</p>
         <p className="st-prose">{t("start.aboutFormats")}</p>
-        <p className="st-prose">{t("start.openSourceAndASibling")}</p>
+        <p className="st-prose">{t("start.aboutProject")}</p>
       </div>
 
       <section>
@@ -29,6 +29,8 @@ export function About({ onCheckForUpdates }: { onCheckForUpdates?: () => void })
       </section>
 
       <div style={{ fontSize: 12.5, color: "var(--st-muted)", lineHeight: 1.6 }}>
+        <div>{t("about.maintainer", { name: "Zack Chen (KIDULTANK)" })}</div>
+        <div>{t("start.upstreamCredit")}</div>
         <div>© 2026 Dann Bleeker Pedersen</div>
         <div>{t("start.softwareApacheLicense20")}</div>
         <div style={{ display: "flex", gap: 16, marginTop: 8 }}>

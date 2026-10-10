@@ -16,6 +16,15 @@ import { type Catalogue, registerMessages } from "../../i18n/registry";
 // the migration nearly free in bundle terms.
 
 export const START_EN = {
+  "start.templateLibrary": "Template library",
+  "start.structureTemplates": "Structure templates",
+  "start.workedExamples": "Worked examples",
+  "start.libraryBlurb":
+    "Start with a structure to fill in, or explore a complete example. Opening either creates your own editable map.",
+  "start.aboutProject":
+    "An independent open-source project with keyboard-first editing and an automation-friendly CLI. iThread is not affiliated with iThoughts or other format vendors.",
+  "start.upstreamCredit":
+    "Built on Mind Map Studio by Dann Bleeker Pedersen; upstream copyright and licence notices are preserved.",
   "start.heroSub":
     "Capture a thought, paste an outline, or open a blank canvas — it all becomes a map you own.",
   "start.moveMapToTrashConfirm":
@@ -25,9 +34,9 @@ export const START_EN = {
   "start.localAndPrivate":
     "Local & private — runs in your browser, works offline, nothing leaves this device.",
   "start.aboutLocalFirst":
-    "{app} is a local-first, offline mind-mapping studio — a self-hosted alternative to MindManager. Your maps live in your browser (IndexedDB) and on disk; there are no accounts, no servers, and no telemetry. Nothing leaves this device.",
+    "{app} is a local-first mind-mapping app for Windows and the web. Create and edit maps offline, without an account. Maps are stored locally; automatic update checks may connect to the internet, but map contents are not uploaded automatically.",
   "start.aboutFormats":
-    "Format-agnostic: one canonical model, with importers and exporters for MindManager, Markdown, OPML, FreeMind, Mermaid, XMind and more — so your work is never locked in. Install it as a PWA to use it fully offline.",
+    "Use .ithread for native saves, import and export iThoughts .itmz files, and exchange content through Markdown, OPML, FreeMind, Mermaid, XMind and MindManager .mmap. Supported features vary by format; check exported files in the destination app.",
   "start.readAndReference": "Read & reference",
   "start.referenceBlurb":
     "The companion book Thinking in Maps, the user guide, and more — each opens in a new tab.",
@@ -86,7 +95,6 @@ export const START_EN = {
   "start.newBlankMap": "New blank map",
   "start.importAFile": "Import a file",
   "start.browseTemplates": "Browse templates",
-  "start.browseExamples": "Browse examples",
   "start.browseLayouts": "Browse layouts",
   "start.learnMindMapping": "Learn mind mapping",
   "start.pinned": "Pinned",
@@ -127,7 +135,6 @@ export const START_EN = {
   "start.bookThinkingInMapsPdf": "Book — Thinking in Maps (PDF)",
   "start.bookThinkingInMapsEpub": "Book — Thinking in Maps (EPUB)",
   "start.updates": "Updates",
-  "start.openSourceAndASibling": "Open-source, and a sibling to TP Studio and MECE Studio.",
   "start.thinkingInMaps": "Thinking in Maps",
   "start.softwareApacheLicense20": "Software — Apache License 2.0 · Book & docs — CC BY-NC 4.0",
   "start.searchYourMaps": "Search your maps…",
@@ -204,9 +211,9 @@ export const START_EN = {
   "start.trashBlurb":
     "Deleted maps are kept here until you empty the Trash — restore one anytime. Emptying is permanent (it also drops the map's version history).",
   "start.templatesBlurb": {
-    one: "Every starter map from the New-map gallery. Pick one and it opens pre-filled — unlike a layout, which is an empty view. {n} template · Blank canvas lives in the Start screen.",
+    one: "Reusable topic structures to fill with your own content. {n} template; blank maps are available from New map.",
     other:
-      "Every starter map from the New-map gallery. Pick one and it opens pre-filled — unlike a layout, which is an empty view. {n} templates · Blank canvas lives in the Start screen.",
+      "Reusable topic structures to fill with your own content. {n} templates; blank maps are available from New map.",
   },
 
   // Interleaves prose with <kbd> markup, so it renders through `tNodes` (i18n/nodes.tsx) as one

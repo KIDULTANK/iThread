@@ -39,6 +39,10 @@ their iThoughts maps and keyboard-oriented workflows. It imports, edits and expo
 files and also works with Markdown, XMind, FreeMind, OPML, MindManager and other common formats. No
 account or permanent internet connection is required, and maps stay on the local device by default.
 
+首次启动跟随 Windows 首选语言（中文 → 简体中文，其他 → 英文）；手动选择优先且会保留。
+The first-launch UI follows the Windows language (Chinese → Simplified Chinese; otherwise English).
+Your saved language choice takes priority. The web app follows browser language preferences.
+
 - [Full English overview](README.en.md)
 - [Quick start](docs/QUICKSTART.en.md)
 - [Known limitations](docs/KNOWN_LIMITATIONS.en.md)

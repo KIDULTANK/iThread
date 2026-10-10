@@ -2829,6 +2829,9 @@ export function App() {
           {t("about.tagline")}
         </p>
         <p style={{ margin: "0 0 14px", fontSize: 13 }}>© 2026 Dann Bleeker Pedersen</p>
+        <p style={{ margin: "0 0 14px", fontSize: 13 }}>
+          {t("about.maintainer", { name: "Zack Chen (KIDULTANK)" })}
+        </p>
         <div style={{ fontSize: 13, marginBottom: 14 }}>
           <div style={{ fontWeight: 600, marginBottom: 4 }}>{t("about.licenseHeading")}</div>
           <div>{t("about.licenseCode")}</div>

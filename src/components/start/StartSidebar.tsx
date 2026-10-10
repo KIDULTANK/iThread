@@ -33,13 +33,7 @@ const NAV: { id: StartSection; label: string }[] = [
   {
     id: "templates",
     get label() {
-      return t("toolbar.templates");
-    },
-  },
-  {
-    id: "examples",
-    get label() {
-      return t("toolbar.examples");
+      return t("start.templateLibrary");
     },
   },
   {
@@ -218,7 +212,7 @@ export function StartSidebar({
             key={n.id}
             type="button"
             className="st-nav-item"
-            aria-current={active === n.id}
+            aria-current={active === n.id || (active === "examples" && n.id === "templates")}
             onClick={() => {
               onNavigate(n.id);
               setDrawerOpen(false);

@@ -598,7 +598,6 @@ export const ZH_CN: Catalogue = {
   "start.newBlankMap": "新建空白导图",
   "start.importAFile": "导入文件",
   "start.browseTemplates": "浏览模板",
-  "start.browseExamples": "浏览示例",
   "start.browseLayouts": "浏览布局",
   "start.learnMindMapping": "学习思维导图",
   "start.pinned": "已置顶",
@@ -637,7 +636,17 @@ export const ZH_CN: Catalogue = {
   "start.bookThinkingInMapsPdf": "《用导图思考》（PDF）",
   "start.bookThinkingInMapsEpub": "《用导图思考》（EPUB）",
   "start.updates": "更新",
-  "start.openSourceAndASibling": "开源项目，与 TP Studio 和 MECE Studio 属于同系列工具。",
+  "start.templateLibrary": "模板库",
+  "start.structureTemplates": "结构模板",
+  "start.workedExamples": "完整示例",
+  "start.libraryBlurb":
+    "选择待填写的结构模板，或参考已填好内容的完整示例。打开后都会创建一份属于你的可编辑导图。",
+  "start.aboutProject":
+    "独立开源项目，提供适合键盘操作的编辑体验，以及便于智能体自动化操作的 CLI。iThread 与 iThoughts 及其他格式厂商无关联。",
+  "about.maintainer": "iThread 维护者：{name}",
+  "about.tagline": "本地优先的思维导图，支持 iThoughts 文件交换与 CLI 自动化。",
+  "start.upstreamCredit":
+    "基于 Dann Bleeker Pedersen 的 Mind Map Studio 开发，保留上游版权及许可证声明。",
   "start.thinkingInMaps": "用导图思考",
   "start.softwareApacheLicense20": "软件 — Apache License 2.0 · 书籍与文档 — CC BY-NC 4.0",
   "start.searchYourMaps": "搜索你的导图…",
@@ -703,7 +712,8 @@ export const ZH_CN: Catalogue = {
   "start.trashBlurb":
     "删除的导图会保留在这里，清空回收站前可随时恢复。清空后将永久删除，并同时移除版本历史。",
   "start.templatesBlurb": {
-    other: "这里包含新建导图菜单中的全部起始模板。选择后会打开预填充内容的导图。共 {n} 个模板。",
+    other:
+      "可重复使用的主题结构，供你填写自己的内容。共 {n} 个模板；空白导图可通过“新建导图”创建。",
   },
   "start.keyboardFirst":
     "键盘操作：{sibling} 添加同级主题，{child} 添加子主题。请选择初始布局（之后可随时切换）：",
@@ -759,9 +769,9 @@ export const ZH_CN: Catalogue = {
   "io.deck.toggleNotes": "显示或隐藏演讲者备注（N）",
   "io.deck.navigationHint": "← → 或单击进行翻页 · 按 N 显示备注",
   "start.aboutLocalFirst":
-    "{app} 是一款本地优先、可离线使用的思维导图工具，也是 MindManager 的可自行托管替代方案。导图保存在浏览器（IndexedDB）和本地磁盘中；无需账号、没有服务器，也不收集遥测数据。任何内容都不会离开此设备。",
+    "{app} 是一款面向 Windows 和网页的本地优先思维导图软件，无需账号即可离线创建和编辑导图。导图保存在本地；自动更新检查可能联网，但不会自动上传导图内容。",
   "start.aboutFormats":
-    "不受格式限制：内部使用统一的数据模型，并支持 MindManager、Markdown、OPML、FreeMind、Mermaid、XMind 等格式的导入与导出，让你的内容不会被锁定。安装为 PWA 后可完全离线使用。",
+    "原生保存使用 .ithread 格式，支持 iThoughts .itmz 文件导入与导出，以及 Markdown、OPML、FreeMind、Mermaid、XMind、MindManager .mmap 等格式交换。不同格式支持的功能有所差异，请在目标软件中核对导出结果。",
   "start.readAndReference": "阅读与参考",
   "start.referenceBlurb":
     "可阅读配套书籍《用导图思考》、用户指南及更多资料；链接均在新标签页打开。",

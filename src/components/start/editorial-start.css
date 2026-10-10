@@ -75,3 +75,16 @@
     padding: 28px;
   }
 }
+.st-library-intro {
+  padding: 24px 28px 0;
+}
+
+.st-library-intro .st-tabs {
+  margin-top: 16px;
+}
+
+.st-tab[aria-pressed="true"] {
+  color: var(--st-accent);
+  background: var(--st-card);
+  box-shadow: inset 0 0 0 1px var(--st-accent);
+}
