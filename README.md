@@ -1,5 +1,7 @@
 # iThread
 
+<img src="public/icon-192.png" alt="iThread" width="96" height="96">
+
 **[简体中文](README.zh-CN.md) | [English](README.en.md)**
 
 Windows 11 思维导图应用 / A Windows 11 mind-mapping app<br>

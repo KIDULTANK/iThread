@@ -19,7 +19,7 @@ New-IconPng 512 (Join-Path $buildDir "icon.png")
 New-IconPng 512 (Join-Path $publicDir "icon-512.png")
 New-IconPng 192 (Join-Path $publicDir "icon-192.png")
 New-IconPng 180 (Join-Path $publicDir "apple-touch-icon.png")
-# Keep the textured brushwork in the SVG-compatible favicon without tracing it.
+# Embed the approved artwork in the SVG-compatible favicon without retracing it.
 $encoded = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes((Join-Path $publicDir "icon-512.png")))
 $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="iThread"><image width="512" height="512" href="data:image/png;base64,' + $encoded + '"/></svg>'
 [System.IO.File]::WriteAllText((Join-Path $publicDir "icon.svg"), $svg, [System.Text.UTF8Encoding]::new($false))
@@ -50,4 +50,4 @@ for ($i=0; $i -lt $sizes.Count; $i++) {
 }
 foreach ($frame in $frames) { $writer.Write([byte[]]$frame) }
 $writer.Dispose(); $source.Dispose()
-Write-Output "Updated iThread calligraphic icons (PNG, SVG and multi-resolution ICO)."
+Write-Output "Updated iThread brand icons (PNG, SVG and multi-resolution ICO)."

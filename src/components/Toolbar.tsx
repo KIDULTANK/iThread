@@ -21,6 +21,7 @@ import type { NodeHit } from "../search";
 import { SHORTCUT_BINDINGS } from "../shortcuts";
 import type { MapSummary } from "../store/mapStore";
 import { buildTemplate, insertableTemplates, templateSubtree, templates } from "../templates";
+import { BrandMark } from "./BrandMark";
 import { EditorIcon, type EditorIconName } from "./EditorIcons";
 
 // Remember the last-chosen export format, BY ITS STABLE ID, so the Export menu can pin a one-click
@@ -495,7 +496,17 @@ export function Toolbar({
     <header className="mm-topbar">
       {/* ── Row 1 — file / identity ── */}
       <div className="mm-topbar-row mm-topbar-row1">
-        <TBtn icon="home" label={t("toolbar.startScreen")} onClick={nav.goHome} />
+        <button
+          type="button"
+          className="mm-editor-brand"
+          title={t("toolbar.startScreen")}
+          aria-label={t("toolbar.startScreen")}
+          onClick={nav.goHome}
+        >
+          <BrandMark size={30} />
+          {isMobile ? null : <span>iThread</span>}
+        </button>
+        {isMobile ? null : <span className="mm-vdiv" />}
         <TBtn
           icon="undo"
           label={t("toolbar.undo")}

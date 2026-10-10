@@ -1,5 +1,6 @@
 import { t } from "../../i18n/registry";
 import "./messages";
+import type { MapNode } from "../../model/types";
 import { timeAgo } from "../../ui";
 import { MiniMap } from "./MiniMap";
 
@@ -13,6 +14,8 @@ export interface MapEntry {
   updatedAt?: number;
   /** Real branch colours (one per root child) → a structure-bearing thumbnail; absent for a bare root. */
   branches?: string[];
+  /** Bounded two-level projection for a useful library thumbnail. */
+  previewRoot?: MapNode;
   /** Pinned to the top of the library lists (curated, recency-independent). */
   pinned?: boolean;
   /** The library folder this map is filed under (C2); absent = top level. */
@@ -67,7 +70,7 @@ export function MapCard({
   entry: MapEntry;
   onAction: (action: string, entry: MapEntry) => void;
 }) {
-  const meta = [`${entry.nodeCount} node${entry.nodeCount === 1 ? "" : "s"}`];
+  const meta = [t("count.nodes", { n: entry.nodeCount })];
   if (entry.updatedAt) meta.push(timeAgo(entry.updatedAt));
   // Pin/unpin leads the kebab so a curated map can be kept at (or released from) the top of the lists.
   const kebabItems = [
@@ -82,7 +85,7 @@ export function MapCard({
         onClick={() => onAction("open", entry)}
         title={t("common.openNamed", { name: entry.title })}
       >
-        <MiniMap seed={entry.id} branches={entry.branches} />
+        <MiniMap seed={entry.id} branches={entry.branches} root={entry.previewRoot} />
       </button>
       <div className="st-tile-body">
         <div className="st-row">

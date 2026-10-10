@@ -40,12 +40,6 @@ export function CommandPalette({ ctx, onClose }: { ctx: StartContext; onClose: (
         kind: "action",
         run: () => ctx.go("layouts"),
       },
-      {
-        id: "learn",
-        label: t("start.learnMindMapping"),
-        kind: "action",
-        run: () => ctx.go("learn"),
-      },
     ];
     const mapCmds: Command[] = maps.map((m) => ({
       id: `map:${m.id}`,

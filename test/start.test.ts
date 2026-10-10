@@ -131,9 +131,11 @@ describe("startThemeVars", () => {
     }
   });
 
-  it("keeps the emerald accent fixed across appearances", () => {
+  it("uses a readable vermilion accent in each appearance", () => {
     for (const dark of [false, true]) {
-      expect((startThemeVars(dark) as Record<string, string>)["--st-accent"]).toBe(ACCENT);
+      expect((startThemeVars(dark) as Record<string, string>)["--st-accent"]).toBe(
+        dark ? "#ef9486" : ACCENT,
+      );
     }
   });
 

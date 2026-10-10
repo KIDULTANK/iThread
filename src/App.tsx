@@ -45,6 +45,7 @@ import { buildEditorCommands } from "./components/editorCommands";
 import { DialogHost, editorConfirm, editorPrompt } from "./components/editorDialogs";
 import { PANEL_LABELS } from "./panelLabels";
 import "./design/editor.css";
+import "./design/editorial.css";
 import { useCliBridge } from "./agent/useCliBridge";
 import { editorThemeVars } from "./design/tokens";
 import { designById } from "./designs";
@@ -1807,6 +1808,76 @@ export function App() {
     );
   }, [openDockKey, setActiveDock]);
 
+  const settingsSurface = settingsOpen && (
+    <Suspense fallback={null}>
+      <SettingsDialog
+        open
+        onClose={() => setSettingsOpen(false)}
+        appearance={appearance}
+        setAppearance={setAppearance}
+        motionPref={motionPref}
+        setMotionPref={setMotionPref}
+        contrastPref={contrastPref}
+        setContrastPref={setContrastPref}
+        onReShowGettingStarted={reShowFirstRun}
+        onClearRecents={() => {
+          clearRecents();
+          showHint(t("hint.commandHistoryCleared"));
+        }}
+        onClearBranchClipboard={() => {
+          clearBranch();
+          showHint(t("hint.branchClipboardCleared"));
+        }}
+        onExportSettings={() => {
+          const file = collectSettings(new Date().toISOString());
+          const keys = settingsKeysIn(file);
+          if (keys.length === 0) {
+            showHint(t("settings.prefsFile.nothingToExport"));
+            return;
+          }
+          downloadBlob(
+            new Blob([serializeSettings(file)], { type: "application/json" }),
+            "ithread-preferences.json",
+          );
+          showHint(
+            t("settings.prefsFile.exported", {
+              count: t("count.preferences", { n: keys.length }),
+            }),
+          );
+        }}
+        onImportSettings={(f) => {
+          void (async () => {
+            let parsed: SettingsFile;
+            try {
+              parsed = parseSettingsFile(await f.text());
+            } catch (err) {
+              setError(err instanceof Error ? err.message : t("settings.prefsFile.unreadable"));
+              return;
+            }
+            const keys = settingsKeysIn(parsed);
+            if (keys.length === 0) {
+              setError(t("settings.prefsFile.unusable"));
+              return;
+            }
+            // Preferences are read at mount, so applying them needs a reload to take effect —
+            // confirm first, and say exactly how many are being replaced.
+            const ok = await editorConfirm({
+              title: t("settings.prefsFile.confirmTitle"),
+              body: t("settings.prefsFile.confirmBody", {
+                count: t("count.preferences", { n: keys.length }),
+              }),
+              confirmText: t("settings.prefsFile.confirmAction"),
+            });
+            if (!ok) return;
+            applySettings(parsed);
+            location.reload();
+          })();
+        }}
+        onClearAllData={clearAllLocalData}
+      />
+    </Suspense>
+  );
+
   if (view === "start") {
     return (
       <>
@@ -1816,8 +1887,18 @@ export function App() {
             onOpen={openFromStart}
             onImportFiles={importFromStart}
             onCheckForUpdates={checkForUpdates}
+            onSettings={() => setSettingsOpen(true)}
           />
         </Suspense>
+        <div style={{ ...editorThemeVars(chromeDark, highContrast), display: "contents" }}>
+          {settingsSurface}
+          <DialogHost />
+          {error && (
+            <Dialog open title={t("settings.title")} onClose={() => setError(null)}>
+              <p role="alert">{error}</p>
+            </Dialog>
+          )}
+        </div>
         {/* The toast surface must render on Start too, or the PWA "Refresh now" prompt (and any
             other toast) is silently swallowed here — Start is the most common landing screen. */}
         <ToastBar toast={toast} onDismiss={dismissToast} variant="floating" />
@@ -2811,7 +2892,7 @@ export function App() {
         </Suspense>
       )}
       <Suspense fallback={null}>
-        <AltShortcutOverlay enabled={view === "editor" && !shortcutsOpen} />
+        <AltShortcutOverlay enabled={view === "editor" && !shortcutsOpen && !settingsOpen} />
       </Suspense>
 
       {/* "Export this branch…" format picker (B4), scoped to the chosen subtree. Lazy: only mounted
@@ -2865,75 +2946,7 @@ export function App() {
         </Suspense>
       )}
 
-      {settingsOpen && (
-        <Suspense fallback={null}>
-          <SettingsDialog
-            open
-            onClose={() => setSettingsOpen(false)}
-            appearance={appearance}
-            setAppearance={setAppearance}
-            motionPref={motionPref}
-            setMotionPref={setMotionPref}
-            contrastPref={contrastPref}
-            setContrastPref={setContrastPref}
-            onReShowGettingStarted={reShowFirstRun}
-            onClearRecents={() => {
-              clearRecents();
-              showHint(t("hint.commandHistoryCleared"));
-            }}
-            onClearBranchClipboard={() => {
-              clearBranch();
-              showHint(t("hint.branchClipboardCleared"));
-            }}
-            onExportSettings={() => {
-              const file = collectSettings(new Date().toISOString());
-              const keys = settingsKeysIn(file);
-              if (keys.length === 0) {
-                showHint(t("settings.prefsFile.nothingToExport"));
-                return;
-              }
-              downloadBlob(
-                new Blob([serializeSettings(file)], { type: "application/json" }),
-                "ithread-preferences.json",
-              );
-              showHint(
-                t("settings.prefsFile.exported", {
-                  count: t("count.preferences", { n: keys.length }),
-                }),
-              );
-            }}
-            onImportSettings={(f) => {
-              void (async () => {
-                let parsed: SettingsFile;
-                try {
-                  parsed = parseSettingsFile(await f.text());
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : t("settings.prefsFile.unreadable"));
-                  return;
-                }
-                const keys = settingsKeysIn(parsed);
-                if (keys.length === 0) {
-                  setError(t("settings.prefsFile.unusable"));
-                  return;
-                }
-                // Preferences are read at mount, so applying them needs a reload to take effect —
-                // confirm first, and say exactly how many are being replaced.
-                const ok = await editorConfirm({
-                  title: t("settings.prefsFile.confirmTitle"),
-                  body: t("settings.prefsFile.confirmBody", {
-                    count: t("count.preferences", { n: keys.length }),
-                  }),
-                  confirmText: t("settings.prefsFile.confirmAction"),
-                });
-                if (!ok) return;
-                applySettings(parsed);
-                location.reload();
-              })();
-            }}
-            onClearAllData={clearAllLocalData}
-          />
-        </Suspense>
-      )}
+      {settingsSurface}
 
       {/* Paste text → map — controlled <Dialog>; focus the textarea on open. (No drop shadow here —
           the original Paste dialog had none, so cancel the shared base shadow.) */}

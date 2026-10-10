@@ -38,7 +38,13 @@ edited maps as new iThoughts-compatible `.itmz` files. Keep the original file an
 - `P` / `Shift+P`: increase or decrease task progress.
 - Hold `Alt`: display the paged shortcut reference.
 
-The application interface can be switched between Chinese and English.
+While the shortcut reference is visible, Left/Right only turn pages and never move branches.
+Release `Alt` or press `Esc` to close it.
+
+Open **Settings** from the library's left navigation, the editor's gear button, or `Ctrl+,`.
+Use **Appearance → Language** to switch between Chinese and English. Settings also include app
+theme, reduced motion, high contrast, Alt-hold hints and delay, and wheel pan/zoom mode and pan
+speed. Preferences are saved locally.
 
 ## 5. Report a problem
 

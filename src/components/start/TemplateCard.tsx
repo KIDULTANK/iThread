@@ -34,7 +34,7 @@ export function TemplateCard({
       title={t("common.openNamed", { name })}
     >
       <div className="st-thumb">
-        <MiniMap seed={seed} branches={branchSpokes(doc)} />
+        <MiniMap seed={seed} branches={branchSpokes(doc)} root={doc.root} />
       </div>
       <div className="st-tile-body">
         <div className="st-card-title">{name}</div>

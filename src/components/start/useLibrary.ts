@@ -25,6 +25,19 @@ export function useLibrary(rev: number): MapEntry[] {
               nodeCount: docNodeCount(d),
               updatedAt: d.meta?.updatedAt,
               branches: branchSpokes(d),
+              previewRoot: {
+                id: d.root.id,
+                topic: d.root.topic,
+                children: d.root.children.slice(0, 4).map((child) => ({
+                  id: child.id,
+                  topic: child.topic,
+                  children: child.children.slice(0, 2).map((leaf) => ({
+                    id: leaf.id,
+                    topic: leaf.topic,
+                    children: [],
+                  })),
+                })),
+              },
               pinned: d.meta?.pinned ?? false,
               folderId: d.meta?.folderId,
             })),

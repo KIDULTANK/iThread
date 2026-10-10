@@ -4,6 +4,7 @@
 // the call site. The IndexedDB library itself is cleared separately (mapStore.clearAllData).
 
 export const LOCAL_PREF_KEYS = [
+  "mindmap-interaction",
   "mindmap-first-run-seen",
   "mindmap-cmdk-recent",
   "mindmap-branch-clipboard",

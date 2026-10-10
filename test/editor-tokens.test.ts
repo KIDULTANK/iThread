@@ -33,13 +33,13 @@ describe("editorThemeVars", () => {
     expect(v["--ed-border"]).toBe("rgba(255,255,255,0.11)");
   });
 
-  it("keeps the emerald accent fixed in both appearances", () => {
+  it("uses readable vermilion accents in both appearances", () => {
     for (const dark of [false, true]) {
       const v = editorThemeVars(dark) as Vars;
-      expect(v["--ed-accent"], String(dark)).toBe(EDITOR_ACCENT);
-      expect(v["--ed-accent-hover"], String(dark)).toBe(EDITOR_ACCENT_HOVER);
+      expect(v["--ed-accent"], String(dark)).toBe(dark ? "#ef9486" : EDITOR_ACCENT);
+      expect(v["--ed-accent-hover"], String(dark)).toBe(dark ? "#ffb1a3" : EDITOR_ACCENT_HOVER);
     }
-    expect(EDITOR_ACCENT).toBe("#1b8a5e");
+    expect(EDITOR_ACCENT).toBe("#be3d32");
   });
 
   it("threads the font stacks through (no web fonts — offline-first)", () => {

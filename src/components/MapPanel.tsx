@@ -493,7 +493,7 @@ export function MapPanel({
               <input
                 type="color"
                 className="mm-map-control"
-                value={accentColor || "#1b8a5e"}
+                value={accentColor || theme.theme.cssVar["--root-bgcolor"] || "#be3d32"}
                 onChange={(e) => onSetAccentColor(e.target.value)}
                 aria-label={t("panel.accentColour")}
                 style={{ padding: 1, width: 34, height: 24 }}

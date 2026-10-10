@@ -28,6 +28,7 @@ import { useLongPress } from "../hooks/useLongPress";
 // entry chunk.
 import { t } from "../i18n/registry";
 import { MARKER_PALETTE, markerImage } from "../icons";
+import { useInteractionPrefs } from "../store/interactionPrefs";
 import "./flow/messages";
 import { parseOutline } from "../io/pasteOutline";
 import { hasFormatting, parseInlineMarkdown, richToPlain, sanitizeRich } from "../io/richText";
@@ -369,6 +370,7 @@ function FlowInner({
   ]);
   const [nodes, setNodes, onNodesChange] = useNodesState<TopicNodeT>(initialFlow.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdge>(initialFlow.edges);
+  const { prefs: interactionPrefs } = useInteractionPrefs();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Multi-selection: this set drives the canvas selection flags; `selectedId` is the anchor (the
   // last-touched node) that every single-node behaviour — keyboard, popover, per-item edits — keeps
@@ -2438,8 +2440,8 @@ function FlowInner({
             panOnDrag={[1, 2]}
             // Trackpad/touch navigation follows the iPad model: two-finger/wheel pans the map,
             // Ctrl/⌘ + wheel (and pinch) zooms around the pointer instead of jumping the camera.
-            panOnScroll
-            panOnScrollSpeed={0.85}
+            panOnScroll={interactionPrefs.wheelMode === "pan"}
+            panOnScrollSpeed={interactionPrefs.panSpeed}
             zoomOnScroll
             zoomOnPinch
             autoPanSpeed={22}

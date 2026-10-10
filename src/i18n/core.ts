@@ -13,6 +13,24 @@ import { type Catalogue, registerMessages } from "./registry";
 // this migration is behaviour-preserving, and the tests assert the rendered strings.
 
 export const CORE_EN = {
+  "settings.intro":
+    "Preferences apply across your library. Changes are saved automatically; switching language reloads the interface.",
+  "settings.interaction": "Keyboard & canvas",
+  "settings.altHelp": "Hold Alt for shortcuts",
+  "settings.altDelay": "Alt hold delay",
+  "settings.delay.fast": "Quick · 350 ms",
+  "settings.delay.normal": "Standard · 550 ms",
+  "settings.delay.slow": "Long · 800 ms",
+  "settings.wheelMode": "Mouse wheel",
+  "settings.wheel.pan": "Pan canvas",
+  "settings.wheel.zoom": "Zoom canvas",
+  "settings.panSpeed": "Scroll pan speed",
+  "settings.speed.slow": "Gentle",
+  "settings.speed.normal": "Standard",
+  "settings.speed.fast": "Fast",
+  "settings.interaction.help":
+    "These controls take effect immediately. In pan mode, Ctrl + wheel zooms. While the shortcut sheet is visible, arrow keys only turn pages.",
+  "settings.interaction.reset": "Reset keyboard & canvas defaults",
   // Shared across features — a string with more than one home belongs here once, under `common.`, so a
   // translator sees it once and the wording can't drift between the toolbar, the canvas and ⌘K.
   // `untitled` is the fallback shown wherever a map or topic has no title; it had 20 hardcoded copies.
@@ -1082,6 +1100,8 @@ export const CORE_EN = {
   "panel.selectATopicToEdit": "Select a topic to edit it",
   "panel.design": "Design",
   "panel.chooseAPreset": "Choose a preset…",
+  "design.editorial": "Writing",
+  "design.editorialNote": "Warm paper, ink tones and fine curved connectors",
   "panel.theme": "Theme",
   "panel.manageThemes": "Manage themes…",
   "panel.background": "Background",

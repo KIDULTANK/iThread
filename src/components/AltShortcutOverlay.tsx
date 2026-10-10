@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { t } from "../i18n";
 import { shortcutGroups } from "../shortcuts";
+import { useInteractionPrefs } from "../store/interactionPrefs";
 
-const HOLD_MS = 550;
 const ITEMS_PER_PAGE = 10;
 
 function shortcutPages() {
@@ -21,8 +21,10 @@ function shortcutPages() {
 
 /** iPad-style shortcut reveal: hold Alt, release it to return immediately to the canvas. */
 export function AltShortcutOverlay({ enabled = true }: { enabled?: boolean }) {
+  const { prefs } = useInteractionPrefs();
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(0);
+  const openRef = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const altDown = useRef(false);
   const cancelled = useRef(false);
@@ -34,13 +36,29 @@ export function AltShortcutOverlay({ enabled = true }: { enabled?: boolean }) {
     };
     const close = () => {
       clearTimer();
+      openRef.current = false;
       setOpen(false);
     };
-    if (!enabled) {
+    if (!enabled || !prefs.altHelp) {
+      altDown.current = false;
       close();
       return;
     }
     const onKeyDown = (event: KeyboardEvent) => {
+      // The visible sheet owns keyboard input, before document/canvas shortcuts receive it.
+      if (openRef.current) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (event.key === "ArrowRight") {
+          setPage((value) => Math.min(value + 1, shortcutPages().length - 1));
+        } else if (event.key === "ArrowLeft") {
+          setPage((value) => Math.max(value - 1, 0));
+        } else if (event.key === "Escape") {
+          cancelled.current = true;
+          close();
+        }
+        return;
+      }
       if (event.key === "Alt") {
         if (event.repeat || event.ctrlKey || event.metaKey || event.shiftKey || altDown.current)
           return;
@@ -51,13 +69,13 @@ export function AltShortcutOverlay({ enabled = true }: { enabled?: boolean }) {
           timer.current = null;
           if (altDown.current && !cancelled.current) {
             setPage(0);
+            openRef.current = true;
             setOpen(true);
           }
-        }, HOLD_MS);
+        }, prefs.altDelay);
         return;
       }
-      // Alt+Arrow and every other real chord keep their normal action. If the sheet was already
-      // visible, get it out of the way before the command runs.
+      // Before the hold threshold, ordinary Alt chords still act on the canvas.
       if (altDown.current) {
         cancelled.current = true;
         close();
@@ -67,6 +85,10 @@ export function AltShortcutOverlay({ enabled = true }: { enabled?: boolean }) {
       }
     };
     const onKeyUp = (event: KeyboardEvent) => {
+      if (openRef.current) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
       if (event.key !== "Alt") return;
       altDown.current = false;
       cancelled.current = false;
@@ -86,7 +108,7 @@ export function AltShortcutOverlay({ enabled = true }: { enabled?: boolean }) {
       window.removeEventListener("keyup", onKeyUp, true);
       window.removeEventListener("blur", onBlur);
     };
-  }, [enabled]);
+  }, [enabled, prefs.altHelp, prefs.altDelay]);
 
   if (!open) return null;
   const pages = shortcutPages();
@@ -99,7 +121,13 @@ export function AltShortcutOverlay({ enabled = true }: { enabled?: boolean }) {
     view: "◉",
   };
   return (
-    <div className="mm-alt-shortcuts-backdrop" onPointerDown={() => setOpen(false)}>
+    <div
+      className="mm-alt-shortcuts-backdrop"
+      onPointerDown={() => {
+        openRef.current = false;
+        setOpen(false);
+      }}
+    >
       <dialog
         open
         className="mm-alt-shortcuts-card"

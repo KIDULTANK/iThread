@@ -1,0 +1,141 @@
+/* Warm editorial chrome. Canvas document colours remain user-controlled. */
+.mm-editor-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+  padding: 4px 7px 4px 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ed-ink);
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  cursor: pointer;
+}
+.mm-editor-brand:hover {
+  background: var(--ed-accent-tint);
+}
+.mm-editor-brand:focus-visible {
+  outline: 2px solid var(--ed-accent);
+  outline-offset: 3px;
+}
+.mm-rail {
+  padding-top: 14px;
+}
+.mm-topbar-row1 {
+  background: var(--ed-page);
+}
+.mm-topbar-row2 {
+  min-height: 48px;
+}
+.mm-tbtn {
+  font-weight: 500;
+}
+.mm-tbtn-accent {
+  border-color: transparent;
+}
+.mm-tbtn-primary,
+.mm-tbtn-primary:hover,
+.mm-tbtn-accent:hover {
+  color: var(--ed-on-accent);
+}
+.mm-select,
+.mm-input,
+.mm-toggle-btn {
+  border-radius: 7px;
+}
+.mm-menu {
+  padding: 8px;
+  border-radius: 10px;
+}
+.mm-menu-item {
+  border-radius: 6px;
+}
+.mm-inspector-head {
+  padding: 18px 18px 15px;
+}
+.mm-inspector-path {
+  font-family: var(--ed-font-sans);
+  font-size: 12px;
+}
+.mm-inspector-body {
+  padding: 18px;
+  gap: 22px;
+}
+.mm-inspector .mm-prim-section {
+  border-bottom: 1px solid var(--ed-divider);
+  padding-bottom: 18px;
+}
+.mm-inspector .mm-prim-input,
+.mm-inspector .mm-prim-select,
+.mm-map-control {
+  min-height: 30px;
+  border-radius: 6px;
+}
+.mm-map-section-title {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.mm-map-field {
+  gap: 12px;
+}
+.mm-stat {
+  border-radius: 8px;
+}
+.mm-doctabs {
+  background: var(--ed-page);
+  padding-top: 5px;
+  height: 43px;
+}
+.mm-doctab {
+  border-radius: 8px 8px 0 0;
+}
+.mm-doctab[data-active] {
+  background: var(--ed-card);
+}
+.mm-doctab-main {
+  font-weight: 500;
+}
+.mm-doctab[data-active] .mm-doctab-main {
+  color: var(--ed-ink);
+  font-weight: 650;
+}
+.mm-dock-tabs {
+  padding-top: 10px;
+}
+.mm-rail-btn,
+.mm-tbtn,
+.mm-editor-brand {
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+@media (min-width: 1100px) {
+  .mm-topbar-row {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .mm-topbar-row1 {
+    height: 55px;
+    gap: 10px;
+  }
+  .mm-topbar-row2.mm-wrap {
+    padding-top: 9px;
+    padding-bottom: 9px;
+    gap: 8px;
+  }
+  .mm-doctab-main {
+    padding: 10px 18px;
+  }
+  .mm-dock {
+    width: 260px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mm-rail-btn,
+  .mm-tbtn,
+  .mm-editor-brand {
+    transition: none;
+  }
+}

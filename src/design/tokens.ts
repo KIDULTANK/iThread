@@ -9,29 +9,30 @@
 // src/mindmap/theme.ts, and the start screen has src/components/start/tokens.ts. Those are
 // deliberately separate palettes — this file is only the surrounding chrome.
 //
-// ── Editor redesign (warm-cream + emerald, theme-reactive) ───────────────────
+// ── Editor redesign (warm-cream + vermilion, theme-reactive) ───────────────────
 // The static `colors` object below is the *legacy* chrome palette (cool lilac). The redesigned
 // editor chrome (icon rail, two-row top bar, inspector) instead consumes the `--ed-*` custom
 // properties emitted by `editorThemeVars()` — the exact same pattern the shipped start screen uses
 // (`startThemeVars` → `--st-*`), so Light / Dark / Ocean / Sunset all stay legible from one source.
-// The emerald brand accent is fixed across themes to match the start screen.
+// The vermilion brand accent is fixed across themes to match the start screen.
 
 import type { CSSProperties } from "react";
 
-/** Emerald brand accent — fixed across all canvas themes (matches the start screen). */
-export const EDITOR_ACCENT = "#1b8a5e";
-export const EDITOR_ACCENT_HOVER = "#15714d";
+/** Vermilion brand accent — fixed across all canvas themes (matches the start screen). */
+export const EDITOR_ACCENT = "#be3d32";
+export const EDITOR_ACCENT_HOVER = "#a32e25";
 
 /** UI font stacks — system sans (matches index.html) + a mono stack that prefers JetBrains Mono if
  *  the user has it installed but never loads a web font (the product is offline-first). Mirrors the
  *  start screen's stacks so the editor and start screen read as one product. */
-export const EDITOR_FONT_SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+export const EDITOR_FONT_SANS =
+  'ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif';
 export const EDITOR_FONT_MONO = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
 
 /** Build the `--ed-*` custom properties for the `.mm-editor` root from the app's chrome appearance
  *  (Phase 8): `dark` is resolved app-wide (system / light / dark) independently of the canvas theme,
  *  so the chrome can be dark over a light canvas and vice-versa. Chrome surfaces are neutral light/dark
- *  values; the emerald accent is constant. Consumed by editor.css + the redesigned chrome components. */
+ *  values; the vermilion accent is constant. Consumed by editor.css + the redesigned chrome components. */
 export function editorThemeVars(dark: boolean, highContrast = false): CSSProperties {
   const page = dark ? "#1d1c22" : "#faf9f5";
   const card = dark ? "#2a2930" : "#ffffff";
@@ -51,10 +52,11 @@ export function editorThemeVars(dark: boolean, highContrast = false): CSSPropert
       "--ed-ink2": dark ? "#ececec" : "#161616",
       "--ed-muted": dark ? "#dcdcdc" : "#232323",
       "--ed-faint": dark ? "#cfcfcf" : "#2c2c2c",
-      "--ed-accent": dark ? "#5fd39a" : "#0a6b40",
-      "--ed-accent-hover": dark ? "#7ee0af" : "#085432",
-      "--ed-accent-tint": dark ? "rgba(95,211,154,0.26)" : "rgba(10,107,64,0.16)",
-      "--ed-accent-ring": dark ? "rgba(120,224,175,0.85)" : "rgba(10,107,64,0.85)",
+      "--ed-accent": dark ? "#ffb1a3" : "#8f241c",
+      "--ed-accent-hover": dark ? "#ffd0c8" : "#7b2019",
+      "--ed-on-accent": dark ? "#201c1b" : "#ffffff",
+      "--ed-accent-tint": dark ? "rgba(255,177,163,0.26)" : "rgba(143,36,28,0.16)",
+      "--ed-accent-ring": dark ? "rgba(255,208,200,0.85)" : "rgba(143,36,28,0.85)",
       "--ed-danger": dark ? "#ff8a88" : "#8f1210",
       "--ed-toast-ink": dark ? "#dfe7f2" : "#1a1550",
       "--ed-toast-border": dark ? "#ffffff" : "#000000",
@@ -89,17 +91,18 @@ export function editorThemeVars(dark: boolean, highContrast = false): CSSPropert
     // hue + muted-darker-than-faint preserved. Dark mode (light-on-dark, already high-contrast) unchanged.
     "--ed-muted": dark ? "#8f8a80" : "#706a5f",
     "--ed-faint": dark ? "#6d695f" : "#7a7468",
-    "--ed-accent": EDITOR_ACCENT,
-    "--ed-accent-hover": EDITOR_ACCENT_HOVER,
-    "--ed-accent-tint": dark ? "rgba(27,138,94,0.18)" : "rgba(27,138,94,0.10)",
-    "--ed-accent-ring": "rgba(27,138,94,0.30)",
+    "--ed-accent": dark ? "#ef9486" : EDITOR_ACCENT,
+    "--ed-accent-hover": dark ? "#ffb1a3" : EDITOR_ACCENT_HOVER,
+    "--ed-on-accent": dark ? "#201c1b" : "#ffffff",
+    "--ed-accent-tint": dark ? "rgba(219,97,81,0.18)" : "rgba(190,61,50,0.08)",
+    "--ed-accent-ring": "rgba(190,61,50,0.24)",
     "--ed-danger": "#b23b3a",
     // Toast + import-banner strips — theme-reactive so feedback isn't a pale light box on a dark
     // canvas (the legacy hardcoded hex are kept as fallbacks where --ed-* isn't in scope, e.g. the
     // Start-screen floating toast). Light values match the old static colors.toast palette.
     "--ed-toast-ink": dark ? "#dfe7f2" : "#26215c",
     "--ed-toast-border": dark ? "rgba(255,255,255,0.12)" : "#cecbf6",
-    "--ed-toast-success-bg": dark ? "rgba(27,138,94,0.18)" : "#eafaf0",
+    "--ed-toast-success-bg": dark ? "rgba(219,97,81,0.18)" : "#eafaf0",
     "--ed-toast-info-bg": dark ? "rgba(90,110,170,0.20)" : "#eef2fc",
     "--ed-toast-error-bg": dark ? "rgba(178,59,58,0.22)" : "#fcebeb",
     "--ed-toast-error-ink": dark ? "#f1b8b6" : "#791f1f",
@@ -150,11 +153,11 @@ export const colors = {
 
   /** Control fill (the toolbar button look). */
   controlBg: "var(--ed-sidebar, #f4f2ec)",
-  /** Accent — active chip background + border, the lit toggle state (emerald). */
-  accent: "var(--ed-accent, #1b8a5e)",
+  /** Accent — active chip background + border, the lit toggle state (vermilion). */
+  accent: "var(--ed-accent, #be3d32)",
   /** Accent used as the history-timeline range slider tint. */
-  accentSlider: "var(--ed-accent, #1b8a5e)",
-  /** Active marker chip background (a soft emerald tint, distinct from the solid accent fill). */
+  accentSlider: "var(--ed-accent, #be3d32)",
+  /** Active marker chip background (a soft vermilion tint, distinct from the solid accent fill). */
   accentTint: "var(--ed-accent-tint, #e3f1ea)",
   /** Destructive action colour (delete confirms, danger buttons). */
   danger: "var(--ed-danger, #b23b3a)",

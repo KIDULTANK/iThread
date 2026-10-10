@@ -50,8 +50,7 @@ describe("StartSidebar", () => {
     expect(onNewMap).toHaveBeenCalledTimes(1);
     await u.click(screen.getByRole("button", { name: /templates/i }));
     expect(onNavigate).toHaveBeenCalledWith("templates");
-    await u.click(screen.getByRole("button", { name: /^learn mind mapping/i }));
-    expect(onNavigate).toHaveBeenCalledWith("learn");
+    expect(screen.queryByRole("button", { name: /^learn mind mapping/i })).toBeNull();
   });
 
   it("shows the All-maps count badge when there are maps", () => {
@@ -63,8 +62,8 @@ describe("StartSidebar", () => {
     const { container } = render(
       <StartSidebar active="start" mapCount={0} onNavigate={vi.fn()} onNewMap={vi.fn()} />,
     );
-    // One inline SVG per nav row (10, incl. Trash); the .st-nav-icon selector excludes the brand glyph.
-    expect(container.querySelectorAll(".st-nav-item .st-nav-icon svg").length).toBe(10);
+    // One inline SVG per navigation row; the selector excludes the brand artwork.
+    expect(container.querySelectorAll(".st-nav-item .st-nav-icon svg").length).toBe(9);
     expect(container.textContent).not.toContain("🕘"); // the old clock emoji is gone
   });
 });
@@ -103,12 +102,12 @@ describe("CommandPalette", () => {
     const ctx = mkCtx();
     render(<CommandPalette ctx={ctx} onClose={vi.fn()} />);
     const input = screen.getByPlaceholderText(/search maps and commands/i);
-    await u.type(input, "learn");
-    expect(screen.getByText("Learn mind mapping")).toBeTruthy();
+    await u.type(input, "layouts");
+    expect(screen.getByText("Browse layouts")).toBeTruthy();
     // the create row is active(0); arrow down to the matched action, then Enter
     fireEvent.keyDown(input, { key: "ArrowDown" });
     fireEvent.keyDown(input, { key: "Enter" });
-    expect(ctx.go).toHaveBeenCalledWith("learn");
+    expect(ctx.go).toHaveBeenCalledWith("layouts");
   });
 
   it("closes on Escape", () => {

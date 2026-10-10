@@ -190,9 +190,9 @@ describe("MapPanel", () => {
     expect(onSetAccentColor).toHaveBeenCalledWith("");
   });
 
-  it("shows the emerald default in the accent picker when no accent is set", () => {
+  it("shows the active theme default in the accent picker when no accent is set", () => {
     setup(doc("M", { id: "root", topic: "M", children: [] }));
-    expect((screen.getByLabelText("Accent colour") as HTMLInputElement).value).toBe("#1b8a5e");
+    expect((screen.getByLabelText("Accent colour") as HTMLInputElement).value).toBe("#be3d32");
     expect(screen.queryByRole("button", { name: "Reset" })).toBeNull(); // nothing to reset
   });
 

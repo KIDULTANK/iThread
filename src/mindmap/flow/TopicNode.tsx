@@ -695,7 +695,7 @@ function TopicNodeImpl({ id, data, selected, dragging }: NodeProps<TopicNodeT>) 
         };
 
   // Selection-ring colour: the node's branch colour, emerald for the root.
-  const ringColor = isRoot ? "#1b8a5e" : branchColor;
+  const ringColor = "var(--ed-accent, #be3d32)";
 
   // Inline task-info line (MindManager schedule/assignment row): start ▸ duration ▸ resources. The
   // priority / progress / due chips render above; this surfaces the remaining task fields the canvas
@@ -722,12 +722,12 @@ function TopicNodeImpl({ id, data, selected, dragging }: NodeProps<TopicNodeT>) 
           ? "0 14px 34px rgba(40,30,16,0.28)"
           : dropTarget
             ? // Drag-to-reparent target: a bold emerald ring so the drop destination is unmistakable.
-              "0 0 0 3px #1b8a5e, 0 0 0 8px rgba(27,138,94,0.25), 0 8px 22px rgba(40,30,16,0.18)"
+              "0 0 0 3px var(--ed-accent, #be3d32), 0 0 0 8px var(--ed-accent-tint, rgba(190,61,50,0.08))"
             : selected
-              ? `0 0 0 2px ${ringColor}, 0 0 0 6px ${ringColor}33, 0 8px 22px rgba(40,30,16,0.16)`
+              ? `0 0 0 2px ${ringColor}, 0 0 0 5px var(--ed-accent-tint, rgba(190,61,50,0.08)), 0 3px 10px rgba(40,30,16,0.08)`
               : hovered
                 ? isRoot
-                  ? "0 10px 26px rgba(27,138,94,0.40)"
+                  ? "0 4px 14px rgba(40,30,16,0.15)"
                   : underlineLeaf
                     ? "none"
                     : "0 6px 18px rgba(40,30,16,0.20)"
@@ -750,7 +750,11 @@ function TopicNodeImpl({ id, data, selected, dragging }: NodeProps<TopicNodeT>) 
         // Read-only Power Filter: fade nodes that aren't on a path to a match.
         opacity: (dimmed ? 0.22 : 1) * motionProgress,
         // Drag-a-marker drop target highlight, else a Find-result highlight ring.
-        outline: markerDragOver ? "2px dashed #1b8a5e" : matched ? "2px solid #f5a623" : undefined,
+        outline: markerDragOver
+          ? "2px dashed var(--ed-accent, #be3d32)"
+          : matched
+            ? "2px solid #f5a623"
+            : undefined,
         outlineOffset: 2,
         transition:
           motionProgress < 1

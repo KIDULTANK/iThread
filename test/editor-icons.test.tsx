@@ -80,17 +80,16 @@ describe("EditorIcon", () => {
 });
 
 describe("BrandMark", () => {
-  it("renders the node-link glyph with the emerald accent by default", () => {
-    const svg = renderToStaticMarkup(<BrandMark />);
-    expect(svg).toMatch(/^<svg/);
-    expect(svg).toContain('viewBox="0 0 24 24"');
-    expect(svg).toContain("var(--ed-accent");
-    expect((svg.match(/<circle/g) ?? []).length).toBe(3); // one hub + two satellites
+  it("uses the approved calligraphic image shared with the application icon", () => {
+    const markup = renderToStaticMarkup(<BrandMark />);
+    expect(markup).toContain('src="/icon-192.png"');
+    expect(markup).toContain('alt=""');
+    expect(markup).toContain('draggable="false"');
   });
 
-  it("accepts an explicit size + colour", () => {
-    const svg = renderToStaticMarkup(<BrandMark size={40} color="#123456" />);
-    expect(svg).toContain('width="40"');
-    expect(svg).toContain("#123456");
+  it("accepts an explicit size without recolouring the approved art", () => {
+    const markup = renderToStaticMarkup(<BrandMark size={40} />);
+    expect(markup).toContain('width="40"');
+    expect(markup).toContain('height="40"');
   });
 });

@@ -1,0 +1,77 @@
+.st-brand {
+  gap: 11px;
+  padding: 5px 6px 12px;
+  font-size: 20px;
+  letter-spacing: -0.03em;
+}
+.st-nav-item {
+  position: relative;
+  min-height: 39px;
+}
+.st-nav-item[aria-current="true"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--st-accent);
+}
+.st-header {
+  min-height: 64px;
+}
+.st-card {
+  border-radius: 14px;
+}
+.st-card-hover:hover {
+  border-color: var(--st-border);
+  box-shadow: var(--st-shadow);
+}
+.st-hero {
+  border-radius: 16px;
+  background: var(--st-card);
+}
+.st-hero h1 {
+  font-size: 30px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+.st-section-title {
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+.st-card-title {
+  font-weight: 600;
+}
+.st-foot {
+  background: transparent;
+  border-color: var(--st-divider);
+}
+.st-new,
+.st-btn {
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.st-new,
+.st-btn-primary {
+  color: var(--st-on-accent);
+}
+@media (min-width: 1000px) {
+  .st-sidebar {
+    width: 244px;
+    padding: 22px 16px;
+    gap: 18px;
+  }
+  .st-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 40px;
+  }
+  .st-grid {
+    gap: 20px;
+  }
+  .st-hero {
+    padding: 28px;
+  }
+}

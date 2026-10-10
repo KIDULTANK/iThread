@@ -4,6 +4,7 @@
 // setBranchGrowth handles from one of these, so there's no new styling mechanism — just a curated
 // preset over the controls that already exist.
 
+import { t } from "./i18n";
 import type { BranchGrowth } from "./model/types";
 
 export type ConnectorStyle = "organic" | "curved" | "elbow" | "straight";
@@ -25,6 +26,19 @@ export interface Design {
 }
 
 export const DESIGNS: readonly Design[] = [
+  {
+    id: "editorial",
+    get name() {
+      return t("design.editorial");
+    },
+    themeId: "light",
+    connectorStyle: "curved",
+    branchGrowth: "fine",
+    accentColor: "#be3d32",
+    get note() {
+      return t("design.editorialNote");
+    },
+  },
   {
     id: "classic",
     name: "Classic",

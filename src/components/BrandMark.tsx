@@ -1,23 +1,16 @@
-// BrandMark — the iThread node-link glyph, in the emerald brand accent. Lifted from the
-// design handoff (shared.jsx). Used in the editor's icon rail; the colour follows currentColor so a
-// parent can tint it, defaulting to the emerald accent token.
-
-export function BrandMark({
-  size = 22,
-  color = "var(--ed-accent, #1b8a5e)",
-}: { size?: number; color?: string }) {
+// The approved vermilion seal icon is shared with the desktop and PWA builds.
+// BASE_URL keeps it available in packaged Electron and GitHub Pages.
+export function BrandMark({ size = 28 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M9 12h3M12 12l4-5M12 12l4 5"
-        stroke={color}
-        strokeWidth="1.6"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <circle cx="6.5" cy="12" r="3.3" fill={color} />
-      <circle cx="17" cy="7" r="2.4" fill={color} opacity="0.85" />
-      <circle cx="17" cy="17" r="2.4" fill={color} opacity="0.7" />
-    </svg>
+    <img
+      className="mm-brand-mark"
+      src={`${import.meta.env.BASE_URL}icon-192.png`}
+      width={size}
+      height={size}
+      alt=""
+      aria-hidden="true"
+      draggable={false}
+      style={{ display: "block", flexShrink: 0, borderRadius: Math.round(size * 0.2) }}
+    />
   );
 }

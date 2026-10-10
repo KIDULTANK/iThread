@@ -15,7 +15,7 @@ function doc(title: string, children: MapNode[]): MindMapDoc {
     id: crypto.randomUUID(),
     title,
     root: { id: "root", topic: title, children },
-    meta: { source: "new" },
+    meta: { source: "new", connectorStyle: "curved", branchGrowth: "fine", accentColor: "#be3d32" },
   };
 }
 

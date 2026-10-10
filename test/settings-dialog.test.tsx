@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { SettingsDialog, applyLocaleChoice } from "../src/components/SettingsDialog";
 import { LOCALE_PREF_KEY, getLocale, setLocale } from "../src/i18n";
+import { INTERACTION_PREF_KEY, readInteractionPrefs } from "../src/store/interactionPrefs";
 
 // SettingsDialog renders inside the shared native-<dialog> wrapper; guard-stub the modal methods
 // (jsdom may lack them) the same way the other dialog tests do.
@@ -20,7 +21,10 @@ beforeAll(() => {
   }
 });
 
-beforeEach(() => setLocale("en"));
+beforeEach(() => {
+  setLocale("en");
+  localStorage.removeItem(INTERACTION_PREF_KEY);
+});
 
 function setup(over: Partial<Parameters<typeof SettingsDialog>[0]> = {}) {
   const props = {
@@ -45,6 +49,28 @@ function setup(over: Partial<Parameters<typeof SettingsDialog>[0]> = {}) {
 }
 
 describe("SettingsDialog", () => {
+  it("persists real keyboard and canvas preferences and resets their defaults", () => {
+    setup();
+    fireEvent.change(screen.getByLabelText("Alt hold delay"), { target: { value: "800" } });
+    fireEvent.change(screen.getByLabelText("Scroll pan speed"), { target: { value: "1.2" } });
+    fireEvent.change(screen.getByLabelText("Mouse wheel"), { target: { value: "zoom" } });
+    fireEvent.change(screen.getByLabelText("Hold Alt for shortcuts"), { target: { value: "off" } });
+    expect(readInteractionPrefs()).toEqual({
+      altHelp: false,
+      altDelay: 800,
+      wheelMode: "zoom",
+      panSpeed: 1.2,
+    });
+    expect((screen.getByLabelText("Alt hold delay") as HTMLSelectElement).disabled).toBe(true);
+    expect((screen.getByLabelText("Scroll pan speed") as HTMLSelectElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Reset keyboard & canvas defaults" }));
+    expect(readInteractionPrefs()).toEqual({
+      altHelp: true,
+      altDelay: 550,
+      wheelMode: "pan",
+      panSpeed: 0.85,
+    });
+  });
   it("offers Chinese and English and persists a language switch", () => {
     setup();
     const language = screen.getByLabelText("Language") as HTMLSelectElement;

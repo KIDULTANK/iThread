@@ -115,14 +115,12 @@ describe("About section", () => {
   it("renders the local-first blurb and every resource link with its href", () => {
     render(<About />);
     expect(screen.getByRole("heading", { name: /About iThread/i })).toBeTruthy();
-    const guide = screen.getByRole("link", { name: /User guide/i });
-    expect(guide.getAttribute("href")).toBe("/user-guide.html");
-    expect(guide.getAttribute("target")).toBe("_blank");
+    expect(screen.queryByRole("heading", { name: /Read & reference/i })).toBeNull();
+    expect(screen.queryByRole("link", { name: /User guide/i })).toBeNull();
     expect(screen.getByRole("link", { name: /Source/i }).getAttribute("href")).toBe(
       "https://github.com/KIDULTANK/iThread",
     );
-    // All six resource links render.
-    expect(screen.getAllByRole("link")).toHaveLength(6);
+    expect(screen.getAllByRole("link")).toHaveLength(2);
   });
 });
 

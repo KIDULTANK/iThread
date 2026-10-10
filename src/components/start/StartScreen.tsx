@@ -13,7 +13,6 @@ import { AllMaps } from "./sections/AllMaps";
 import { Examples } from "./sections/Examples";
 import { ImportView } from "./sections/ImportView";
 import { Layouts } from "./sections/Layouts";
-import { Learn } from "./sections/Learn";
 import { Recent } from "./sections/Recent";
 import { Templates } from "./sections/Templates";
 import { Trash } from "./sections/Trash";
@@ -21,6 +20,7 @@ import { startThemeVars } from "./tokens";
 import type { StartContext, StartSection } from "./types";
 import { useLibrary } from "./useLibrary";
 import "./start.css";
+import "./editorial-start.css";
 
 function sectionTitle(section: StartSection): string {
   const key: Record<StartSection, Parameters<typeof t>[0]> = {
@@ -31,7 +31,6 @@ function sectionTitle(section: StartSection): string {
     examples: "toolbar.examples",
     layouts: "start.layouts",
     import: "start.import",
-    learn: "start.learnMindMapping",
     about: "start.about",
     trash: "start.trash",
   };
@@ -43,12 +42,14 @@ export function StartScreen({
   onOpen,
   onImportFiles,
   onCheckForUpdates,
+  onSettings,
 }: {
   /** Resolved app appearance (Phase 8) — drives the Start chrome independently of the canvas theme. */
   dark: boolean;
   onOpen: (doc: MindMapDoc, layout?: string) => void;
   onImportFiles: (files: File[]) => void;
   onCheckForUpdates?: () => void;
+  onSettings?: () => void;
 }) {
   const [section, setSection] = useState<StartSection>("start");
   const [cmdk, setCmdk] = useState(false);
@@ -68,6 +69,11 @@ export function StartScreen({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key === ",") {
+        e.preventDefault();
+        onSettings?.();
+        return;
+      }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setCmdk((v) => !v);
@@ -75,7 +81,7 @@ export function StartScreen({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [onSettings]);
 
   const ctx: StartContext = useMemo(
     () => ({
@@ -100,6 +106,7 @@ export function StartScreen({
         mapCount={mapCount}
         onNavigate={setSection}
         onNewMap={() => onOpen(blankDoc())}
+        onSettings={onSettings}
       />
       <div className="st-main">
         <StartHeader title={sectionTitle(section)} onCommand={() => setCmdk(true)} />
@@ -111,7 +118,6 @@ export function StartScreen({
           {section === "examples" ? <Examples ctx={ctx} /> : null}
           {section === "layouts" ? <Layouts ctx={ctx} /> : null}
           {section === "import" ? <ImportView ctx={ctx} /> : null}
-          {section === "learn" ? <Learn /> : null}
           {section === "about" ? <About onCheckForUpdates={onCheckForUpdates} /> : null}
           {section === "trash" ? <Trash ctx={ctx} /> : null}
         </div>

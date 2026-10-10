@@ -11,7 +11,6 @@ export type StartSection =
   | "examples"
   | "layouts"
   | "import"
-  | "learn"
   | "about"
   | "trash";
 

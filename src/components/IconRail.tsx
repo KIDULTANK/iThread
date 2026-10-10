@@ -1,6 +1,5 @@
 import { type ChangeEvent, useRef } from "react";
 import { t } from "../i18n";
-import { BrandMark } from "./BrandMark";
 import { EditorIcon } from "./EditorIcons";
 
 // IconRail — the 56px left rail of the redesigned editor. Brand mark returns to the Start screen;
@@ -62,7 +61,7 @@ export function IconRail({
         onClick={onHome}
         style={{ width: 40, height: 40, marginBottom: 4 }}
       >
-        <BrandMark size={24} />
+        <EditorIcon name="home" size={20} />
       </button>
       <span className="mm-rail-sep" />
       {/* A real <button> (not a <label> wrapping a hidden input, which isn't keyboard-operable) that

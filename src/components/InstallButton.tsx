@@ -7,7 +7,7 @@ import { useInstallPrompt } from "../pwa/useInstallPrompt";
 // (already installed / dismissed / unsupported). Self-styled (inline) so it works in both the Start
 // screen (--st-* theme) and the editor About dialog (--ed-* theme) without a shared stylesheet.
 
-const ACCENT = "#1b8a5e";
+const ACCENT = "#be3d32";
 
 const wrap: CSSProperties = {
   display: "flex",

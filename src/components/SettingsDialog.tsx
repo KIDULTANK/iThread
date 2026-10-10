@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../design/primitives";
 import { type Locale, getLocale, setLocale, t } from "../i18n";
+import { useInteractionPrefs } from "../store/interactionPrefs";
 import type { Appearance } from "../useAppearance";
 import type { ContrastPref } from "../useHighContrast";
 import type { MotionPref } from "../useReducedMotion";
 import { Dialog } from "./Dialog";
+import "./settings.css";
 
 // Settings / Preferences — the one place to see and reset the bits of app state that otherwise live
 // invisibly in ~a dozen localStorage keys + the IndexedDB library. Local-first means everything lives
@@ -46,10 +48,10 @@ const fmtBytes = (n: number): string => {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-      <div className="mm-map-section-title">{title}</div>
+    <section className="mm-settings-section" aria-label={title}>
+      <h3 className="mm-map-section-title">{title}</h3>
       {children}
-    </div>
+    </section>
   );
 }
 
@@ -76,6 +78,7 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const [storage, setStorage] = useState<{ usage: number; quota: number } | null>(null);
   const settingsFileRef = useRef<HTMLInputElement>(null);
+  const { prefs, update } = useInteractionPrefs();
 
   // Read the local storage estimate when the dialog opens (best-effort — not in every browser/jsdom).
   useEffect(() => {
@@ -99,133 +102,201 @@ export function SettingsDialog({
       onClose={onClose}
       title={t("settings.title")}
       style={{
-        width: "min(440px, 92vw)",
+        width: "min(720px, 92vw)",
+        maxHeight: "85dvh",
+        overflowY: "auto",
         padding: 20,
         color: "var(--ed-ink)",
         background: "var(--ed-card)",
         boxShadow: "var(--ed-shadow-pop)",
       }}
     >
-      <Section title={t("settings.appearance")}>
-        <label className="mm-map-field">
-          <span>{t("settings.language")}</span>
-          <select
-            className="mm-map-control"
-            value={getLocale()}
-            onChange={(e) => applyLocaleChoice(e.target.value as Locale)}
-            aria-label={t("settings.language")}
-          >
-            <option value="zh-CN">{t("settings.language.chinese")}</option>
-            <option value="en">{t("settings.language.english")}</option>
-          </select>
-        </label>
-        <label className="mm-map-field">
-          <span>{t("settings.appTheme")}</span>
-          <select
-            className="mm-map-control"
-            value={appearance}
-            onChange={(e) => setAppearance(e.target.value as Appearance)}
-            aria-label={t("settings.appTheme")}
-          >
-            <option value="system">{t("settings.toggle.system")}</option>
-            <option value="light">{t("common.light")}</option>
-            <option value="dark">{t("common.dark")}</option>
-          </select>
-        </label>
-        <p style={{ margin: 0, fontSize: 12, color: "var(--ed-muted)" }}>
-          {t("settings.appTheme.help")}
-        </p>
-        <label className="mm-map-field">
-          <span>{t("settings.reduceMotion")}</span>
-          <select
-            className="mm-map-control"
-            value={motionPref}
-            onChange={(e) => setMotionPref(e.target.value as MotionPref)}
-            aria-label={t("settings.reduceMotion")}
-          >
-            <option value="system">{t("settings.toggle.system")}</option>
-            <option value="reduced">{t("settings.toggle.on")}</option>
-            <option value="full">{t("settings.toggle.off")}</option>
-          </select>
-        </label>
-        <p style={{ margin: 0, fontSize: 12, color: "var(--ed-muted)" }}>
-          {t("settings.reduceMotion.help")}
-        </p>
-        <label className="mm-map-field">
-          <span>{t("settings.highContrast")}</span>
-          <select
-            className="mm-map-control"
-            value={contrastPref}
-            onChange={(e) => setContrastPref(e.target.value as ContrastPref)}
-            aria-label={t("settings.highContrast")}
-          >
-            <option value="system">{t("settings.toggle.system")}</option>
-            <option value="high">{t("settings.toggle.on")}</option>
-            <option value="normal">{t("settings.toggle.off")}</option>
-          </select>
-        </label>
-        <p style={{ margin: 0, fontSize: 12, color: "var(--ed-muted)" }}>
-          {t("settings.highContrast.help")}
-        </p>
-      </Section>
+      <p className="mm-settings-intro">{t("settings.intro")}</p>
+      <div className="mm-settings-grid">
+        <Section title={t("settings.appearance")}>
+          <label className="mm-map-field">
+            <span>{t("settings.language")}</span>
+            <select
+              className="mm-map-control"
+              value={getLocale()}
+              onChange={(e) => applyLocaleChoice(e.target.value as Locale)}
+              aria-label={t("settings.language")}
+            >
+              <option value="zh-CN">{t("settings.language.chinese")}</option>
+              <option value="en">{t("settings.language.english")}</option>
+            </select>
+          </label>
+          <label className="mm-map-field">
+            <span>{t("settings.appTheme")}</span>
+            <select
+              className="mm-map-control"
+              value={appearance}
+              onChange={(e) => setAppearance(e.target.value as Appearance)}
+              aria-label={t("settings.appTheme")}
+            >
+              <option value="system">{t("settings.toggle.system")}</option>
+              <option value="light">{t("common.light")}</option>
+              <option value="dark">{t("common.dark")}</option>
+            </select>
+          </label>
+          <p style={{ margin: 0, fontSize: 12, color: "var(--ed-muted)" }}>
+            {t("settings.appTheme.help")}
+          </p>
+          <label className="mm-map-field">
+            <span>{t("settings.reduceMotion")}</span>
+            <select
+              className="mm-map-control"
+              value={motionPref}
+              onChange={(e) => setMotionPref(e.target.value as MotionPref)}
+              aria-label={t("settings.reduceMotion")}
+            >
+              <option value="system">{t("settings.toggle.system")}</option>
+              <option value="reduced">{t("settings.toggle.on")}</option>
+              <option value="full">{t("settings.toggle.off")}</option>
+            </select>
+          </label>
+          <p style={{ margin: 0, fontSize: 12, color: "var(--ed-muted)" }}>
+            {t("settings.reduceMotion.help")}
+          </p>
+          <label className="mm-map-field">
+            <span>{t("settings.highContrast")}</span>
+            <select
+              className="mm-map-control"
+              value={contrastPref}
+              onChange={(e) => setContrastPref(e.target.value as ContrastPref)}
+              aria-label={t("settings.highContrast")}
+            >
+              <option value="system">{t("settings.toggle.system")}</option>
+              <option value="high">{t("settings.toggle.on")}</option>
+              <option value="normal">{t("settings.toggle.off")}</option>
+            </select>
+          </label>
+          <p style={{ margin: 0, fontSize: 12, color: "var(--ed-muted)" }}>
+            {t("settings.highContrast.help")}
+          </p>
+        </Section>
 
-      <Section title={t("settings.gettingStarted")}>
-        <Button onClick={onReShowGettingStarted} style={{ alignSelf: "flex-start" }}>
-          {t("settings.gettingStarted.action")}
-        </Button>
-      </Section>
-
-      <Section title={t("settings.prefsFile")}>
-        <p style={{ margin: 0, fontSize: 12.5, color: "var(--ed-muted)", lineHeight: 1.5 }}>
-          {t("settings.prefsFile.body")}
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          <Button onClick={onExportSettings}>{t("settings.prefsFile.export")}</Button>
-          <Button onClick={() => settingsFileRef.current?.click()}>
-            {t("settings.prefsFile.import")}
+        <Section title={t("settings.interaction")}>
+          <label className="mm-map-field">
+            <span>{t("settings.altHelp")}</span>
+            <select
+              className="mm-map-control"
+              aria-label={t("settings.altHelp")}
+              value={prefs.altHelp ? "on" : "off"}
+              onChange={(e) => update({ altHelp: e.target.value === "on" })}
+            >
+              <option value="on">{t("settings.toggle.on")}</option>
+              <option value="off">{t("settings.toggle.off")}</option>
+            </select>
+          </label>
+          <label className="mm-map-field">
+            <span>{t("settings.altDelay")}</span>
+            <select
+              className="mm-map-control"
+              aria-label={t("settings.altDelay")}
+              value={prefs.altDelay}
+              disabled={!prefs.altHelp}
+              onChange={(e) => update({ altDelay: Number(e.target.value) })}
+            >
+              <option value="350">{t("settings.delay.fast")}</option>
+              <option value="550">{t("settings.delay.normal")}</option>
+              <option value="800">{t("settings.delay.slow")}</option>
+            </select>
+          </label>
+          <label className="mm-map-field">
+            <span>{t("settings.wheelMode")}</span>
+            <select
+              className="mm-map-control"
+              aria-label={t("settings.wheelMode")}
+              value={prefs.wheelMode}
+              onChange={(e) => update({ wheelMode: e.target.value === "zoom" ? "zoom" : "pan" })}
+            >
+              <option value="pan">{t("settings.wheel.pan")}</option>
+              <option value="zoom">{t("settings.wheel.zoom")}</option>
+            </select>
+          </label>
+          <label className="mm-map-field">
+            <span>{t("settings.panSpeed")}</span>
+            <select
+              className="mm-map-control"
+              aria-label={t("settings.panSpeed")}
+              value={prefs.panSpeed}
+              disabled={prefs.wheelMode !== "pan"}
+              onChange={(e) => update({ panSpeed: Number(e.target.value) })}
+            >
+              <option value="0.5">{t("settings.speed.slow")}</option>
+              <option value="0.85">{t("settings.speed.normal")}</option>
+              <option value="1.2">{t("settings.speed.fast")}</option>
+            </select>
+          </label>
+          <p className="mm-settings-help">{t("settings.interaction.help")}</p>
+          <Button
+            onClick={() =>
+              update({ altHelp: true, altDelay: 550, wheelMode: "pan", panSpeed: 0.85 })
+            }
+          >
+            {t("settings.interaction.reset")}
           </Button>
-          <input
-            ref={settingsFileRef}
-            type="file"
-            accept="application/json,.json"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              e.target.value = ""; // let the same file be picked again after a failed import
-              if (f) onImportSettings(f);
+        </Section>
+
+        <Section title={t("settings.gettingStarted")}>
+          <Button onClick={onReShowGettingStarted} style={{ alignSelf: "flex-start" }}>
+            {t("settings.gettingStarted.action")}
+          </Button>
+        </Section>
+
+        <Section title={t("settings.prefsFile")}>
+          <p style={{ margin: 0, fontSize: 12.5, color: "var(--ed-muted)", lineHeight: 1.5 }}>
+            {t("settings.prefsFile.body")}
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            <Button onClick={onExportSettings}>{t("settings.prefsFile.export")}</Button>
+            <Button onClick={() => settingsFileRef.current?.click()}>
+              {t("settings.prefsFile.import")}
+            </Button>
+            <input
+              ref={settingsFileRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = ""; // let the same file be picked again after a failed import
+                if (f) onImportSettings(f);
+              }}
+              style={{ display: "none" }}
+            />
+          </div>
+        </Section>
+
+        <Section title={t("settings.localData")}>
+          <p style={{ margin: 0, fontSize: 12.5, color: "var(--ed-muted)", lineHeight: 1.5 }}>
+            {t("settings.localData.body")}
+            {storage
+              ? t("settings.localData.usage", {
+                  used: fmtBytes(storage.usage),
+                  quota: fmtBytes(storage.quota),
+                })
+              : ""}
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            <Button onClick={onClearRecents}>{t("settings.localData.clearRecents")}</Button>
+            <Button onClick={onClearBranchClipboard}>
+              {t("settings.localData.clearBranchClipboard")}
+            </Button>
+          </div>
+          <Button
+            onClick={onClearAllData}
+            style={{
+              alignSelf: "flex-start",
+              marginTop: 4,
+              color: "var(--ed-danger)",
+              border: "1px solid var(--ed-danger)",
             }}
-            style={{ display: "none" }}
-          />
-        </div>
-      </Section>
-
-      <Section title={t("settings.localData")}>
-        <p style={{ margin: 0, fontSize: 12.5, color: "var(--ed-muted)", lineHeight: 1.5 }}>
-          {t("settings.localData.body")}
-          {storage
-            ? t("settings.localData.usage", {
-                used: fmtBytes(storage.usage),
-                quota: fmtBytes(storage.quota),
-              })
-            : ""}
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          <Button onClick={onClearRecents}>{t("settings.localData.clearRecents")}</Button>
-          <Button onClick={onClearBranchClipboard}>
-            {t("settings.localData.clearBranchClipboard")}
+          >
+            {t("settings.localData.clearAll")}
           </Button>
-        </div>
-        <Button
-          onClick={onClearAllData}
-          style={{
-            alignSelf: "flex-start",
-            marginTop: 4,
-            color: "var(--ed-danger)",
-            border: "1px solid var(--ed-danger)",
-          }}
-        >
-          {t("settings.localData.clearAll")}
-        </Button>
-      </Section>
+        </Section>
+      </div>
     </Dialog>
   );
 }
