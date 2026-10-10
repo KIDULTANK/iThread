@@ -1,3 +1,4 @@
+import type { SETTINGS_EN } from "../components/settingsMessages";
 import type { StartKey } from "../components/start/messages";
 import type { ThemeKey } from "../components/themeDesignerMessages";
 import type { IoKey } from "../io/messages";
@@ -14,4 +15,12 @@ import type { CoreKey } from "./core";
 // chunk-local while the key type stays global. Keep them `import type`; a value import would undo it.
 //
 // As each catalogue is added (io, …) add its key type to this union.
-export type MessageKey = CoreKey | CanvasKey | StartKey | ThemeKey | PresentKey | IoKey | PwaKey;
+export type MessageKey =
+  | CoreKey
+  | CanvasKey
+  | StartKey
+  | ThemeKey
+  | PresentKey
+  | IoKey
+  | PwaKey
+  | keyof typeof SETTINGS_EN;

@@ -5,6 +5,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SETTINGS_EN } from "../src/components/settingsMessages";
 import { START_EN } from "../src/components/start/messages";
 import { THEME_EN } from "../src/components/themeDesignerMessages";
 import type { Catalogue } from "../src/i18n";
@@ -50,6 +51,7 @@ const CATALOGUES = [
   { name: "PRESENT_EN", catalogue: PRESENT_EN as Catalogue },
   { name: "IO_EN", catalogue: IO_EN as Catalogue },
   { name: "PWA_EN", catalogue: PWA_EN as Catalogue },
+  { name: "SETTINGS_EN", catalogue: SETTINGS_EN as Catalogue },
 ] as const;
 
 beforeEach(() => {

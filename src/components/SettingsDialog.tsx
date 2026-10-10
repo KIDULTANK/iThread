@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../design/primitives";
-import { type Locale, getLocale, setLocale, t } from "../i18n";
+import { type Locale, getLocale, setLocale, t } from "../i18n/registry";
 import { useInteractionPrefs } from "../store/interactionPrefs";
 import type { Appearance } from "../useAppearance";
 import type { ContrastPref } from "../useHighContrast";
 import type { MotionPref } from "../useReducedMotion";
 import { Dialog } from "./Dialog";
 import "./settings.css";
+import "./settingsMessages";
 
 // Settings / Preferences — the one place to see and reset the bits of app state that otherwise live
 // invisibly in ~a dozen localStorage keys + the IndexedDB library. Local-first means everything lives
