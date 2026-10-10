@@ -2,7 +2,7 @@
 
 [简体中文](README.zh-CN.md) | **English**
 
-**Current preview: v0.6.0** · Windows 11 focused · Local-first · Apache-2.0
+**Current preview: v0.6.1** · Windows 11 focused · Local-first · Apache-2.0
 
 > iThread is an independent community project. It is not affiliated with, authorised by, or
 > endorsed by iThoughts or its original developers.
@@ -309,9 +309,11 @@ images through our own importer.
 
 ## Status
 
-**v0.6.0** is the current public-preview release. It makes the token-authenticated local CLI available
-to the installed Windows app, adds atomic batch edits, dry runs, direct open/export commands and
-Markdown import through standard input. It also includes the v0.5.0 crash-recovery drafts, explicit
+**v0.6.1** is the current public-preview release. It refreshes the interface and seal-style app icon,
+unifies templates and examples into one library, improves Settings, fixes Alt-held shortcut paging,
+and selects the first-launch desktop UI language from the operating system. Saved language choices
+take priority. It retains the token-authenticated local CLI, atomic batch edits, dry runs,
+direct open/export commands and Markdown import through standard input, as well as crash-recovery drafts, explicit
 `.itmz` compatibility report, broader Chinese UI coverage, assisted + portable Windows packages,
 native desktop open/save/file associations and a user-initiated GitHub update check. Its `.itmz`
 importer/exporter remains regression-tested against five large real-world maps and 31,389 topics, and

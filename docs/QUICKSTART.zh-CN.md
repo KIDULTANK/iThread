@@ -2,14 +2,14 @@
 
 **简体中文 | [English](QUICKSTART.en.md)**
 
-iThread v0.6.0 是面向 Windows 11 的公开预览版。它可以导入 iThoughts `.itmz` 文件，也能
+iThread v0.6.1 是面向 Windows 11 的公开预览版。它可以导入 iThoughts `.itmz` 文件，也能
 把修改导出为新的 iThoughts 兼容 `.itmz`。第一次测试时仍请保留原文件，并优先使用副本。
 
 ## 1. 下载和启动
 
 1. 从 [GitHub Releases](https://github.com/KIDULTANK/iThread/releases) 下载安装版
-   `iThread-0.6.0-Windows-x64-Setup.exe`，或便携版
-   `iThread-0.6.0-Windows-x64-Portable.exe`。
+   `iThread-0.6.1-Windows-x64-Setup.exe`，或便携版
+   `iThread-0.6.1-Windows-x64-Portable.exe`。
 2. 对照同一 Release 中的 `SHA256SUMS.txt` 核对文件校验值。
 3. 当前版本尚未取得代码签名。Windows SmartScreen 如提示“未知发布者”，请先确认下载地址
    和 SHA-256，再决定是否运行。

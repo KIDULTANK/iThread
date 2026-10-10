@@ -55,12 +55,12 @@ download from Releases and verify the published SHA-256 checksum.
 
 ## Download / 下载
 
-The current preview is **v0.6.0**. / 当前公开测试版为 **v0.6.0**。
+The current preview is **v0.6.1**. / 当前公开测试版为 **v0.6.1**。
 
-- `iThread-0.6.0-Windows-x64-Setup.exe` — 安装版 / installer
-- `iThread-0.6.0-Windows-x64-Portable.exe` — 便携版 / portable
+- `iThread-0.6.1-Windows-x64-Setup.exe` — 安装版 / installer
+- `iThread-0.6.1-Windows-x64-Portable.exe` — 便携版 / portable
 
-[打开 v0.6.0 发布页 / Open the v0.6.0 release](https://github.com/KIDULTANK/iThread/releases/tag/v0.6.0)
+[打开 v0.6.1 发布页 / Open the v0.6.1 release](https://github.com/KIDULTANK/iThread/releases/tag/v0.6.1)
 
 ## Build / 构建
 

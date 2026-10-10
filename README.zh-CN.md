@@ -2,7 +2,7 @@
 
 **简体中文 | [English](README.en.md)**
 
-**当前公开测试版：v0.6.0** · 面向 Windows 11 · 本地优先 · Apache-2.0
+**当前公开测试版：v0.6.1** · 面向 Windows 11 · 本地优先 · Apache-2.0
 
 > iThread 是独立社区项目，与 iThoughts 及其原作者不存在隶属、授权或背书关系。
 

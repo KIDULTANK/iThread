@@ -2,14 +2,14 @@
 
 [简体中文](QUICKSTART.zh-CN.md) | **English**
 
-iThread v0.6.0 is a public preview for Windows 11. It can import iThoughts `.itmz` files and export
+iThread v0.6.1 is a public preview for Windows 11. It can import iThoughts `.itmz` files and export
 edited maps as new iThoughts-compatible `.itmz` files. Keep the original file and test with a copy.
 
 ## 1. Download and launch
 
 1. Open [GitHub Releases](https://github.com/KIDULTANK/iThread/releases).
-2. Download `iThread-0.6.0-Windows-x64-Setup.exe`, or use the no-install
-   `iThread-0.6.0-Windows-x64-Portable.exe`.
+2. Download `iThread-0.6.1-Windows-x64-Setup.exe`, or use the no-install
+   `iThread-0.6.1-Windows-x64-Portable.exe`.
 3. Compare the file with the SHA-256 value in `SHA256SUMS.txt` on the same release.
 4. The current build is unsigned. If SmartScreen reports an unknown publisher, verify the download
    URL and checksum before deciding whether to run it.
