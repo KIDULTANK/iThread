@@ -28,7 +28,8 @@ export const ZH_CN: Catalogue = {
   "sync.conflicts": "已保留的冲突",
   "sync.conflictsHelp": "双方副本均已保留，供人工核对；同步不会自动决定覆盖哪一方。",
   "sync.downloadConflict": "下载双方副本（JSON）",
-  "settings.intro": "设置对整个文件库生效并自动保存。切换语言时会重新加载界面。",
+  "settings.intro":
+    "常规偏好对整个文件库生效并自动保存；同步需要主动操作。切换语言时会重新加载界面。",
   "settings.interaction": "快捷键与画布",
   "settings.altHelp": "长按 Alt 显示快捷键",
   "settings.altDelay": "Alt 长按等待时间",
@@ -574,7 +575,7 @@ export const ZH_CN: Catalogue = {
   "start.startYourOwn": "开始创作",
   "start.heroSub": "记录想法、粘贴大纲或打开空白画布 — 它们都会成为完全属于你的导图。",
   "start.moveMapToTrashConfirm": "将“{name}”移到回收站？清空回收站前仍可恢复。",
-  "start.localAndPrivate": "本地且私密 — 在浏览器中运行，支持离线，数据不会离开此设备。",
+  "start.localAndPrivate": "本地优先，支持离线。除非主动导出或同步，导图保留在此设备。",
   "start.examplesExplain": {
     other: "完整的示例导图 — 打开后可以探索并改成自己的内容。共 {n} 个示例。",
   },

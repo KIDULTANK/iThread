@@ -35,6 +35,13 @@
 .mm-sync-section {
   grid-column: 1 / -1;
 }
+.mm-sync-section .mm-map-control {
+  flex: 1;
+  min-width: 0;
+}
+.mm-sync-section > button {
+  align-self: flex-start;
+}
 .mm-sync-actions {
   display: flex;
   flex-wrap: wrap;

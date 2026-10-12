@@ -27,7 +27,7 @@ export const SETTINGS_EN = {
     "Both copies are kept for manual review. Sync will not choose a winner automatically.",
   "sync.downloadConflict": "Download both copies (JSON)",
   "settings.intro":
-    "Preferences apply across your library. Changes are saved automatically; switching language reloads the interface.",
+    "General preferences apply across your library and save automatically. Sync requires explicit action. Switching language reloads the interface.",
   "settings.interaction": "Keyboard & canvas",
   "settings.altHelp": "Hold Alt for shortcuts",
   "settings.altDelay": "Alt hold delay",

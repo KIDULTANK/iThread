@@ -32,7 +32,7 @@ export const START_EN = {
   // Straight ampersand, not the HTML entity: t() returns a plain string React ESCAPES rather than
   // decodes, so "&amp;" captured from JSX source would have shipped to the user literally.
   "start.localAndPrivate":
-    "Local & private — runs in your browser, works offline, nothing leaves this device.",
+    "Local first — works offline. Maps stay on this device unless you export or explicitly sync them.",
   "start.aboutLocalFirst":
     "{app} is a local-first mind-mapping app for Windows and the web. Create and edit maps offline, without an account. Maps are stored locally; automatic update checks may connect to the internet, but map contents are not uploaded automatically.",
   "start.aboutFormats":
