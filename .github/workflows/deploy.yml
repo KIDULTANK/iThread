@@ -20,7 +20,9 @@ permissions:
 
 # One deploy at a time; don't cancel an in-progress production deploy.
 concurrency:
-  group: pages
+  # A failed/cancelled upstream run has no deployable output. Its skipped workflow must not
+  # replace a valid pending Pages run (GitHub permits only one pending run in a group).
+  group: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success' && format('pages-skipped-{0}', github.run_id) || 'pages' }}
   cancel-in-progress: false
 
 jobs:
