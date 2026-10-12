@@ -32,3 +32,43 @@
     grid-template-columns: 1fr;
   }
 }
+.mm-sync-section {
+  grid-column: 1 / -1;
+}
+.mm-sync-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mm-sync-section button {
+  padding: 8px 12px;
+  border: 1px solid var(--ed-border);
+  border-radius: 6px;
+  background: var(--ed-card);
+  color: var(--ed-ink);
+  cursor: pointer;
+}
+.mm-sync-section button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.mm-sync-maps {
+  display: grid;
+  gap: 8px;
+  max-height: 200px;
+  overflow: auto;
+}
+.mm-sync-maps label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.mm-sync-maps small {
+  color: var(--ed-muted);
+}
+.mm-sync-section pre {
+  overflow: auto;
+  max-height: 200px;
+  font-size: 11px;
+}

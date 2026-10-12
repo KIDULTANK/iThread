@@ -6,6 +6,7 @@ import type { Appearance } from "../useAppearance";
 import type { ContrastPref } from "../useHighContrast";
 import type { MotionPref } from "../useReducedMotion";
 import { Dialog } from "./Dialog";
+import { SyncSettings } from "./SyncSettings";
 import "./settings.css";
 import "./settingsMessages";
 
@@ -16,6 +17,8 @@ import "./settingsMessages";
 // branch clipboard, full wipe). The storage estimate is read here (best-effort) since it's read-only.
 
 export interface SettingsDialogProps {
+  syncActiveMapId?: string;
+  onSyncLibraryChange?: () => void | Promise<void>;
   open: boolean;
   onClose: () => void;
   /** App chrome appearance — System / Light / Dark (independent of the canvas theme). */
@@ -76,6 +79,8 @@ export function SettingsDialog({
   onExportSettings,
   onImportSettings,
   onClearAllData,
+  syncActiveMapId,
+  onSyncLibraryChange,
 }: SettingsDialogProps) {
   const [storage, setStorage] = useState<{ usage: number; quota: number } | null>(null);
   const settingsFileRef = useRef<HTMLInputElement>(null);
@@ -297,6 +302,7 @@ export function SettingsDialog({
             {t("settings.localData.clearAll")}
           </Button>
         </Section>
+        <SyncSettings activeMapId={syncActiveMapId} onLibraryChange={onSyncLibraryChange} />
       </div>
     </Dialog>
   );

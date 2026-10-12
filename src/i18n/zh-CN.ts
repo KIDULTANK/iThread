@@ -5,6 +5,29 @@ import { registerMessages } from "./registry";
 // Unlisted specialist strings fall back to the English source catalogue, so a newly-added feature can
 // never render a blank label while its Chinese wording is being reviewed.
 export const ZH_CN: Catalogue = {
+  "sync.title": "多设备同步 · 实验功能",
+  "sync.intro":
+    "可选、手动的 WebDAV 同步，无需 iThread 账号。请使用已存在的专用目录；真实服务器兼容性仍需验证。浏览器使用时，服务器需允许跨域访问（CORS）。",
+  "sync.endpoint": "WebDAV 目录地址",
+  "sync.configure": "保存目录",
+  "sync.username": "WebDAV 用户名",
+  "sync.password": "WebDAV 密码",
+  "sync.credentialsHelp":
+    "凭据仅在本次设置会话的内存中使用，不保存、不加入导出文件。更换目录会清空凭据。",
+  "sync.discover": "查找远端导图",
+  "sync.run": "同步已选导图",
+  "sync.selectionHelp":
+    "只有勾选的导图参与同步，不会自动上传。取消勾选不会删除数据；各设备请使用相同目录。",
+  "sync.active": " · 编辑中：暂缓同步",
+  "sync.report": "已检查 {done} 张；冲突 {conflicts} 张；暂缓或待重试 {pending} 张。",
+  "sync.running": "正在同步…",
+  "sync.configured": "目录已保存在本地，尚未发送网络请求。",
+  "sync.discovered": "已读取远端列表，请选择导图后再同步。",
+  "sync.error":
+    "操作失败。请检查地址、凭据、跨域许可和强 ETag 支持。本地内容保留；此前成功的传输可能已保存。",
+  "sync.conflicts": "已保留的冲突",
+  "sync.conflictsHelp": "双方副本均已保留，供人工核对；同步不会自动决定覆盖哪一方。",
+  "sync.downloadConflict": "下载双方副本（JSON）",
   "settings.intro": "设置对整个文件库生效并自动保存。切换语言时会重新加载界面。",
   "settings.interaction": "快捷键与画布",
   "settings.altHelp": "长按 Alt 显示快捷键",
@@ -159,7 +182,8 @@ export const ZH_CN: Catalogue = {
     "减少画布缩放、适应视图和引导浏览的动画。跟随系统时使用 Windows 的动画设置。",
   "settings.highContrast.help":
     "增强边框、分隔线、文字和焦点轮廓。跟随系统时使用 Windows 的高对比度设置。",
-  "settings.localData.body": "你的导图、版本历史和偏好设置都保存在本机浏览器中。",
+  "settings.localData.body":
+    "文件库、版本历史和偏好设置保存在本机。可选的手动同步会将勾选导图传到你指定的服务。",
   "settings.localData.usage": " 已使用约 {used}，可用空间 {quota}。",
   "settings.prefsFile.body": "将外观、布局、快捷设置等偏好导出到文件，也可以在另一台设备上导入。",
   "settings.prefsFile.nothingToExport": "目前没有可导出的偏好设置。",

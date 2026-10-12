@@ -11,6 +11,7 @@ Local-first · iThoughts `.itmz` compatibility · Chinese and English UI · Apac
 > iThread 是独立社区项目，与 iThoughts 及其原作者不存在隶属、授权或背书关系。<br>
 > iThread is an independent community project and is not affiliated with or endorsed by iThoughts.
 
+[官网 / Website](https://kidultank.github.io/iThread/website/) ·
 [在线体验 / Try online](https://kidultank.github.io/iThread/) ·
 [Windows 下载 / Downloads](https://github.com/KIDULTANK/iThread/releases) ·
 [问题反馈 / Issues](https://github.com/KIDULTANK/iThread/issues/new/choose)

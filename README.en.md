@@ -7,6 +7,7 @@
 > iThread is an independent community project. It is not affiliated with, authorised by, or
 > endorsed by iThoughts or its original developers.
 
+[Website](https://kidultank.github.io/iThread/website/) ·
 [Try online](https://kidultank.github.io/iThread/) ·
 [Download for Windows](https://github.com/KIDULTANK/iThread/releases) ·
 [Quick start](docs/QUICKSTART.en.md) ·

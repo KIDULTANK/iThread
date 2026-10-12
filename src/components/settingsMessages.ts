@@ -2,6 +2,30 @@ import { type Catalogue, registerMessages } from "../i18n/registry";
 
 // Settings-only strings load with the dialog, not on the first-paint path.
 export const SETTINGS_EN = {
+  "sync.title": "Device sync · experimental",
+  "sync.intro":
+    "Optional, manual WebDAV sync. No iThread account is needed. Use a dedicated existing directory; real-server compatibility must still be tested. Browser servers must permit CORS.",
+  "sync.endpoint": "WebDAV directory URL",
+  "sync.configure": "Save directory",
+  "sync.username": "WebDAV username",
+  "sync.password": "WebDAV password",
+  "sync.credentialsHelp":
+    "Credentials stay in memory for this settings session. They are not saved or included in exports. Changing the directory clears them.",
+  "sync.discover": "Find remote maps",
+  "sync.run": "Sync selected maps",
+  "sync.selectionHelp":
+    "Only checked maps participate. Nothing uploads automatically. Unchecking does not delete data. Keep the same directory on each device.",
+  "sync.active": " · editing: deferred",
+  "sync.report": "Checked {done}; conflicts {conflicts}; deferred/retry {pending}.",
+  "sync.running": "Syncing…",
+  "sync.configured": "Directory saved locally. No network request was made.",
+  "sync.discovered": "Remote list loaded. Select maps before syncing.",
+  "sync.error":
+    "Operation failed. Check URL, credentials, CORS and strong ETag support. Local content is kept; successful earlier transfers may already be stored.",
+  "sync.conflicts": "Preserved conflicts",
+  "sync.conflictsHelp":
+    "Both copies are kept for manual review. Sync will not choose a winner automatically.",
+  "sync.downloadConflict": "Download both copies (JSON)",
   "settings.intro":
     "Preferences apply across your library. Changes are saved automatically; switching language reloads the interface.",
   "settings.interaction": "Keyboard & canvas",
@@ -45,7 +69,7 @@ export const SETTINGS_EN = {
   "settings.highContrast.help":
     "High contrast strengthens chrome borders, dividers and text, and adds bolder focus rings. System follows your device's contrast / forced-colors setting.",
   "settings.localData.body":
-    "Everything — your maps, version history and preferences — is stored only in this browser.",
+    "Your library, version history and preferences are stored locally. Optional manual sync transfers selected maps to your chosen service.",
   "settings.localData.usage": " About {used} used of {quota} available.",
 } as const satisfies Catalogue;
 

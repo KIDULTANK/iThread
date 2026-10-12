@@ -2,6 +2,7 @@ import { type DBSchema, type IDBPDatabase, deleteDB, openDB } from "idb";
 import { compareText } from "../i18n";
 import { normalizeDoc } from "../model/normalize";
 import type { MapNode, MindMapDoc } from "../model/types";
+import type { RemoteSnapshot } from "../sync/engine";
 
 // Local-first multi-map library. Each map is stored under its id; a small `meta`
 // store remembers the last-opened map so startup restores where you left off; a
@@ -26,6 +27,8 @@ export interface RecentFile {
 }
 
 interface MindMapDB extends DBSchema {
+  syncStates: { key: string; value: SyncRecord };
+  syncConflicts: { key: string; value: SyncConflict };
   maps: { key: string; value: MindMapDoc };
   meta: { key: string; value: string };
   versions: { key: string; value: VersionRecord; indexes: { "by-map": string } };
@@ -40,7 +43,23 @@ interface MindMapDB extends DBSchema {
 }
 
 const DB_NAME = "mindmap-studio";
-const DB_VERSION = 6;
+const DB_VERSION = 7;
+export interface SyncRecord {
+  workspace: string;
+  mapId: string;
+  enabled: boolean;
+  version: number;
+  observed: MindMapDoc | null;
+  base: MindMapDoc | null;
+  baseEtag: string | null;
+}
+export interface SyncConflict {
+  workspace: string;
+  mapId: string;
+  local: MindMapDoc | null;
+  remote: RemoteSnapshot;
+  savedAt: number;
+}
 /** Keep at most this many snapshots per map; older ones are pruned. */
 export const MAX_VERSIONS = 30;
 
@@ -50,6 +69,10 @@ function db(): Promise<IDBPDatabase<MindMapDB>> {
   if (!dbPromise) {
     dbPromise = openDB<MindMapDB>(DB_NAME, DB_VERSION, {
       upgrade(database) {
+        if (!database.objectStoreNames.contains("syncStates"))
+          database.createObjectStore("syncStates");
+        if (!database.objectStoreNames.contains("syncConflicts"))
+          database.createObjectStore("syncConflicts");
         if (!database.objectStoreNames.contains("maps")) database.createObjectStore("maps");
         if (!database.objectStoreNames.contains("meta")) database.createObjectStore("meta");
         if (!database.objectStoreNames.contains("versions")) {
@@ -64,6 +87,11 @@ function db(): Promise<IDBPDatabase<MindMapDB>> {
     });
   }
   return dbPromise;
+}
+
+/** Shared transaction boundary for lazy sync adapters; never opens a separate copy of the library. */
+export function getMapDatabase() {
+  return db();
 }
 
 export interface MapSummary {

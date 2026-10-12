@@ -1812,6 +1812,18 @@ export function App() {
     <Suspense fallback={null}>
       <SettingsDialog
         open
+        syncActiveMapId={view === "editor" ? doc.id : undefined}
+        onSyncLibraryChange={async () => {
+          sessionCache.current.clear();
+          if (view === "start") {
+            const updated = await loadMap(doc.id);
+            if (updated) {
+              liveDocRef.current = updated;
+              setDoc(updated);
+            }
+          }
+          await refreshMaps();
+        }}
         onClose={() => setSettingsOpen(false)}
         appearance={appearance}
         setAppearance={setAppearance}

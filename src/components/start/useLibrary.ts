@@ -3,10 +3,21 @@ import { type Folder, getAllMaps, getFolders, listTrashedMaps } from "../../stor
 import type { MapEntry } from "./MapCard";
 import { branchSpokes, docNodeCount } from "./nodeStats";
 
+function useLibraryRevision(rev: number) {
+  const [changes, setChanges] = useState(0);
+  useEffect(() => {
+    const refresh = () => setChanges((n) => n + 1);
+    window.addEventListener("ithread:library-changed", refresh);
+    return () => window.removeEventListener("ithread:library-changed", refresh);
+  }, []);
+  return rev + changes;
+}
+
 // Load the whole library as MapEntry[] (id, title, node count, last-edited, sheet group). Re-runs
 // when `rev` changes (bumped after a delete/rename/duplicate). One read serves Home/All maps/Recent.
 
 export function useLibrary(rev: number): MapEntry[] {
+  const revision = useLibraryRevision(rev);
   const [entries, setEntries] = useState<MapEntry[]>([]);
   // `rev` isn't read inside the effect — it's the explicit re-fetch trigger (bumped after a
   // delete/rename/duplicate), so it belongs in the deps despite biome's heuristic.
@@ -47,12 +58,13 @@ export function useLibrary(rev: number): MapEntry[] {
     return () => {
       alive = false;
     };
-  }, [rev]);
+  }, [revision]);
   return entries;
 }
 
 /** The library folders (C2), re-fetched when `rev` bumps. */
 export function useFolders(rev: number): Folder[] {
+  const revision = useLibraryRevision(rev);
   const [folders, setFolders] = useState<Folder[]>([]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: rev is the re-fetch signal, by design
   useEffect(() => {
@@ -65,7 +77,7 @@ export function useFolders(rev: number): Folder[] {
     return () => {
       alive = false;
     };
-  }, [rev]);
+  }, [revision]);
   return folders;
 }
 
@@ -78,6 +90,7 @@ export interface TrashEntry {
 
 /** The Trash contents (soft-deleted maps), re-fetched when `rev` bumps. */
 export function useTrashMaps(rev: number): TrashEntry[] {
+  const revision = useLibraryRevision(rev);
   const [entries, setEntries] = useState<TrashEntry[]>([]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: rev is the re-fetch signal, by design
   useEffect(() => {
@@ -90,6 +103,6 @@ export function useTrashMaps(rev: number): TrashEntry[] {
     return () => {
       alive = false;
     };
-  }, [rev]);
+  }, [revision]);
   return entries;
 }

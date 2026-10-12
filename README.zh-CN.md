@@ -6,6 +6,7 @@
 
 > iThread 是独立社区项目，与 iThoughts 及其原作者不存在隶属、授权或背书关系。
 
+[官网](https://kidultank.github.io/iThread/website/) ·
 [在线体验](https://kidultank.github.io/iThread/) ·
 [下载 Windows 版](https://github.com/KIDULTANK/iThread/releases) ·
 [快速上手](docs/QUICKSTART.zh-CN.md) ·
