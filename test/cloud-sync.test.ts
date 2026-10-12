@@ -34,6 +34,7 @@ class Device implements SyncLocalStore {
     this.state = {
       value: structuredClone(remote.value),
       base: structuredClone(remote.value),
+      baseEtag: remote.etag,
       version: version + 1,
     };
     return true;
@@ -73,6 +74,23 @@ function server() {
 }
 
 describe("single-person multi-device sync", () => {
+  it("does not resurrect a remote deletion on a newly enrolled device", async () => {
+    const { repo } = server();
+    const tombstone = await repo.write("map-1", null, null);
+    const device = new Device(doc("Old local file"));
+    expect(await syncMap("map-1", device, repo)).toBe("conflict");
+    expect(await repo.read("map-1")).toEqual(tombstone);
+    expect(device.state.value?.title).toBe("Old local file");
+  });
+  it("remembers tombstone ancestry when the remote server loses files", async () => {
+    const { repo, files } = server();
+    await repo.write("map-1", null, null);
+    const device = new Device();
+    await syncMap("map-1", device, repo);
+    files.clear();
+    expect(await syncMap("map-1", device, repo)).toBe("conflict");
+    expect(device.state.value).toBeNull();
+  });
   it("creates on A, discovers and downloads on B, then transfers an offline edit back", async () => {
     const { repo } = server();
     const a = new Device(doc());

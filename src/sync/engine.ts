@@ -63,6 +63,18 @@ export async function syncMap(id: string, local: SyncLocalStore, repository: Syn
     await local.preserveConflict(id, snapshot.version, remote);
     return "conflict";
   }
+  // A newly enrolled device has no common base: its old local copy must not resurrect a
+  // versioned remote deletion without an explicit conflict review.
+  if (
+    !snapshot.baseEtag &&
+    snapshot.base === null &&
+    snapshot.value !== null &&
+    remote.etag !== null &&
+    remote.value === null
+  ) {
+    await local.preserveConflict(id, snapshot.version, remote);
+    return "conflict";
+  }
   const plan = planSync(snapshot.value, snapshot.base, remote.value);
   if (plan === "conflict") {
     await local.preserveConflict(id, snapshot.version, remote);
