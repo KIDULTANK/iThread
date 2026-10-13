@@ -4,8 +4,6 @@
 
 **当前公开测试版：v0.6.1** · 面向 Windows 11 · 本地优先 · Apache-2.0
 
-> iThread 是独立社区项目，与 iThoughts 及其原作者不存在隶属、授权或背书关系。
-
 [官网](https://kidultank.github.io/iThread/website/) ·
 [在线体验](https://kidultank.github.io/iThread/) ·
 [下载 Windows 版](https://github.com/KIDULTANK/iThread/releases) ·

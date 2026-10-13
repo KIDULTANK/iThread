@@ -54,8 +54,7 @@ const english = {
   unsigned:
     "Windows builds are currently unsigned. SmartScreen may show an “Unknown publisher” warning. Download from the official Releases and verify SHA-256.",
   release: "Release notes & downloads ↗",
-  independent:
-    "An independent community project, not affiliated with or endorsed by iThoughts or its original developer.",
+  tagline: "Local-first, open-source mind mapping.",
   credit: "Maintained by Zack Chen · Built on Mind Map Studio · Software Apache-2.0",
   feedback: "Report an issue ↗",
   privacy: "Privacy policy ↗",

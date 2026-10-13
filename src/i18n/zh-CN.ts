@@ -667,7 +667,7 @@ export const ZH_CN: Catalogue = {
   "start.libraryBlurb":
     "选择待填写的结构模板，或参考已填好内容的完整示例。打开后都会创建一份属于你的可编辑导图。",
   "start.aboutProject":
-    "独立开源项目，提供适合键盘操作的编辑体验，以及便于智能体自动化操作的 CLI。iThread 与 iThoughts 及其他格式厂商无关联。",
+    "开源思维导图软件，提供适合键盘操作的编辑体验，以及便于智能体自动化操作的 CLI。",
   "about.maintainer": "iThread 维护者：{name}",
   "about.tagline": "本地优先的思维导图，支持 iThoughts 文件交换与 CLI 自动化。",
   "start.upstreamCredit":

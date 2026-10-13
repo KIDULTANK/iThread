@@ -22,7 +22,7 @@ export const START_EN = {
   "start.libraryBlurb":
     "Start with a structure to fill in, or explore a complete example. Opening either creates your own editable map.",
   "start.aboutProject":
-    "An independent open-source project with keyboard-first editing and an automation-friendly CLI. iThread is not affiliated with iThoughts or other format vendors.",
+    "An open-source mind-mapping app with keyboard-first editing and an automation-friendly CLI.",
   "start.upstreamCredit":
     "Built on Mind Map Studio by Dann Bleeker Pedersen; upstream copyright and licence notices are preserved.",
   "start.heroSub":

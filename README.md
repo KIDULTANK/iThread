@@ -8,9 +8,6 @@ Windows 11 思维导图应用 / A Windows 11 mind-mapping app<br>
 本地优先 · iThoughts `.itmz` 兼容 · 中英文界面 · Apache-2.0<br>
 Local-first · iThoughts `.itmz` compatibility · Chinese and English UI · Apache-2.0
 
-> iThread 是独立社区项目，与 iThoughts 及其原作者不存在隶属、授权或背书关系。<br>
-> iThread is an independent community project and is not affiliated with or endorsed by iThoughts.
-
 [官网 / Website](https://kidultank.github.io/iThread/website/) ·
 [在线体验 / Try online](https://kidultank.github.io/iThread/) ·
 [Windows 下载 / Downloads](https://github.com/KIDULTANK/iThread/releases) ·
