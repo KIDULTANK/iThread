@@ -507,10 +507,10 @@
   },
   {
     "date": "2026-10-13",
-    "linesTsJs": 93211,
+    "linesTsJs": 93232,
     "coveragePct": 90.3,
-    "tests": 2410,
-    "bundleKb": 642.1,
+    "tests": 2412,
+    "bundleKb": 642.4,
     "mutationScore": null,
     "featureManualPct": 100,
     "featureBookPct": 96.1,
