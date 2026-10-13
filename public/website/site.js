@@ -9,6 +9,7 @@ const english = {
   download: "Download for Windows ↗",
   try: "Try in your browser →",
   version: "v0.6.1 preview · Windows 11 x64 · No account required",
+  releaseEyebrow: "WINDOWS PREVIEW",
   demoFile: "My next step.ithread",
   local: "Local first",
   demoRoot: "A good idea",
@@ -67,6 +68,10 @@ const chinese = Object.fromEntries(
 function setLanguage(lang) {
   document.documentElement.lang = lang;
   document.title = lang === "en" ? "iThread — Room for your ideas" : "iThread — 想法，自在展开";
+  document.querySelector('meta[name="description"]').content =
+    lang === "en"
+      ? "iThread — Local-first, open-source mind mapping. Windows 11, Chinese and English UI, iThoughts file compatibility and a local CLI."
+      : "iThread — 本地优先的开源思维导图软件。Windows 11、中英文界面、iThoughts 文件兼容与本地 CLI。";
   document
     .querySelector("nav")
     .setAttribute("aria-label", lang === "en" ? "Main navigation" : "主导航");
@@ -94,19 +99,26 @@ function setLanguage(lang) {
     el.rel = "noopener noreferrer";
   }
 }
+function browserLanguage() {
+  const preferences = navigator.languages?.length ? navigator.languages : [navigator.language];
+  for (const preference of preferences) {
+    const primary = String(preference || "")
+      .trim()
+      .toLowerCase()
+      .replaceAll("_", "-")
+      .split("-")[0];
+    if (primary === "zh") return "zh-CN";
+    if (primary === "en") return "en";
+  }
+  return "en";
+}
 let saved;
 try {
   saved = localStorage.getItem("ithread-site-language");
 } catch {
   /* Storage may be unavailable. */
 }
-setLanguage(
-  saved === "en" || saved === "zh-CN"
-    ? saved
-    : navigator.language.toLowerCase().startsWith("zh")
-      ? "zh-CN"
-      : "en",
-);
+setLanguage(saved === "en" || saved === "zh-CN" ? saved : browserLanguage());
 for (const button of document.querySelectorAll("[data-lang]"))
   button.addEventListener("click", () => {
     setLanguage(button.dataset.lang);

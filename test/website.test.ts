@@ -7,12 +7,13 @@ import { describe, expect, it } from "vitest";
 
 const html = readFileSync(new URL("../public/website/index.html", import.meta.url), "utf8");
 const script = readFileSync(new URL("../public/website/site.js", import.meta.url), "utf8");
-function site(language: string, saved?: string, blocked = false) {
+function site(language: string, saved?: string, blocked = false, preferences = [language]) {
   const dom = new JSDOM(html, {
     url: "https://kidultank.github.io/iThread/website/",
     runScripts: "outside-only",
   });
   Object.defineProperty(dom.window.navigator, "language", { value: language });
+  Object.defineProperty(dom.window.navigator, "languages", { value: preferences });
   if (saved) dom.window.localStorage.setItem("ithread-site-language", saved);
   if (blocked)
     Object.defineProperty(dom.window, "localStorage", {
@@ -24,6 +25,26 @@ function site(language: string, saved?: string, blocked = false) {
   return dom;
 }
 describe("zero-cost bilingual website", () => {
+  it.each([
+    [["zh-CN", "en-US"], "zh-CN"],
+    [["en-GB", "zh-CN"], "en"],
+    [["de-DE", "zh-TW", "en-US"], "zh-CN"],
+    [["ZH-Hant-HK", "en"], "zh-CN"],
+    [["fr-FR", "de-DE"], "en"],
+    [[], "zh-CN"],
+  ])("respects ordered browser preferences %j", (preferences, expected) => {
+    const dom = site("zh-CN", undefined, false, preferences);
+    expect(dom.window.document.documentElement.lang).toBe(expected);
+    expect(
+      dom.window.document.querySelector('meta[name="description"]')?.getAttribute("content"),
+    ).toContain(expected === "en" ? "Local-first" : "本地优先");
+    dom.window.close();
+  });
+  it("keeps a saved manual choice ahead of browser preferences", () => {
+    const dom = site("zh-CN", "en", false, ["zh-CN", "en-US"]);
+    expect(dom.window.document.documentElement.lang).toBe("en");
+    dom.window.close();
+  });
   it("defaults to Chinese for Chinese devices and English elsewhere", () => {
     const chinese = site("zh-TW");
     const english = site("fr-FR");
