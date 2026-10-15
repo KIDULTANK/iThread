@@ -2,6 +2,14 @@ import { type Catalogue, registerMessages } from "../i18n/registry";
 
 // Settings-only strings load with the dialog, not on the first-paint path.
 export const SETTINGS_EN = {
+  "sync.historyHelp":
+    "Nutstore uses immutable history revisions in the Windows desktop app. Each edit adds cloud storage use. The web app requires a server that permits browser cross-origin access.",
+  "sync.desktopRequired":
+    "Nutstore sync requires the updated iThread desktop test build; this browser or older desktop build cannot connect directly.",
+  "sync.legacyFormat":
+    "This map has a legacy sync file. Use a separate test directory; automatic protocol migration is not supported.",
+  "sync.historyLimit":
+    "This map reached the experimental history limit (256 revisions / 128 MiB). Sync stopped without removing history. Export a backup before choosing a new directory.",
   "sync.title": "Device sync · experimental",
   "sync.intro":
     "Optional, manual WebDAV sync. No iThread account is needed. Use a dedicated existing directory; real-server compatibility must still be tested. Browser servers must permit CORS.",

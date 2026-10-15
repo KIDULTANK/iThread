@@ -5,6 +5,13 @@ import { registerMessages } from "./registry";
 // Unlisted specialist strings fall back to the English source catalogue, so a newly-added feature can
 // never render a blank label while its Chinese wording is being reviewed.
 export const ZH_CN: Catalogue = {
+  "sync.historyHelp":
+    "坚果云在 Windows 桌面端使用独立历史版本，每次修改会增加云端占用。网页版仍要求服务器允许浏览器跨域访问。",
+  "sync.desktopRequired":
+    "坚果云同步需要新版 iThread 桌面测试构建；当前浏览器或旧版桌面程序不能直接连接。",
+  "sync.legacyFormat": "该导图存在旧协议同步文件。请使用独立测试目录；暂不支持自动迁移同步协议。",
+  "sync.historyLimit":
+    "该导图达到实验历史上限（256 个版本或 128 MiB），已停止同步且保留历史。请先导出备份，再选择新目录。",
   "sync.title": "多设备同步 · 实验功能",
   "sync.intro":
     "可选、手动的 WebDAV 同步，无需 iThread 账号。请使用已存在的专用目录；真实服务器兼容性仍需验证。浏览器使用时，服务器需允许跨域访问（CORS）。",

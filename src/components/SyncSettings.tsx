@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { t } from "../i18n/registry";
 import { getAllMaps } from "../store/mapStore";
+import { connectSyncRepository } from "../sync/connection";
 import { syncMap } from "../sync/engine";
 import { IndexedDbSyncLocal, syncEndpoint } from "../sync/localStore";
 import { WebDavRepository } from "../sync/webdav";
@@ -24,6 +25,9 @@ export function SyncSettings({
   const [status, setStatus] = useState("");
   const [report, setReport] = useState({ done: 0, conflicts: 0, pending: 0 });
   const live = useRef(true);
+  const connection = useRef<Awaited<ReturnType<typeof connectSyncRepository>> | undefined>(
+    undefined,
+  );
   const protectedId = useRef(activeMapId);
   protectedId.current = activeMapId;
   const local = useCallback(
@@ -65,21 +69,29 @@ export function SyncSettings({
       });
     return () => {
       live.current = false;
+      void connection.current?.close().catch(() => {});
+      connection.current = undefined;
     };
   }, [refresh]);
-  function repository() {
-    const bytes = new TextEncoder().encode(`${username}:${password}`);
-    const authorization =
-      username || password ? `Basic ${btoa(String.fromCharCode(...bytes))}` : undefined;
-    return new WebDavRepository(configured, (input, init) =>
-      fetch(input, {
-        ...init,
-        headers: {
-          ...Object.fromEntries(new Headers(init?.headers)),
-          ...(authorization ? { Authorization: authorization } : {}),
-        },
-      }),
-    );
+  async function repository() {
+    const acquired = await connectSyncRepository(configured, username, password);
+    if (!live.current) {
+      await acquired.close();
+      throw new Error("cancelled");
+    }
+    connection.current = acquired;
+    return acquired.repository;
+  }
+  async function disconnect() {
+    const acquired = connection.current;
+    connection.current = undefined;
+    await acquired?.close().catch(() => {});
+  }
+  function failure(error: unknown) {
+    return error instanceof Error &&
+      ["desktop-required", "legacy-sync-format", "sync-history-limit"].includes(error.message)
+      ? error.message
+      : "error";
   }
   async function configure() {
     setBusy(true);
@@ -107,14 +119,15 @@ export function SyncSettings({
     setBusy(true);
     setStatus("");
     try {
-      const ids = await repository().list();
+      const ids = await (await repository()).list();
       if (live.current) {
         setRemoteIds(ids);
         setStatus("discovered");
       }
-    } catch {
-      if (live.current) setStatus("error");
+    } catch (error) {
+      if (live.current) setStatus(failure(error));
     } finally {
+      await disconnect();
       if (live.current) setBusy(false);
     }
   }
@@ -135,7 +148,7 @@ export function SyncSettings({
     const counts = { done: 0, conflicts: 0, pending: 0 };
     try {
       const store = local(configured);
-      const repo = repository();
+      const repo = await repository();
       for (const id of await store.selectedIds()) {
         if (!live.current) break;
         try {
@@ -155,11 +168,12 @@ export function SyncSettings({
       if (live.current) {
         setStatus("complete");
       }
-    } catch {
+    } catch (error) {
       if (live.current) {
-        setStatus("error");
+        setStatus(failure(error));
       }
     } finally {
+      await disconnect();
       if (live.current) {
         setReport(counts);
         try {
@@ -207,6 +221,7 @@ export function SyncSettings({
     <section className="mm-settings-section mm-sync-section" aria-label={t("sync.title")}>
       <h3>{t("sync.title")}</h3>
       <p className="mm-settings-help">{t("sync.intro")}</p>
+      <p className="mm-settings-help">{t("sync.historyHelp")}</p>
       <label className="mm-map-field">
         <span>{t("sync.endpoint")}</span>
         <input
@@ -286,7 +301,13 @@ export function SyncSettings({
                 ? t("sync.configured")
                 : status === "discovered"
                   ? t("sync.discovered")
-                  : t("sync.error")}
+                  : status === "desktop-required"
+                    ? t("sync.desktopRequired")
+                    : status === "legacy-sync-format"
+                      ? t("sync.legacyFormat")
+                      : status === "sync-history-limit"
+                        ? t("sync.historyLimit")
+                        : t("sync.error")}
         </output>
       )}
       {conflicts.length > 0 && (

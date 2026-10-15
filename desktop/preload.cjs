@@ -14,6 +14,9 @@ ipcRenderer.on("ithread:open-file", (_event, payload) => {
 
 contextBridge.exposeInMainWorld("iThreadDesktop", {
   systemLocale: systemLocale === "zh-CN" || systemLocale === "en" ? systemLocale : undefined,
+  syncConnect: (input) => ipcRenderer.invoke("ithread:sync-connect", input),
+  syncRequest: (token, input) => ipcRenderer.invoke("ithread:sync-request", token, input),
+  syncDisconnect: (token) => ipcRenderer.invoke("ithread:sync-disconnect", token),
   checkForUpdates: () => ipcRenderer.invoke("ithread:check-for-updates"),
   openReleasePage: (url) => ipcRenderer.invoke("ithread:open-release-page", url),
   openFileDialog: () => ipcRenderer.invoke("ithread:open-file-dialog"),

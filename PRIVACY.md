@@ -2,7 +2,7 @@
 
 [简体中文](PRIVACY.zh-CN.md) | **English**
 
-Effective date: 2026-10-12
+Effective date: 2026-10-15
 
 iThread is a local-first mind-mapping application. It does not require an account and does not
 include advertising, analytics or telemetry. The application does not transmit map contents,
@@ -29,6 +29,12 @@ in IndexedDB. WebDAV credentials are held only in memory for the settings sessio
 stored in preferences or map exports. Closing Settings or changing directories clears them.
 The bilingual website saves only a language preference locally and includes no tracking scripts
 or registration forms. Access to GitHub Pages is still subject to GitHub's hosting logs.
+
+Experimental Nutstore desktop sync retains multiple complete map revisions and deletion markers
+in the user's own directory, with no automatic history pruning. They consume the user's storage
+and traffic quota; deleting a current map does not erase its cloud history. Native credentials
+remain in memory and are cleared on completion, close or expiry. The native channel is restricted
+to scoped Nutstore requests. There is no end-to-end encryption; the chosen provider can read uploads.
 
 GitHub may process ordinary website and download logs when users visit the source repository or
 download a release. Those services are governed by GitHub's own privacy statement and are not

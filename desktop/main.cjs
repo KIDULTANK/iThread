@@ -4,6 +4,11 @@ const { randomUUID } = require("node:crypto");
 const path = require("node:path");
 const { createCliBridgeServer } = require("./cli-bridge.cjs");
 const { selectSystemLocale } = require("./locale.cjs");
+const { pathToFileURL } = require("node:url");
+const { createSyncTransport } = require("./sync-transport.cjs");
+const { registerSyncIpc } = require("./sync-ipc.cjs");
+const syncTransport = createSyncTransport();
+const APP_DOCUMENT = pathToFileURL(path.join(__dirname, "..", "dist", "index.html")).href;
 
 const APP_ID = "com.ithread.desktop";
 const APP_ORIGIN = "file://";
@@ -113,6 +118,12 @@ function createWindow() {
   window.on("closed", () => {
     if (mainWindow === window) mainWindow = null;
   });
+  const syncOwner = window.webContents.id;
+  window.webContents.once("destroyed", () => syncTransport.closeOwner(syncOwner));
+  window.webContents.on("render-process-gone", () => syncTransport.closeOwner(syncOwner));
+  window.webContents.on("did-start-navigation", (_event, _url, _inPlace, isMainFrame) => {
+    if (isMainFrame) syncTransport.closeOwner(syncOwner);
+  });
 
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (!url.startsWith(APP_ORIGIN)) void shell.openExternal(url);
@@ -146,6 +157,12 @@ else {
   });
 
   app.whenReady().then(async () => {
+    registerSyncIpc({
+      ipcMain,
+      transport: syncTransport,
+      getContents: () => mainWindow?.webContents,
+      documentUrl: APP_DOCUMENT,
+    });
     app.on("web-contents-created", (_event, contents) => {
       contents.session.setPermissionRequestHandler((_webContents, _permission, callback) => {
         callback(false);
@@ -262,6 +279,7 @@ else {
     app.quit();
   });
   app.on("before-quit", () => {
+    syncTransport.dispose();
     cliBridgeServer?.close();
   });
 }

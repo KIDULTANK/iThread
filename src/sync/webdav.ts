@@ -12,7 +12,7 @@ function strongEtag(response: Response): string {
   if (!etag || !/^"[^"\r\n]*"$/.test(etag)) throw new Error("Sync requires a strong ETag");
   return etag;
 }
-function parseDocument(value: unknown, id: string): MindMapDoc {
+export function parseSyncDocument(value: unknown, id: string): MindMapDoc {
   if (!value || typeof value !== "object") throw new Error("Invalid sync document");
   const doc = value as MindMapDoc;
   if (doc.schemaVersion !== 1 || doc.id !== id || typeof doc.title !== "string")
@@ -46,7 +46,7 @@ function parseDocument(value: unknown, id: string): MindMapDoc {
 /** Transport only. Credentials are supplied by a platform-owned request function, not stored here.
  * The chosen remote directory must already exist and be dedicated to this sync library. */
 export class WebDavRepository implements SyncRepository {
-  private readonly root: URL;
+  protected readonly root: URL;
   constructor(
     endpoint: string,
     private readonly request: typeof fetch = fetch,
@@ -69,7 +69,7 @@ export class WebDavRepository implements SyncRepository {
   private url(id: string) {
     return new URL(`${safeId(id)}.json`, this.root);
   }
-  private async send(url: URL, init: RequestInit) {
+  protected async send(url: URL, init: RequestInit) {
     const response = await this.request(url, {
       ...init,
       redirect: "error",
@@ -80,7 +80,7 @@ export class WebDavRepository implements SyncRepository {
       throw new Error(`Sync HTTP ${response.status}`);
     return response;
   }
-  private async text(response: Response, limit = MAX_BYTES) {
+  protected async text(response: Response, limit = MAX_BYTES) {
     if (Number(response.headers.get("Content-Length")) > limit)
       throw new Error("Sync payload too large");
     const reader = response.body?.getReader();
@@ -109,7 +109,7 @@ export class WebDavRepository implements SyncRepository {
     }
     return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   }
-  async list(): Promise<string[]> {
+  protected async filenames(): Promise<string[]> {
     const response = await this.send(this.root, {
       method: "PROPFIND",
       headers: { Depth: "1", "Content-Type": "application/xml" },
@@ -121,24 +121,42 @@ export class WebDavRepository implements SyncRepository {
       throw new Error("Invalid WebDAV XML");
     const data = new XMLParser({ removeNSPrefix: true, processEntities: false }).parse(xml);
     const responses = data?.multistatus?.response;
-    if (!responses) throw new Error("Missing WebDAV listing");
+    if (!data || !Object.hasOwn(data, "multistatus")) throw new Error("Missing WebDAV listing");
     const result = new Set<string>();
-    for (const entry of Array.isArray(responses) ? responses : [responses]) {
+    for (const entry of !responses ? [] : Array.isArray(responses) ? responses : [responses]) {
       if (typeof entry.href !== "string") continue;
-      const url = new URL(entry.href, this.root);
+      let url: URL;
+      let path: string[];
+      let root: string[];
+      try {
+        url = new URL(entry.href, this.root);
+        path = url.pathname.split("/").map(decodeURIComponent);
+        root = this.root.pathname.split("/").slice(0, -1).map(decodeURIComponent);
+      } catch {
+        continue;
+      }
       if (
         url.origin !== this.root.origin ||
-        !url.pathname.startsWith(this.root.pathname) ||
+        url.username ||
+        url.password ||
+        path.length !== root.length + 1 ||
+        !root.every((segment, i) => segment === path[i]) ||
         url.search ||
         url.hash
       )
         continue;
-      const match = url.pathname
-        .slice(this.root.pathname.length)
-        .match(/^([a-zA-Z0-9_-]{1,128})\.json$/);
-      if (match) result.add(match[1]);
+      const filename = path.at(-1);
+      if (filename && !/[\\/]/.test(filename) && ![".", ".."].includes(filename))
+        result.add(filename);
+      if (result.size > 4096) throw new Error("Sync listing limit exceeded");
     }
     return [...result].sort();
+  }
+  async list(): Promise<string[]> {
+    return (await this.filenames()).flatMap((filename) => {
+      const match = filename.match(/^([a-zA-Z0-9_-]{1,128})\.json$/);
+      return match ? [match[1]] : [];
+    });
   }
   async read(id: string): Promise<RemoteSnapshot> {
     const response = await this.send(this.url(id), { method: "GET" });
@@ -154,7 +172,7 @@ export class WebDavRepository implements SyncRepository {
     if (payload.deleted && payload.document !== null) throw new Error("Invalid sync tombstone");
     return {
       etag: strongEtag(response),
-      value: payload.deleted ? null : parseDocument(payload.document, id),
+      value: payload.deleted ? null : parseSyncDocument(payload.document, id),
     };
   }
   async write(
@@ -162,7 +180,7 @@ export class WebDavRepository implements SyncRepository {
     expectedEtag: string | null,
     value: MindMapDoc | null,
   ): Promise<RemoteSnapshot | null> {
-    if (value) parseDocument(value, id);
+    if (value) parseSyncDocument(value, id);
     if (expectedEtag !== null && !/^"[^"\r\n]*"$/.test(expectedEtag))
       throw new Error("Invalid sync ETag");
     const body = JSON.stringify({

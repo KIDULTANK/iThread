@@ -5,6 +5,8 @@ type Value = MindMapDoc | null;
 export interface RemoteSnapshot {
   etag: string | null;
   value: Value;
+  conflicts?: RemoteSnapshot[];
+  ancestors?: string[];
 }
 export interface SyncRepository {
   list(): Promise<string[]>;
@@ -57,6 +59,18 @@ export function planSync(local: Value, base: Value, remote: Value) {
 export async function syncMap(id: string, local: SyncLocalStore, repository: SyncRepository) {
   const snapshot = await local.read(id);
   const remote = await repository.read(id);
+  if (remote.conflicts?.length) {
+    for (const copy of remote.conflicts) await local.preserveConflict(id, snapshot.version, copy);
+    return "conflict";
+  }
+  if (
+    snapshot.baseEtag?.startsWith("j2:") &&
+    remote.ancestors &&
+    !remote.ancestors.includes(snapshot.baseEtag)
+  ) {
+    await local.preserveConflict(id, snapshot.version, remote);
+    return "conflict";
+  }
   // Physical absence after a previous sync is not a confirmed deletion. Only a versioned tombstone
   // may propagate deletion; a missing/restored server must never wipe the local library.
   if (remote.etag === null && (snapshot.base !== null || snapshot.baseEtag)) {

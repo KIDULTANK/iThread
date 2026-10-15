@@ -78,6 +78,12 @@ type DesktopUpdateResult =
     };
 
 interface IThreadDesktopBridge {
+  syncConnect?(input: { endpoint: string; username: string; password: string }): Promise<string>;
+  syncRequest?(
+    token: string,
+    input: { filename: string; method: string; headers: Record<string, string>; body?: string },
+  ): Promise<{ status: number; headers: Record<string, string>; body: string }>;
+  syncDisconnect?(token: string): Promise<boolean>;
   /** Initial UI locale derived from the operating system, before the first render. */
   readonly systemLocale?: "en" | "zh-CN";
   checkForUpdates(): Promise<DesktopUpdateResult>;
