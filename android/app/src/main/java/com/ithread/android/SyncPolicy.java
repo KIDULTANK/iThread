@@ -10,6 +10,11 @@ final class SyncPolicy {
     static final String ORIGIN = "https://appassets.androidplatform.net";
     static final String DOCUMENT = ORIGIN + "/assets/index.html";
 
+    static boolean supportedWebView(String version) {
+        try { return Integer.parseInt(version.split("\\.")[0]) >= 124; }
+        catch (RuntimeException ignored) { return false; }
+    }
+
     static URI directory(String text) {
         if (text.length() > 4096) throw new IllegalArgumentException("Invalid directory");
         URI uri = URI.create(text);

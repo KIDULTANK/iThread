@@ -6,6 +6,13 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
 public final class SyncPolicyTest {
+    @Test public void requiresModernWebViewForSharedEditorFeatures() {
+        assertTrue(SyncPolicy.supportedWebView("124.0.6367.179"));
+        assertTrue(SyncPolicy.supportedWebView("150.0.0.0"));
+        assertFalse(SyncPolicy.supportedWebView("123.0.0.0"));
+        assertFalse(SyncPolicy.supportedWebView(null));
+        assertFalse(SyncPolicy.supportedWebView("unknown"));
+    }
     @Test public void allowsDedicatedNutstoreDirectory() {
         assertEquals("https://dav.jianguoyun.com/dav/%E6%B5%8B%E8%AF%95/",
                 SyncPolicy.directory("https://dav.jianguoyun.com/dav/%E6%B5%8B%E8%AF%95").toString());

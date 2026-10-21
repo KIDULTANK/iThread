@@ -2,7 +2,7 @@
 
 [简体中文](ANDROID.zh-CN.md) | **English**
 
-Targets Android 10 / API 29+ tablets, portrait/landscape, touch and external keyboards. The debug
+Targets Android 10 / API 29+ tablets with Android System WebView 124+, portrait/landscape, touch and external keyboards. The debug
 application ID is `com.ithread.android.preview`, separate from the future production app. This is not
 a stable mobile release and does not replace Windows v0.7.0 downloads.
 

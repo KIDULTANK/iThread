@@ -2,7 +2,8 @@
 
 **简体中文 | [English](ANDROID.en.md)**
 
-首版目标为 Android 10（API 29）及以上平板，横竖屏、触摸与外接键盘。应用标识为
+首版目标为 Android 10（API 29）及以上平板，需要 Android System WebView 124 或更高版本，
+支持横竖屏、触摸与外接键盘。应用标识为
 `com.ithread.android`，当前调试包为独立的 `com.ithread.android.preview`。
 这不是已发布的稳定移动客户端，暂不替换 Windows v0.7.0 下载。
 

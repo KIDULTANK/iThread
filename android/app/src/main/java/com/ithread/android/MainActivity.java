@@ -62,9 +62,11 @@ public final class MainActivity extends Activity {
             view.setPadding(safe.left, safe.top, safe.right, safe.bottom);
             return insets;
         });
-        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+        android.content.pm.PackageInfo provider = WebViewCompat.getCurrentWebViewPackage(this);
+        if (provider == null || !SyncPolicy.supportedWebView(provider.versionName)
+                || !WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
             TextView message = new TextView(this);
-            message.setText("请更新 Android System WebView 后重新打开 iThread。\nUpdate Android System WebView to run iThread.");
+            message.setText("请将 Android System WebView 更新到 124 或更高版本后重新打开 iThread。\nUpdate Android System WebView to version 124 or later to run iThread.");
             root.addView(message);
             return;
         }
