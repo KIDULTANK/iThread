@@ -10,7 +10,7 @@ export function useTouchContextMenu(open: (id: string, x: number, y: number) => 
     y: number;
     timer: ReturnType<typeof setTimeout>;
   } | null>(null);
-  const suppressClick = useRef(0);
+  const suppressClick = useRef<{ id: string; until: number } | null>(null);
   const cancel = useCallback(() => {
     if (gesture.current) clearTimeout(gesture.current.timer);
     gesture.current = null;
@@ -31,7 +31,7 @@ export function useTouchContextMenu(open: (id: string, x: number, y: number) => 
         y,
         timer: setTimeout(() => {
           gesture.current = null;
-          suppressClick.current = Date.now() + 800;
+          suppressClick.current = { id, until: Date.now() + 800 };
           callback.current(id, x, y);
         }, 550),
       };
@@ -47,9 +47,18 @@ export function useTouchContextMenu(open: (id: string, x: number, y: number) => 
     },
     onPointerUpCapture: cancel,
     onPointerCancelCapture: cancel,
-    onClickCapture(event: { preventDefault(): void; stopPropagation(): void }) {
-      if (Date.now() < suppressClick.current) {
-        suppressClick.current = 0;
+    onClickCapture(event: {
+      target: EventTarget;
+      preventDefault(): void;
+      stopPropagation(): void;
+    }) {
+      const suppressed = suppressClick.current;
+      const id =
+        event.target instanceof Element
+          ? event.target.closest<HTMLElement>(".react-flow__node[data-id]")?.dataset.id
+          : undefined;
+      if (suppressed && Date.now() < suppressed.until && id === suppressed.id) {
+        suppressClick.current = null;
         event.preventDefault();
         event.stopPropagation();
       }

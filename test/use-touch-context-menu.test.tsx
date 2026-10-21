@@ -33,7 +33,14 @@ describe("touch topic menus", () => {
       vi.advanceTimersByTime(550);
     });
     expect(open).toHaveBeenCalledWith("synthetic", 20, 30);
-    const click = { preventDefault: vi.fn(), stopPropagation: vi.fn() };
+    const menuClick = {
+      target: document.createElement("button"),
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    };
+    result.current.onClickCapture(menuClick);
+    expect(menuClick.stopPropagation).not.toHaveBeenCalled();
+    const click = { target: event().target, preventDefault: vi.fn(), stopPropagation: vi.fn() };
     result.current.onClickCapture(click);
     expect(click.stopPropagation).toHaveBeenCalledTimes(1);
   });
