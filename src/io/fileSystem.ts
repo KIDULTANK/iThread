@@ -50,6 +50,9 @@ export function isNativeExt(name: string): boolean {
 /** True when the browser exposes the File System Access pickers (Chromium desktop, HTTPS/localhost). */
 export function supportsFileSystemAccess(): boolean {
   return (
+    // New Android WebViews may expose these APIs. The APK owns its document I/O;
+    // desktop save-back and its narrower import filter must not bypass that bridge.
+    import.meta.env.MODE !== "android" &&
     typeof window !== "undefined" &&
     typeof window.showOpenFilePicker === "function" &&
     typeof window.showSaveFilePicker === "function"
@@ -98,7 +101,7 @@ export type OpenResult =
 
 /** Open the system file picker and classify the chosen file. Returns null if the user cancels. */
 export async function openMapFile(): Promise<OpenResult | null> {
-  if (!window.showOpenFilePicker) return null;
+  if (import.meta.env.MODE === "android" || !window.showOpenFilePicker) return null;
   let handle: FileSystemFileHandle | undefined;
   try {
     [handle] = await window.showOpenFilePicker({
@@ -117,7 +120,7 @@ export async function openMapFile(): Promise<OpenResult | null> {
 
 /** "Save As" — pick a destination and return its handle (caller then writes + remembers it). */
 export async function pickSaveHandle(doc: MindMapDoc): Promise<FileSystemFileHandle | null> {
-  if (!window.showSaveFilePicker) return null;
+  if (import.meta.env.MODE === "android" || !window.showSaveFilePicker) return null;
   try {
     return await window.showSaveFilePicker({
       suggestedName: suggestedFileName(doc),

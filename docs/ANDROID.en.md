@@ -29,6 +29,9 @@ double-tap topics to edit, and long-press for actions. Chinese/English and saved
 are shared with the editor. Native Nutstore requests use the same immutable history protocol as Windows.
 Dev.2 moves native message parsing and export decoding off the UI thread, uses streaming import
 preflight checks, and fixes Ctrl+O when the More menu is closed.
+Even when a newer WebView exposes browser file pickers, the Android build stays on its native
+document route and does not bind desktop save-back handles. Roundtrip checks also verify that
+the original imported file is not overwritten.
 
 Only the bundled document's main frame can access the origin-restricted native message listener.
 External links leave the app; arbitrary native URLs, redirects, cleartext traffic, TLS bypass and

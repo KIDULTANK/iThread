@@ -80,6 +80,7 @@ public final class TabletFileTest extends TabletTestBase {
         assertNotNull("Export JSON was incomplete", saved);
         assertEquals(1, saved.getInt("schemaVersion"));
         assertEquals(title, saved.getJSONObject("root").getString("topic"));
+        assertArrayEquals("Import must not overwrite the original document", bytes, Files.readAllBytes(input.toPath()));
         return saved;
     }
 

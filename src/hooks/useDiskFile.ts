@@ -219,6 +219,11 @@ export function useDiskFile({
   // Save As / download. Prompts once for write permission if the browser dropped it this session.
   const saveFile = useCallback(async () => {
     const d = liveDocRef.current;
+    // A handle persisted by an older preview must not re-enable desktop save-back in the APK.
+    if (import.meta.env.MODE === "android") {
+      if (await downloadMapFile(d)) showHint(`Downloaded ${suggestedFileName(d)}`);
+      return;
+    }
     const handle = handleCache.current.get(d.id);
     if (!handle) {
       if (!supportsFileSystemAccess()) {
@@ -259,6 +264,7 @@ export function useDiskFile({
   // holds write permission, so a denied/revoked grant simply leaves the IndexedDB copy as the record.
   const scheduleFileSave = useCallback(() => {
     if (fileSaveTimer.current) clearTimeout(fileSaveTimer.current);
+    if (import.meta.env.MODE === "android") return;
     fileSaveTimer.current = setTimeout(async () => {
       const d = liveDocRef.current;
       const handle = handleCache.current.get(d.id);

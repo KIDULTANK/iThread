@@ -64,9 +64,30 @@ beforeEach(() => {
   mocked.ensureWritePermission.mockResolvedValue(true);
   mocked.downloadMapFile.mockResolvedValue(true);
 });
-afterEach(() => vi.restoreAllMocks?.());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
 
 describe("useDiskFile — save / save-as", () => {
+  it("ignores a legacy desktop file binding in the Android build", async () => {
+    vi.stubEnv("MODE", "android");
+    const { result } = setup();
+    result.current.handleCache.current.set("m1", fakeHandle());
+    await act(async () => {
+      await result.current.saveFile();
+    });
+    expect(mocked.downloadMapFile).toHaveBeenCalledOnce();
+    expect(mocked.writeMapToHandle).not.toHaveBeenCalled();
+    vi.useFakeTimers();
+    try {
+      result.current.scheduleFileSave();
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(mocked.writeMapToHandle).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it("does not announce a completed export before the native document picker finishes", async () => {
     mocked.supportsFileSystemAccess.mockReturnValue(false);
     let finish: (value: boolean) => void = () => {};

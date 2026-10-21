@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   NATIVE_EXT,
   downloadMapFile,
@@ -21,6 +21,8 @@ const docOf = (title: string, id = "m1"): MindMapDoc => ({
   title,
   root: { id: "r", topic: title, children: [{ id: "c", topic: "child", children: [] }] },
 });
+
+afterEach(() => vi.unstubAllEnvs());
 
 /** A fake FileSystemFileHandle that records writes and reports a configurable permission state. */
 function fakeHandle(name: string, opts: { perm?: PermissionState; content?: string } = {}) {
@@ -91,6 +93,18 @@ describe("supportsFileSystemAccess", () => {
     window.showOpenFilePicker = vi.fn();
     window.showSaveFilePicker = vi.fn();
     expect(supportsFileSystemAccess()).toBe(true);
+  });
+  it("uses APK document I/O even when Android WebView exposes desktop pickers", async () => {
+    vi.stubEnv("MODE", "android");
+    const open = vi.fn();
+    const save = vi.fn();
+    window.showOpenFilePicker = open;
+    window.showSaveFilePicker = save;
+    expect(supportsFileSystemAccess()).toBe(false);
+    expect(await openMapFile()).toBeNull();
+    expect(await pickSaveHandle(docOf("Android"))).toBeNull();
+    expect(open).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
   });
 });
 
