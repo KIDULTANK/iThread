@@ -98,6 +98,12 @@ interface IThreadDesktopBridge {
 }
 
 interface Window {
+  readonly iThreadAndroid?: Pick<
+    IThreadDesktopBridge,
+    "syncConnect" | "syncRequest" | "syncDisconnect"
+  > & {
+    saveFile(input: { filename: string; mime: string; base64: string }): Promise<boolean>;
+  };
   showOpenFilePicker?(options?: OpenFilePickerOptions): Promise<FileSystemFileHandle[]>;
   showSaveFilePicker?(options?: SaveFilePickerOptions): Promise<FileSystemFileHandle>;
   readonly launchQueue?: LaunchQueue;

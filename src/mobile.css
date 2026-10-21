@@ -144,3 +144,23 @@
 .mm-dock-tab {
   user-select: none;
 }
+
+/* Android tablets keep the desktop canvas and navigation, with finger-sized chrome. This does not
+   enlarge topic collapse/progress icons or add floating insertion buttons to the map. */
+html[data-platform="android"] .mm-tbtn,
+html[data-platform="android"] .mm-rail-btn,
+html[data-platform="android"] .mm-menu-item,
+html[data-platform="android"] .mm-settings-nav button {
+  min-height: 44px;
+  min-width: 44px;
+}
+html[data-platform="android"] .mm-topbar-row {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: thin;
+}
+html[data-platform="android"] .react-flow__node:not(:has(input, textarea)) {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}

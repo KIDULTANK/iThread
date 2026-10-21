@@ -24,6 +24,8 @@
     "desktop:portable": "pnpm build && electron-builder --win portable --x64 --publish never",
     "desktop:installer": "pnpm build && electron-builder --win nsis --x64 --publish never",
     "desktop:dist": "pnpm build && electron-builder --win portable nsis --x64 --publish never",
+    "android:prepare": "pnpm build && node scripts/android-prepare.mjs",
+    "android:apk": "pnpm android:prepare && gradle -p android assembleDebug",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",

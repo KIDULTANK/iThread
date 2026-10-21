@@ -22,6 +22,7 @@ import {
 import { ContextMenu, MenuItem, MenuLabel, MenuSeparator } from "../design/primitives";
 import { colors, motion } from "../design/tokens";
 import { useLongPress } from "../hooks/useLongPress";
+import { useTouchContextMenu } from "../hooks/useTouchContextMenu";
 // `../i18n/registry`, NOT the `../i18n` barrel: the barrel pulls in the eager core catalogue, which
 // would drag the whole chrome catalogue into this lazy chunk. The side-effect import registers the
 // canvas catalogue when this chunk loads. There's a test asserting the canvas strings stay out of the
@@ -330,6 +331,8 @@ function FlowInner({
 }: MindMapProps) {
   const palette = (theme ?? mindManagerTheme).palette;
   const isMobile = useIsMobile();
+  const coarsePointer = useIsMobile("(pointer: coarse)");
+  const touchMode = coarsePointer || Boolean(window.iThreadAndroid);
   // Latest-value ref so the many viewport-animation callsites can read the current reduced-motion
   // preference without each callback/handle taking it as a dependency (refs are exempt from
   // exhaustive-deps). Each animation duration becomes 0 when motion is reduced.
@@ -1931,6 +1934,10 @@ function FlowInner({
     (id: string) => selectOverlay({ kind: "boundary", id }),
     [selectOverlay],
   );
+  const touchNodeMenu = useTouchContextMenu((id, x, y) => {
+    openNodeMenuAt(id);
+    setMenu({ id, x, y });
+  });
   const handleSelectSummaryOverlay = useCallback(
     (id: string) => selectOverlay({ kind: "summary", id }),
     [selectOverlay],
@@ -2308,6 +2315,7 @@ function FlowInner({
             title: renderDoc.title?.trim() || t("canvas.region.untitledMap"),
           })}
           {...paneLongPress}
+          {...touchNodeMenu}
           style={{
             height: "100%",
             width: "100%",
@@ -2437,7 +2445,7 @@ function FlowInner({
             fitView={!mountSession.current?.viewport}
             defaultViewport={mountSession.current?.viewport}
             // Plain left-drag on empty canvas draws a marquee; middle/right drag pans.
-            panOnDrag={[1, 2]}
+            panOnDrag={touchMode ? true : [1, 2]}
             // Trackpad/touch navigation follows the iPad model: two-finger/wheel pans the map,
             // Ctrl/⌘ + wheel (and pinch) zooms around the pointer instead of jumping the camera.
             panOnScroll={interactionPrefs.wheelMode === "pan"}
@@ -2445,7 +2453,7 @@ function FlowInner({
             zoomOnScroll
             zoomOnPinch
             autoPanSpeed={22}
-            selectionOnDrag
+            selectionOnDrag={!touchMode}
             selectionKeyCode={null}
             multiSelectionKeyCode={["Shift", "Meta", "Control"]}
             onSelectionChange={onSelectionChange}

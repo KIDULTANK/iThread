@@ -55,7 +55,7 @@ export const initPwaUpdateToast = (
   showToast: ShowToast,
   translatedMessages?: Partial<typeof messages>,
 ): void => {
-  if (registered || typeof window === "undefined") return;
+  if (registered || typeof window === "undefined" || window.iThreadAndroid) return;
   registered = true;
   toast = showToast;
   messages = { ...messages, ...translatedMessages };
@@ -81,6 +81,7 @@ export type UpdateCheckResult = "unsupported" | "already-pending" | "newly-found
 
 /** Force a SW update check (the browser otherwise checks on each load + ~24h). */
 export const checkForUpdate = async (): Promise<UpdateCheckResult> => {
+  if (typeof window !== "undefined" && window.iThreadAndroid) return "unsupported";
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return "unsupported";
   const reg = await navigator.serviceWorker.getRegistration();
   if (!reg) return "unsupported";

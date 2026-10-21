@@ -7,7 +7,8 @@ export async function connectSyncRepository(endpoint: string, username: string, 
   new WebDavRepository(endpoint); // Shared validation, before any network or IPC.
   if (!root.pathname.endsWith("/")) root.pathname += "/";
   if (root.hostname === "dav.jianguoyun.com") {
-    const desktop = typeof window === "undefined" ? undefined : window.iThreadDesktop;
+    const desktop =
+      typeof window === "undefined" ? undefined : (window.iThreadAndroid ?? window.iThreadDesktop);
     if (!desktop?.syncConnect || !desktop.syncRequest || !desktop.syncDisconnect)
       throw new Error("desktop-required");
     const token = await desktop.syncConnect({ endpoint: root.href, username, password });
@@ -45,6 +46,8 @@ export async function connectSyncRepository(endpoint: string, username: string, 
       },
     };
   }
+  if (typeof window !== "undefined" && window.iThreadAndroid)
+    throw new Error("android-provider-unsupported");
   const controller = new AbortController();
   const bytes = new TextEncoder().encode(`${username}:${password}`);
   const authorization =

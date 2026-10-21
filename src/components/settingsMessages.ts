@@ -2,10 +2,13 @@ import { type Catalogue, registerMessages } from "../i18n/registry";
 
 // Settings-only strings load with the dialog, not on the first-paint path.
 export const SETTINGS_EN = {
+  "android.exportFailed": "Export failed; your local map is still saved. {error}",
   "sync.historyHelp":
     "Nutstore uses immutable history revisions in the Windows desktop app. Each edit adds cloud storage use. The web app requires a server that permits browser cross-origin access.",
   "sync.desktopRequired":
-    "Nutstore sync requires iThread Windows v0.7.0 or later; this browser or older desktop build cannot connect directly.",
+    "Nutstore sync requires a supported iThread Windows or Android client; this browser or older build cannot connect directly.",
+  "sync.androidProvider":
+    "The Android preview currently supports only a dedicated Nutstore WebDAV directory.",
   "sync.legacyFormat":
     "This map has a legacy sync file. Use a separate test directory; automatic protocol migration is not supported.",
   "sync.historyLimit":

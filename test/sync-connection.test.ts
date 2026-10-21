@@ -6,8 +6,41 @@ import { connectSyncRepository } from "../src/sync/connection";
 afterEach(() => {
   vi.unstubAllGlobals();
   Object.defineProperty(window, "iThreadDesktop", { configurable: true, value: undefined });
+  Object.defineProperty(window, "iThreadAndroid", { configurable: true, value: undefined });
 });
 describe("sync connection selection", () => {
+  it("uses the Android native bridge with the Windows-compatible immutable history protocol", async () => {
+    const bridge = {
+      syncConnect: vi.fn(async () => "android-session"),
+      syncRequest: vi.fn(async () => ({
+        status: 207,
+        headers: {},
+        body: '<d:multistatus xmlns:d="DAV:"/>',
+      })),
+      syncDisconnect: vi.fn(async () => true),
+    };
+    Object.defineProperty(window, "iThreadAndroid", { configurable: true, value: bridge });
+    const connection = await connectSyncRepository(
+      "https://dav.jianguoyun.com/dav/test/",
+      "synthetic",
+      "synthetic",
+    );
+    expect(await connection.repository.list()).toEqual([]);
+    expect(bridge.syncRequest).toHaveBeenCalledWith(
+      "android-session",
+      expect.objectContaining({ method: "PROPFIND" }),
+    );
+    await connection.close();
+    expect(bridge.syncDisconnect).toHaveBeenCalledTimes(1);
+  });
+  it("rejects unsupported Android providers before sending credentials", async () => {
+    Object.defineProperty(window, "iThreadAndroid", { configurable: true, value: {} });
+    vi.stubGlobal("fetch", vi.fn());
+    await expect(
+      connectSyncRepository("https://example.test/maps/", "synthetic", "synthetic"),
+    ).rejects.toThrow("android-provider-unsupported");
+    expect(fetch).not.toHaveBeenCalled();
+  });
   it("stops Nutstore in the browser before sending credentials over a cross-origin request", async () => {
     vi.stubGlobal("fetch", vi.fn());
     await expect(

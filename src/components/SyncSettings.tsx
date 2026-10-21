@@ -89,7 +89,12 @@ export function SyncSettings({
   }
   function failure(error: unknown) {
     return error instanceof Error &&
-      ["desktop-required", "legacy-sync-format", "sync-history-limit"].includes(error.message)
+      [
+        "desktop-required",
+        "legacy-sync-format",
+        "sync-history-limit",
+        "android-provider-unsupported",
+      ].includes(error.message)
       ? error.message
       : "error";
   }
@@ -301,13 +306,15 @@ export function SyncSettings({
                 ? t("sync.configured")
                 : status === "discovered"
                   ? t("sync.discovered")
-                  : status === "desktop-required"
-                    ? t("sync.desktopRequired")
-                    : status === "legacy-sync-format"
-                      ? t("sync.legacyFormat")
-                      : status === "sync-history-limit"
-                        ? t("sync.historyLimit")
-                        : t("sync.error")}
+                  : status === "android-provider-unsupported"
+                    ? t("sync.androidProvider")
+                    : status === "desktop-required"
+                      ? t("sync.desktopRequired")
+                      : status === "legacy-sync-format"
+                        ? t("sync.legacyFormat")
+                        : status === "sync-history-limit"
+                          ? t("sync.historyLimit")
+                          : t("sync.error")}
         </output>
       )}
       {conflicts.length > 0 && (

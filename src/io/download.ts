@@ -2,6 +2,10 @@
  *  right after the click. The one place the download mechanism lives (export handlers, the map-card
  *  "download", and the save-picker fallback all share it). */
 export function downloadBlob(blob: Blob, filename: string): void {
+  if (window.iThreadAndroid) {
+    void import("./androidDownload").then(({ saveAndroidBlob }) => saveAndroidBlob(blob, filename));
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
