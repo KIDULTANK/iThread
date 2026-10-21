@@ -48,5 +48,10 @@ not a public Release. Debug certificates may differ between build machines; expo
 reinstall. A stable, backed-up Android signing key is required before ongoing public distribution;
 Windows SignPath signing is unrelated.
 
+Release signing reads only `ITHREAD_ANDROID_KEYSTORE`, `ITHREAD_ANDROID_STORE_PASSWORD`,
+`ITHREAD_ANDROID_KEY_ALIAS` and `ITHREAD_ANDROID_KEY_PASSWORD` from the environment. Missing any value
+blocks Release builds; disposable debug keys never substitute for release signing. Keep keys outside
+Git and back them up securely. A production key and CI secret provisioning have not been created.
+
 Implementation follows Android's [local asset loading](https://developer.android.com/develop/ui/views/layout/webapps/load-local-content)
 and [origin-restricted bridge](https://developer.android.com/develop/ui/views/layout/webapps/native-api-access-jsbridge) guidance.

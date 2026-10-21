@@ -1,5 +1,11 @@
 plugins { id 'com.android.application' }
 
+def signingEnvironment = [
+    'ITHREAD_ANDROID_KEYSTORE', 'ITHREAD_ANDROID_STORE_PASSWORD',
+    'ITHREAD_ANDROID_KEY_ALIAS', 'ITHREAD_ANDROID_KEY_PASSWORD'
+].collectEntries { name -> [(name): System.getenv(name)] }
+def signingReady = signingEnvironment.values().every { it != null && !it.isEmpty() }
+
 android {
     namespace 'com.ithread.android'
     compileSdk 36
@@ -24,6 +30,22 @@ android {
         main.res.srcDir layout.buildDirectory.dir('generated/ithread/res')
     }
     buildFeatures { buildConfig true }
+}
+
+if (signingReady) {
+    android.signingConfigs.create('publicBeta') {
+        storeFile rootProject.file(signingEnvironment.ITHREAD_ANDROID_KEYSTORE)
+        storePassword signingEnvironment.ITHREAD_ANDROID_STORE_PASSWORD
+        keyAlias signingEnvironment.ITHREAD_ANDROID_KEY_ALIAS
+        keyPassword signingEnvironment.ITHREAD_ANDROID_KEY_PASSWORD
+    }
+    android.buildTypes.release.signingConfig = android.signingConfigs.publicBeta
+}
+// A release must never silently fall back to an unsigned APK or a disposable debug certificate.
+gradle.taskGraph.whenReady { graph ->
+    if (!signingReady && graph.allTasks.any { task ->
+        task.project == project && task.name in ['assembleRelease', 'bundleRelease', 'packageRelease']
+    }) throw new GradleException('Release requires the four ITHREAD_ANDROID_* signing environment variables. Keep a backed-up key outside Git.')
 }
 
 tasks.register('verifyWebAssets') {

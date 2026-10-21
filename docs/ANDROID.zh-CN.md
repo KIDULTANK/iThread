@@ -67,6 +67,11 @@ gradle -p android testDebugUnitTest assembleDebug
 安装；如需重装，必须先导出本地导图，不能为了安装而直接卸载唯一副本。公开持续分发前需
 建立并妥善备份稳定的安卓签名密钥；它与 Windows SignPath 证书是两件事。
 
+正式签名构建只读取环境变量 `ITHREAD_ANDROID_KEYSTORE`（密钥文件绝对路径）、
+`ITHREAD_ANDROID_STORE_PASSWORD`、`ITHREAD_ANDROID_KEY_ALIAS`、`ITHREAD_ANDROID_KEY_PASSWORD`。
+缺少任一项就拒绝 Release 构建；不会拿调试证书充当正式签名。密钥和密码不放进源码或
+公开构建日志；公测前另行配置安全备份与 CI 密钥管理，目前尚未创建正式密钥或启用公测发布。
+
 ## 依据
 
 - [Android 本地资源加载](https://developer.android.com/develop/ui/views/layout/webapps/load-local-content)
