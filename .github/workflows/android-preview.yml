@@ -42,7 +42,7 @@ jobs:
           gradle-version: "8.13"
       - run: pnpm install --frozen-lockfile
       - name: Check shared editor
-        run: pnpm typecheck && pnpm exec vitest run test/android-bridge.test.ts test/android-export.test.ts test/use-touch-context-menu.test.tsx test/sync-connection.test.ts test/use-disk-file.test.tsx test/pwaUpdate.test.ts
+        run: pnpm typecheck && pnpm exec vitest run test/android-bridge.test.ts test/android-export.test.ts test/use-touch-context-menu.test.tsx test/sync-connection.test.ts test/use-disk-file.test.tsx test/pwaUpdate.test.ts test/toolbar.test.tsx test/app-integration.test.tsx --maxWorkers=2 --minWorkers=1
       - name: Bundle offline editor
         run: pnpm android:prepare
       - name: Compile APK and run native policy tests
@@ -122,13 +122,17 @@ jobs:
             if [ '${{ matrix.api }}' -ge 35 ]; then adb install -r baseline-apk/app-debug.apk; else adb install -r test-apks/debug/app-debug.apk; fi
             adb install -r test-apks/androidTest/debug/app-debug-androidTest.apk
             if [ '${{ matrix.api }}' -ge 35 ]; then adb shell am instrument -w -r -e class com.ithread.android.UpgradeStorageTest#seedBaselineData com.ithread.android.preview.test/androidx.test.runner.AndroidJUnitRunner | tee upgrade-seed.log; fi
+            adb logcat -d -v brief AndroidRuntime:E chromium:E '*:S' > runtime-errors.log
             if [ '${{ matrix.api }}' -ge 35 ]; then ! grep -E 'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|INSTRUMENTATION_STATUS_CODE: -4' upgrade-seed.log && grep -q 'OK (1 test)' upgrade-seed.log; fi
             adb install -r test-apks/debug/app-debug.apk
             if [ '${{ matrix.api }}' -ge 35 ]; then adb shell am instrument -w -r -e class com.ithread.android.UpgradeStorageTest#verifyAfterUpgrade com.ithread.android.preview.test/androidx.test.runner.AndroidJUnitRunner | tee upgrade-verify.log; fi
+            adb logcat -d -v brief AndroidRuntime:E chromium:E '*:S' > runtime-errors.log
             if [ '${{ matrix.api }}' -ge 35 ]; then ! grep -E 'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|INSTRUMENTATION_STATUS_CODE: -4' upgrade-verify.log && grep -q 'OK (1 test)' upgrade-verify.log; fi
             adb shell am instrument -w -r -e notClass com.ithread.android.UpgradeStorageTest com.ithread.android.preview.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.log
+            adb logcat -d -v brief AndroidRuntime:E chromium:E '*:S' > runtime-errors.log
             ! grep -E 'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=' instrumentation.log
             grep -q 'OK (' instrumentation.log
+            if [ '${{ matrix.api }}' -ge 35 ]; then ! grep -q 'INSTRUMENTATION_STATUS_CODE: -4' instrumentation.log; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -136,5 +140,6 @@ jobs:
           path: |
             instrumentation.log
             upgrade-*.log
+            runtime-errors.log
           if-no-files-found: warn
           retention-days: 14

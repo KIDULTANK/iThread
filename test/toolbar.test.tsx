@@ -359,10 +359,12 @@ describe("Toolbar — More menu", () => {
     // A real <button role=menuitem>, not a <label> wrapping a hidden input — natively keyboard-operable.
     const item = screen.getByRole("menuitem", { name: /import files/i });
     expect(item.tagName).toBe("BUTTON");
-    const input = item.nextElementSibling as HTMLInputElement; // the hidden file input alongside it
+    const input = document.getElementById("mmap-input") as HTMLInputElement;
     const click = vi.spyOn(input, "click").mockImplementation(() => {});
     fireEvent.click(item);
     expect(click).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("menuitem", { name: /import files/i })).toBeNull();
+    expect(document.getElementById("mmap-input")).toBe(input);
   });
 });
 

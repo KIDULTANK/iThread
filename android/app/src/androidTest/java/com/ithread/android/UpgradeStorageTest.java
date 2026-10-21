@@ -31,7 +31,9 @@ public final class UpgradeStorageTest extends TabletTestBase {
                 + "tx.objectStore('meta').put(rows,'android-upgrade-checkpoint');await done;db.close();"
                 + "localStorage.setItem('mindmap-locale','zh-CN');localStorage.setItem('android-upgrade-marker','dev1-preserved');window.__upgradeDone=true;"
                 + "}catch(e){window.__upgradeError=String(e)}})();true");
-        waitTrue("window.__upgradeDone === true");
+        waitTrue("window.__upgradeDone === true || Boolean(window.__upgradeError)");
+        org.junit.Assert.assertEquals("Baseline fixture creation", "\"\"", evaluate("window.__upgradeError"));
+        org.junit.Assert.assertEquals("true", evaluate("window.__upgradeDone"));
     }
 
     @Test public void verifyAfterUpgrade() throws Exception {

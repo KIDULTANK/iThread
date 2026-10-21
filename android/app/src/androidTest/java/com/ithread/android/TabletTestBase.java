@@ -29,7 +29,9 @@ abstract class TabletTestBase {
             if (web == null) { response.complete("null"); return; }
             web.evaluateJavascript(script, response::complete);
         });
-        return response.get(10, TimeUnit.SECONDS);
+        // A cold WebView on a software-rendered CI tablet may compile the editor while
+        // evaluateJavascript is queued. Keep this bounded, but do not impose a 10s boot deadline.
+        return response.get(30, TimeUnit.SECONDS);
     }
     protected void waitTrue(String script) throws Exception {
         long end = System.nanoTime() + TimeUnit.SECONDS.toNanos(45);
@@ -37,12 +39,12 @@ abstract class TabletTestBase {
             if ("true".equals(evaluate(script))) return;
             Thread.sleep(200);
         }
-        fail("Android state not reached: " + script + "\n" + evaluate("document.body.innerText.slice(0,1200)"));
+        fail("Android state not reached: " + script + "\n" + evaluate("JSON.stringify({body:document.body.innerText.slice(0,1200),upgradeError:window.__upgradeError})"));
     }
     protected void ready() throws Exception {
         final boolean[] supported = { false };
         scenario.onActivity(activity -> supported[0] = findWeb(activity.getWindow().getDecorView()) != null);
         assumeTrue("WebView upgrade prompt only; editor tests skipped", supported[0]);
-        waitTrue("Boolean(document.querySelector('.start') || document.querySelector('.mm-editor'))");
+        waitTrue("Boolean(document.querySelector('.start') || document.querySelector('.mm-editor .react-flow'))");
     }
 }
