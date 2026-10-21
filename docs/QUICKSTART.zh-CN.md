@@ -2,14 +2,14 @@
 
 **简体中文 | [English](QUICKSTART.en.md)**
 
-iThread v0.6.1 是面向 Windows 11 的公开预览版。它可以导入 iThoughts `.itmz` 文件，也能
+iThread v0.7.0 是面向 Windows 11 的公开预览版。它可以导入 iThoughts `.itmz` 文件，也能
 把修改导出为新的 iThoughts 兼容 `.itmz`。第一次测试时仍请保留原文件，并优先使用副本。
 
 ## 1. 下载和启动
 
 1. 从 [GitHub Releases](https://github.com/KIDULTANK/iThread/releases) 下载安装版
-   `iThread-0.6.1-Windows-x64-Setup.exe`，或便携版
-   `iThread-0.6.1-Windows-x64-Portable.exe`。
+   `iThread-0.7.0-Windows-x64-Setup.exe`，或便携版
+   `iThread-0.7.0-Windows-x64-Portable.exe`。
 2. 对照同一 Release 中的 `SHA256SUMS.txt` 核对文件校验值。
 3. 当前版本尚未取得代码签名。Windows SmartScreen 如提示“未知发布者”，请先确认下载地址
    和 SHA-256，再决定是否运行。
@@ -51,7 +51,18 @@ iThread v0.6.1 是面向 Windows 11 的公开预览版。它可以导入 iThough
 “模板库”统一收纳待填写的“结构模板”和填好内容的“完整示例”；打开后都会创建
 一份可编辑的新导图，不会改变内置内容。
 
-## 5. 反馈问题
+## 5. 可选的多设备同步（实验功能）
+
+Windows v0.7.0 可在“设置 → 多设备同步”中配置自己的坚果云 WebDAV 专用目录。
+填写 HTTPS 目录地址和自己的应用凭据，主动选择导图后点击同步；另一台 Windows 使用
+同一目录查找远端导图并同步。当前正在编辑的导图会暂缓同步，请先回到文件库。
+
+无需注册 iThread 账号，也不会自动上传整个文件库。关闭设置会清空密码。同步历史使用
+自己的网盘额度；冲突保留双方但不能自动合并。两台实际设备验证尚未完成，请先导出备份
+并用人工导图体验。网页版不能直接连接坚果云，Mac、iPad 和安卓客户端尚未提供。
+详细配置、历史上限及其他服务要求见[同步指南](SYNC.zh-CN.md)。
+
+## 6. 反馈问题
 
 请通过 [GitHub 问题模板](https://github.com/KIDULTANK/iThread/issues/new/choose) 提交，并尽量提供：
 

@@ -2,7 +2,7 @@
 
 **简体中文 | [English](README.en.md)**
 
-**当前公开测试版：v0.6.1** · 面向 Windows 11 · 本地优先 · Apache-2.0
+**当前公开测试版：v0.7.0** · 面向 Windows 11 · 本地优先 · Apache-2.0
 
 [官网](https://kidultank.github.io/iThread/website/) ·
 [在线体验](https://kidultank.github.io/iThread/) ·
@@ -69,8 +69,11 @@ iThread 可以导入 iThoughts `.itmz`，也可以把修改结果导出为新的
 ## 数据与隐私
 
 iThread 没有账号和遥测，不会在后台上传导图内容。浏览器版数据位于浏览器本地存储，Windows
-桌面版可把 `.ithread` 保存到用户选择的位置。项目目前没有自建云同步；可以使用 OneDrive、
-Dropbox、坚果云等系统同步目录保存原生文件。
+桌面版可把 `.ithread` 保存到用户选择的位置，也可以使用 OneDrive、Dropbox、坚果云等系统
+同步目录保存原生文件。v0.7.0 另提供可选的[实验性 WebDAV 手动同步](docs/SYNC.zh-CN.md)，
+坚果云需要 Windows 桌面版及用户自己的账号、专用目录和应用密码，不需要 iThread 账号。
+仅主动勾选的导图参与同步；冲突保留双方，不自动合并。两台实际设备验证尚未完成，
+Mac、iPad 和安卓客户端尚未提供；重要资料仍需单独备份。
 
 公开反馈问题时，请勿上传包含个人信息、案件材料、客户资料或商业秘密的原始导图。
 

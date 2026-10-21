@@ -2,8 +2,9 @@
 
 [简体中文](SYNC.zh-CN.md) | **English**
 
-The development source and web app include optional, manual WebDAV sync. The v0.6.1 Windows
-installer does not include this addition. Synthetic-map tests against Nutstore's real service passed
+Windows v0.7.0 includes optional, experimental manual WebDAV sync. The web app also exposes sync
+settings, but cannot connect directly to Nutstore. The v0.6.1 Windows installer does not include
+this addition. Synthetic-map tests against Nutstore's real service passed
 on 2026-10-15; two physical-device UI testing remains outstanding. Use synthetic test maps and keep separate backups. This is not a production
 cloud service. Mac, iPad and Android clients have not been released.
 
@@ -17,15 +18,16 @@ storage or traffic.
 
 ## Try it with test maps
 
-1. Create a dedicated directory in your own service. It must support HTTPS, PROPFIND, strong ETags,
-   and conditional PUT using `If-Match` and `If-None-Match` correctly.
+1. Create a dedicated directory in your own service. For Nutstore, use Windows v0.7.0 or later.
+   Other services must support HTTPS, PROPFIND, strong ETags, browser CORS, and conditional PUT
+   using `If-Match` and `If-None-Match` correctly.
 2. In Settings → Device sync, save the directory URL without credentials or query parameters.
 3. Enter the service credentials. Check the maps to include, then run manual sync.
 4. On another device, use the same directory, find remote maps, select them, and sync.
 5. Credentials stay in memory for this Settings session. Closing Settings or changing directories
    clears them. Prefer dedicated credentials restricted to this directory.
 
-Web requests, including the current Chromium-based desktop transport, may require server CORS
+Other providers use browser requests, including in the desktop app, and may require server CORS
 configuration. Permit the application's origin, GET/PUT/PROPFIND and Authorization/Depth/
 If-Match/If-None-Match headers, and expose ETag. Do not disable browser security to bypass errors.
 Test conditional-write correctness on the actual server before using important maps.
@@ -34,7 +36,7 @@ Test conditional-write correctness on the actual server before using important m
 
 ### Nutstore desktop history protocol
 
-The updated Windows desktop test build uses immutable protocol-v2 revisions for Nutstore. The web
+Windows v0.7.0 and later use immutable protocol-v2 revisions for Nutstore. The web
 app and older desktop builds stop with a desktop-required message before sending credentials.
 Each change creates a new `<map-id>--<SHA256>.ithread-sync.json` file with a random nonce, parent
 revisions and a complete snapshot. Parallel writes create separate heads; neither overwrites the
@@ -50,7 +52,8 @@ Browser security is not disabled. Other providers retain the original browser/v1
 History is capped at 256 revisions / 128 MiB per map and 4096 discovered directory entries.
 It consumes the user's storage and is not automatically pruned. Reaching a cap stops sync without
 deleting history. Conflicts are preserved for manual review; one-click merging is not implemented.
-The standalone test build uses a separate local profile from the normal application.
+The earlier standalone test build uses a separate local profile. Export/import `.ithread` files
+to transfer its maps into the regular v0.7.0 application; profiles are not automatically merged.
 
 - Only checked maps participate. Unchecking does not delete local or remote content.
 - A common base snapshot distinguishes one-sided edits from divergent edits. Timestamps do not

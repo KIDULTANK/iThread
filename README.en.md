@@ -2,7 +2,7 @@
 
 [简体中文](README.zh-CN.md) | **English**
 
-**Current preview: v0.6.1** · Windows 11 focused · Local-first · Apache-2.0
+**Current preview: v0.7.0** · Windows 11 focused · Local-first · Apache-2.0
 
 [Website](https://kidultank.github.io/iThread/website/) ·
 [Try online](https://kidultank.github.io/iThread/) ·
@@ -307,7 +307,12 @@ images through our own importer.
 
 ## Status
 
-**v0.6.1** is the current public-preview release. It refreshes the interface and seal-style app icon,
+**v0.7.0** is the current public-preview release. It adds optional, experimental manual WebDAV sync,
+including native Windows Nutstore connectivity and immutable revision histories that preserve
+divergent changes. Credentials remain in memory and only selected maps sync; there are no automatic
+uploads or iThread accounts. Two-physical-device validation is still outstanding, conflicts require
+manual review, and Mac, iPad and Android clients are not available. Back up first and read the
+[sync guide](docs/SYNC.en.md). It retains the refreshed interface and seal-style app icon,
 unifies templates and examples into one library, improves Settings, fixes Alt-held shortcut paging,
 and selects the first-launch desktop UI language from the operating system. Saved language choices
 take priority. It retains the token-authenticated local CLI, atomic batch edits, dry runs,

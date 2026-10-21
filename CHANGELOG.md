@@ -5,6 +5,24 @@ phase-based. Open work lives in `NEXT_STEPS.md`, not here.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-21
+
+### Added
+
+- Optional manual WebDAV sync in Settings, using the user's own storage and explicitly selected maps.
+- A restricted native Windows connection for Nutstore and immutable, content-hashed revision histories
+  that preserve concurrent changes instead of overwriting a shared file.
+- Persistent sync baselines and conflict copies, local version guards, recoverable tombstones,
+  remote-map discovery and JSON conflict-review downloads. Credentials remain in session memory.
+
+### Limitations
+
+- Sync remains experimental and manual. Two-physical-device validation is outstanding; Mac, iPad and
+  Android clients are not available. The web app cannot directly connect to Nutstore.
+- No automatic conflict merge, background retry queue or end-to-end encryption. Nutstore history is
+  capped at 256 revisions / 128 MiB per map, with no automatic pruning; use independent backups.
+- Windows installers and portable builds remain unsigned.
+
 ### Changed
 
 - The GitHub landing page now provides equal Chinese and English entry points, with separate full

@@ -36,6 +36,11 @@ location for important material.
   backup.
 - iThread does not currently provide its own cloud account. Native `.ithread` files can be placed in
   OneDrive, Dropbox or another OS-synchronised folder. Concurrent editing may still create conflicts.
+- v0.7.0 adds [experimental manual WebDAV sync](SYNC.en.md); Nutstore requires the Windows app.
+  It uses your account and quota and only selected maps. Two-physical-device validation is outstanding.
+  Conflicts are kept but not automatically merged. There is no end-to-end encryption or automatic
+  background retry; history has size/count limits and no automatic pruning. Mac, iPad and Android
+  clients are not available, and the web app cannot connect directly to Nutstore.
 - Browser data lives in that browser's local storage. Clearing browser data may remove maps that were
   never exported.
 

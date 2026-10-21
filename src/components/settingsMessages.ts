@@ -5,7 +5,7 @@ export const SETTINGS_EN = {
   "sync.historyHelp":
     "Nutstore uses immutable history revisions in the Windows desktop app. Each edit adds cloud storage use. The web app requires a server that permits browser cross-origin access.",
   "sync.desktopRequired":
-    "Nutstore sync requires the updated iThread desktop test build; this browser or older desktop build cannot connect directly.",
+    "Nutstore sync requires iThread Windows v0.7.0 or later; this browser or older desktop build cannot connect directly.",
   "sync.legacyFormat":
     "This map has a legacy sync file. Use a separate test directory; automatic protocol migration is not supported.",
   "sync.historyLimit":

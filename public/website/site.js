@@ -8,7 +8,7 @@ const english = {
   lead: "From a passing thought to a clear map. Organize what you know, shape what comes next, and give complex ideas a place to belong.",
   download: "Download for Windows ↗",
   try: "Try in your browser →",
-  version: "v0.6.1 preview · Windows 11 x64 · No account required",
+  version: "v0.7.0 preview · Windows 11 x64 · No account required",
   releaseEyebrow: "WINDOWS PREVIEW",
   demoFile: "My next step.ithread",
   local: "Local first",
@@ -42,7 +42,7 @@ const english = {
   roadmapEyebrow: "WHAT COMES NEXT",
   roadmapTitle: "One train of thought.<br>More devices.",
   roadmapBody:
-    "Windows and the web experience are available today. Single-person multi-device sync is in development; Mac, iPad and Android clients are not yet released. Sync should never be a requirement for offline editing.",
+    "Windows v0.7.0 includes experimental manual Nutstore sync using your own storage. Two-physical-device validation is outstanding. The web app cannot connect directly to Nutstore; Mac, iPad and Android clients are not yet released. Offline editing remains available.",
   available: "Available",
   planned: "Planned",
   startEyebrow: "GIVE YOUR FIRST IDEA A HOME",
@@ -51,7 +51,7 @@ const english = {
     "Try it in your browser, then bring it to your desktop. Keep a backup of important files and check exports in the destination app.",
   guide: "Quick start ↗",
   releaseBody:
-    "A refreshed interface and seal-style icon, a unified template library, richer Settings, and a bilingual UI that follows your system language.",
+    "Optional manual WebDAV sync, native Windows Nutstore connectivity and conflict-preserving histories. Sync remains experimental: back up first. No iThread account is required.",
   unsigned:
     "Windows builds are currently unsigned. SmartScreen may show an “Unknown publisher” warning. Download from the official Releases and verify SHA-256.",
   release: "Release notes & downloads ↗",

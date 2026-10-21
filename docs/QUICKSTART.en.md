@@ -2,14 +2,14 @@
 
 [简体中文](QUICKSTART.zh-CN.md) | **English**
 
-iThread v0.6.1 is a public preview for Windows 11. It can import iThoughts `.itmz` files and export
+iThread v0.7.0 is a public preview for Windows 11. It can import iThoughts `.itmz` files and export
 edited maps as new iThoughts-compatible `.itmz` files. Keep the original file and test with a copy.
 
 ## 1. Download and launch
 
 1. Open [GitHub Releases](https://github.com/KIDULTANK/iThread/releases).
-2. Download `iThread-0.6.1-Windows-x64-Setup.exe`, or use the no-install
-   `iThread-0.6.1-Windows-x64-Portable.exe`.
+2. Download `iThread-0.7.0-Windows-x64-Setup.exe`, or use the no-install
+   `iThread-0.7.0-Windows-x64-Portable.exe`.
 3. Compare the file with the SHA-256 value in `SHA256SUMS.txt` on the same release.
 4. The current build is unsigned. If SmartScreen reports an unknown publisher, verify the download
    URL and checksum before deciding whether to run it.
@@ -54,7 +54,20 @@ is remembered and takes priority over automatic detection.
 The template library groups reusable structure templates and complete worked examples in one
 place. Opening either creates your own editable map without changing the built-in content.
 
-## 5. Report a problem
+## 5. Optional device sync (experimental)
+
+Windows v0.7.0 supports a dedicated Nutstore WebDAV directory in **Settings → Device sync**.
+Enter its HTTPS URL and your own application credentials, select maps and sync manually. On another
+Windows computer, use the same directory to find and sync remote maps. Open maps are deferred;
+return to the library first.
+
+No iThread registration or automatic whole-library upload is involved. Closing Settings clears the
+password. History uses your storage quota; divergent copies are kept but not automatically merged.
+Two-physical-device validation is still outstanding, so export backups and start with synthetic maps.
+The web app cannot connect directly to Nutstore; Mac, iPad and Android clients are not available.
+See the [sync guide](SYNC.en.md) for configuration, history limits and other provider requirements.
+
+## 6. Report a problem
 
 Use the bilingual [GitHub issue templates](https://github.com/KIDULTANK/iThread/issues/new/choose)
 and include the iThread and Windows versions, exact reproduction steps, expected and actual results,
