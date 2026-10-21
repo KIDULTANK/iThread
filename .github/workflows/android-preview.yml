@@ -41,7 +41,7 @@ jobs:
       - name: Bundle offline editor
         run: pnpm android:prepare
       - name: Compile APK and run native policy tests
-        run: gradle -p android testDebugUnitTest assembleDebug --no-daemon
+        run: gradle -p android testDebugUnitTest assembleDebug assembleDebugAndroidTest --no-daemon
       - name: Checksums
         run: |
           cd android/app/build/outputs/apk/debug
@@ -53,4 +53,54 @@ jobs:
             android/app/build/outputs/apk/debug/app-debug.apk
             android/app/build/outputs/apk/debug/SHA256SUMS.txt
           if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iThread-Android-instrumented-tests
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  compatibility:
+    needs: build-android
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [29, 35, 36]
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: actions/download-artifact@v4
+        with:
+          name: iThread-Android-instrumented-tests
+          path: test-apks
+      - name: Enable emulator acceleration on this disposable runner
+        run: sudo chmod a+rw /dev/kvm
+      - name: Run tablet runtime checks
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          target: google_apis
+          profile: pixel_c
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: |
+            adb install -r test-apks/debug/app-debug.apk
+            adb install -r test-apks/androidTest/debug/app-debug-androidTest.apk
+            adb shell am instrument -w -r com.ithread.android.preview.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.log
+            ! grep -E 'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=' instrumentation.log
+            grep -q 'OK (' instrumentation.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-runtime-api-${{ matrix.api }}
+          path: instrumentation.log
+          if-no-files-found: warn
           retention-days: 14
