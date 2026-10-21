@@ -494,6 +494,16 @@ export function Toolbar({
 
   return (
     <header className="mm-topbar">
+      {/* Keep the fallback picker mounted even while More is closed (Ctrl+O on Android). */}
+      <input
+        ref={importInputRef}
+        id="mmap-input"
+        type="file"
+        accept=".ithread,.mmst,.mmap,.mmp,.md,.markdown,.json,.opml,.mm,.mmd,.mermaid,.xmind,.smmx,.docx,.xlsx,.itmz,.mind,.mup,.textpack,.textbundle"
+        multiple
+        onChange={io.handleFile}
+        style={{ display: "none" }}
+      />
       {/* ── Row 1 — file / identity ── */}
       <div className="mm-topbar-row mm-topbar-row1">
         <button
@@ -739,22 +749,13 @@ export function Toolbar({
                   type="button"
                   role="menuitem"
                   className="mm-menu-item"
-                  onClick={() => importInputRef.current?.click()}
+                  onClick={() => {
+                    importInputRef.current?.click();
+                    close();
+                  }}
                 >
                   <EditorIcon name="import" size={15} /> {t("toolbar.importFiles")}
                 </button>
-                <input
-                  ref={importInputRef}
-                  id="mmap-input"
-                  type="file"
-                  accept=".ithread,.mmst,.mmap,.mmp,.md,.markdown,.json,.opml,.mm,.mmd,.mermaid,.xmind,.smmx,.docx,.xlsx,.itmz,.mind,.mup,.textpack,.textbundle"
-                  multiple
-                  onChange={(e) => {
-                    io.handleFile(e);
-                    close();
-                  }}
-                  style={{ display: "none" }}
-                />
                 <MenuItem
                   icon={mi("paste")}
                   label={t("cmd.paste-topics")}

@@ -90,6 +90,13 @@ describe("App (integration)", () => {
     expect(screen.getByText("Brainstorm", { exact: true })).toBeTruthy();
     await openEditor(user, container);
     expect(container.querySelector(".mm-editor")).toBeTruthy();
+    // The keyboard Open command needs this input even while the More menu is closed.
+    const picker = container.querySelector<HTMLInputElement>("#mmap-input");
+    expect(picker).toBeTruthy();
+    if (!picker) throw new Error("Persistent file picker is missing");
+    const choose = vi.spyOn(picker, "click").mockImplementation(() => {});
+    fireEvent.keyDown(window, { key: "o", ctrlKey: true });
+    await waitFor(() => expect(choose).toHaveBeenCalledOnce());
   });
 
   it("opens + closes the ⌘K command palette", async () => {

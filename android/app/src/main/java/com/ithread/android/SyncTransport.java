@@ -126,14 +126,25 @@ final class SyncTransport {
     }
 
     static byte[] readBounded(InputStream input, int limit) throws Exception {
-        if (input == null) throw new IllegalArgumentException("Missing input");
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        byte[] buffer = new byte[32768];
-        int read;
-        while ((read = input.read(buffer)) != -1) {
-            if (output.size() + read > limit) throw new IllegalArgumentException("File too large");
-            output.write(buffer, 0, read);
-        }
+        transferBounded(input, limit, output);
         return output.toByteArray();
+    }
+
+    static int checkReadable(InputStream input, int limit) throws Exception {
+        return transferBounded(input, limit, null);
+    }
+
+    private static int transferBounded(InputStream input, int limit, java.io.OutputStream output) throws Exception {
+        if (input == null) throw new IllegalArgumentException("Missing input");
+        byte[] buffer = new byte[32768];
+        int read, total = 0;
+        while ((read = input.read(buffer)) != -1) {
+            if (Thread.currentThread().isInterrupted()) throw new java.io.InterruptedIOException("Cancelled");
+            if (total + read > limit) throw new IllegalArgumentException("File too large");
+            if (output != null) output.write(buffer, 0, read);
+            total += read;
+        }
+        return total;
     }
 }

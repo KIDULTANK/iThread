@@ -11,11 +11,7 @@ describe("Android document exports", () => {
   it("sends exact binary bytes and the filename to the native picker", async () => {
     const saveFile = vi.fn(async () => true);
     Object.defineProperty(window, "iThreadAndroid", { configurable: true, value: { saveFile } });
-    const blob = {
-      size: 3,
-      type: "application/octet-stream",
-      arrayBuffer: async () => new Uint8Array([0, 128, 255]).buffer,
-    } as Blob;
+    const blob = new Blob([new Uint8Array([0, 128, 255])], { type: "application/octet-stream" });
     await saveAndroidBlob(blob, "测试.itmz");
     expect(saveFile).toHaveBeenCalledWith({
       filename: "测试.itmz",
@@ -29,11 +25,19 @@ describe("Android document exports", () => {
       configurable: true,
       value: { saveFile: async () => false },
     });
-    await saveAndroidBlob(
-      { size: 0, type: "", arrayBuffer: async () => new ArrayBuffer(0) } as Blob,
-      "empty.ithread",
-    );
+    expect(await saveAndroidBlob(new Blob([]), "empty.ithread")).toBe(false);
     expect(alert).not.toHaveBeenCalled();
+  });
+  it.each(["error", "abort"])("does not open a picker after a reader %s", async (kind) => {
+    const alert = vi.spyOn(window, "alert").mockImplementation(() => {});
+    const saveFile = vi.fn();
+    Object.defineProperty(window, "iThreadAndroid", { configurable: true, value: { saveFile } });
+    vi.spyOn(FileReader.prototype, "readAsDataURL").mockImplementation(function (this: FileReader) {
+      this.dispatchEvent(new Event(kind));
+    });
+    expect(await saveAndroidBlob(new Blob(["sample"]), "sample.ithread")).toBe(false);
+    expect(saveFile).not.toHaveBeenCalled();
+    expect(alert).toHaveBeenCalledOnce();
   });
   it("reports oversized exports before allocating a base64 payload", async () => {
     const alert = vi.spyOn(window, "alert").mockImplementation(() => {});

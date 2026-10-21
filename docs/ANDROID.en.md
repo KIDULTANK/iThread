@@ -12,6 +12,12 @@ client work. CI covers tablet emulators on API 29, 35 and 36, distinguishing an 
 prompt from a running editor. Runtime checks exercise bridge roundtrips, host rejection, rotation,
 local-data recreation and document-export cancellation where the engine is supported.
 
+Dev.2 adds artificial Markdown, `.itmz` and 5,001-topic import→editor→native export checks.
+Only external picker results are stubbed; parsing, keyboard commands and native writes run normally.
+API 35/36 also install dev.2 over dev.1 without clearing data and check maps, versions, recovery drafts,
+sync records, conflicts and language settings. Consult the corresponding workflow logs for results.
+These checks do not claim physical-device or live Windows↔Android sync acceptance.
+
 Before public beta distribution: stable backed-up signing keys, non-destructive upgrade verification,
 several vendor devices, real-file roundtrips, IME/keyboard/large-map checks, offline recovery and
 Windows↔Android sync acceptance. Emulator checks alone do not meet those criteria; debug artifacts
@@ -21,6 +27,8 @@ The APK bundles the shared editor and existing iThread icon for offline use. Sys
 handle import/export without broad storage permissions. Drag the canvas to pan, pinch to zoom,
 double-tap topics to edit, and long-press for actions. Chinese/English and saved language preferences
 are shared with the editor. Native Nutstore requests use the same immutable history protocol as Windows.
+Dev.2 moves native message parsing and export decoding off the UI thread, uses streaming import
+preflight checks, and fixes Ctrl+O when the More menu is closed.
 
 Only the bundled document's main frame can access the origin-restricted native message listener.
 External links leave the app; arbitrary native URLs, redirects, cleartext traffic, TLS bypass and
@@ -47,6 +55,8 @@ Configure `ANDROID_HOME` or ignored `android/local.properties`. The APK is at
 not a public Release. Debug certificates may differ between build machines; export maps before any
 reinstall. A stable, backed-up Android signing key is required before ongoing public distribution;
 Windows SignPath signing is unrelated.
+The CI upgrade check builds both APKs with the same temporary debug key within one run; it does not
+make debug APKs from different runs upgrade-compatible or establish production signing.
 
 Release signing reads only `ITHREAD_ANDROID_KEYSTORE`, `ITHREAD_ANDROID_STORE_PASSWORD`,
 `ITHREAD_ANDROID_KEY_ALIAS` and `ITHREAD_ANDROID_KEY_PASSWORD` from the environment. Missing any value

@@ -51,4 +51,11 @@ public final class SyncPolicyTest {
         assertThrows(IllegalArgumentException.class,
                 () -> SyncTransport.readBounded(new ByteArrayInputStream(bytes), bytes.length - 1));
     }
+    @Test public void preflightCountsWithoutKeepingASecondFileCopy() throws Exception {
+        byte[] bytes = new byte[32769];
+        assertEquals(bytes.length, SyncTransport.checkReadable(new ByteArrayInputStream(bytes), bytes.length));
+        assertThrows(IllegalArgumentException.class,
+                () -> SyncTransport.checkReadable(new ByteArrayInputStream(bytes), bytes.length - 1));
+        assertThrows(IllegalArgumentException.class, () -> SyncTransport.checkReadable(null, 1));
+    }
 }

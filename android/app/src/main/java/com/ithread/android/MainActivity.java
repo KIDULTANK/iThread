@@ -41,11 +41,14 @@ public final class MainActivity extends Activity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final ThreadPoolExecutor workers = new ThreadPoolExecutor(2, 2, 30, TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(8));
+    // Decoding must not occupy the UI thread or queue behind slow network calls.
+    private final ThreadPoolExecutor decoder = new ThreadPoolExecutor(1, 1, 30, TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(2));
     private ValueCallback<Uri[]> fileChooser;
     private byte[] saveBytes;
     private String saveId;
     private JavaScriptReplyProxy saveReply;
-    private boolean destroyed;
+    private volatile boolean destroyed;
     private final Runnable expiry = new Runnable() {
         @Override public void run() { sync.expire(); handler.postDelayed(this, 30000); }
     };
@@ -123,37 +126,45 @@ public final class MainActivity extends Activity {
                 (view, message, sourceOrigin, mainFrame, reply) -> {
                     if (!mainFrame || !SyncPolicy.ORIGIN.equals(sourceOrigin.toString())
                             || !SyncPolicy.appDocument(view.getUrl())) return;
-                    try {
-                        String raw = message.getData();
-                        if (raw == null || raw.length() > 24 * 1024 * 1024) return;
-                        JSONObject request = new JSONObject(raw);
-                        String id = request.getString("id"), method = request.getString("method");
-                        if (!id.matches("[a-f0-9-]{36}")) return;
-                        JSONObject input = request.getJSONObject("input");
-                        if (method.equals("syncCloseAll")) { sync.closeAll(); respond(reply, id, true, false); return; }
-                        if (method.equals("syncDisconnect")) {
-                            respond(reply, id, sync.close(input.getString("token")), false); return;
-                        }
-                        if (method.equals("saveFile")) { saveFile(input, id, reply); return; }
-                        try {
-                            workers.execute(() -> {
-                                try {
-                                    Object result = switch (method) {
-                                        case "syncConnect" -> sync.connect(input);
-                                        case "syncRequest" -> sync.request(input);
-                                        default -> throw new IllegalArgumentException("Unknown method");
-                                    };
-                                    respond(reply, id, result, false);
-                                } catch (Exception ignored) { respond(reply, id, null, true); }
-                            });
-                        } catch (Exception ignored) { respond(reply, id, null, true); }
-                    } catch (Exception ignored) { /* Never log bridge messages or credentials. */ }
+                    String raw = message.getData();
+                    if (raw == null || raw.length() > 24 * 1024 * 1024) return;
+                    try { decoder.execute(() -> dispatch(raw, reply)); }
+                    catch (Exception ignored) {
+                        // IDs are first in the bundled bootstrap's envelope. Bound the scan so a
+                        // rejected large message never gets decoded on the UI thread.
+                        java.util.regex.Matcher id = java.util.regex.Pattern.compile("\"id\"\\s*:\\s*\"([a-f0-9-]{36})\"")
+                                .matcher(raw.substring(0, Math.min(raw.length(), 128)));
+                        if (id.find()) respond(reply, id.group(1), null, true);
+                    }
                 });
         handler.post(expiry);
         web.loadUrl(SyncPolicy.DOCUMENT);
         if (android.os.Build.VERSION.SDK_INT >= 33)
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
                     android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::handleBack);
+    }
+
+    private void dispatch(String raw, JavaScriptReplyProxy reply) {
+        if (destroyed) return;
+        try {
+            JSONObject request = new JSONObject(raw);
+            String id = request.getString("id"), method = request.getString("method");
+            if (!id.matches("[a-f0-9-]{36}")) return;
+            JSONObject input = request.getJSONObject("input");
+            try {
+                if (method.equals("syncCloseAll")) { sync.closeAll(); respond(reply, id, true, false); return; }
+                if (method.equals("syncDisconnect")) {
+                    respond(reply, id, sync.close(input.getString("token")), false); return;
+                }
+                if (method.equals("syncConnect")) { respond(reply, id, sync.connect(input), false); return; }
+                if (method.equals("saveFile")) { saveFile(input, id, reply); return; }
+                if (!method.equals("syncRequest")) throw new IllegalArgumentException("Unknown method");
+                workers.execute(() -> {
+                    try { respond(reply, id, sync.request(input), false); }
+                    catch (Exception ignored) { respond(reply, id, null, true); }
+                });
+            } catch (Exception ignored) { respond(reply, id, null, true); }
+        } catch (Exception ignored) { /* Never log bridge messages or credentials. */ }
     }
 
     private static String mime(String path) {
@@ -173,19 +184,22 @@ public final class MainActivity extends Activity {
     }
 
     private void respond(JavaScriptReplyProxy reply, String id, Object value, boolean error) {
+        final String encoded;
+        try {
+            JSONObject result = new JSONObject().put("id", id);
+            if (error) result.put("error", "Android operation failed. Check connection, size limit and credentials.");
+            else result.put("value", value == null ? JSONObject.NULL : value);
+            encoded = result.toString();
+        } catch (Exception ignored) { return; }
         handler.post(() -> {
             if (destroyed) return;
             try {
-                JSONObject result = new JSONObject().put("id", id);
-                if (error) result.put("error", "Android operation failed. Check connection, size limit and credentials.");
-                else result.put("value", value == null ? JSONObject.NULL : value);
-                reply.postMessage(result.toString());
+                reply.postMessage(encoded);
             } catch (Exception ignored) { /* Closing/navigating the app invalidates the reply channel. */ }
         });
     }
 
     private void saveFile(JSONObject input, String id, JavaScriptReplyProxy reply) {
-        if (saveId != null) { respond(reply, id, null, true); return; }
         try {
             String name = input.getString("filename").replaceAll("[\\\\/:*?\"<>|\\p{Cntrl}]", "_");
             if (name.trim().isEmpty() || name.length() > 240) throw new IllegalArgumentException("Invalid filename");
@@ -193,11 +207,20 @@ public final class MainActivity extends Activity {
             if (bytes.length > SyncPolicy.MAX_BYTES) throw new IllegalArgumentException("Export too large");
             String mime = input.getString("mime");
             if (!mime.matches("[a-zA-Z0-9.+-]+/[a-zA-Z0-9.+-]+")) mime = "application/octet-stream";
-            saveBytes = bytes; saveId = id; saveReply = reply;
-            startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType(mime)
-                    .addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, name), 2);
+            final String type = mime;
+            handler.post(() -> {
+                if (destroyed) return;
+                if (saveId != null) { respond(reply, id, null, true); return; }
+                saveBytes = bytes; saveId = id; saveReply = reply;
+                try {
+                    startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType(type)
+                            .addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, name), 2);
+                } catch (Exception ignored) {
+                    saveBytes = null; saveId = null; saveReply = null;
+                    respond(reply, id, null, true);
+                }
+            });
         } catch (Exception ignored) {
-            saveBytes = null; saveId = null; saveReply = null;
             respond(reply, id, null, true);
         }
     }
@@ -215,12 +238,12 @@ public final class MainActivity extends Activity {
                         for (Uri uri : uris) {
                             if (!"content".equals(uri.getScheme())) throw new IllegalArgumentException("Invalid file");
                             try (InputStream input = getContentResolver().openInputStream(uri)) {
-                                SyncTransport.readBounded(input, SyncPolicy.MAX_BYTES);
+                                SyncTransport.checkReadable(input, SyncPolicy.MAX_BYTES);
                             }
                         }
                         handler.post(() -> { if (!destroyed) callback.onReceiveValue(uris); });
                     } catch (Exception ignored) {
-                        handler.post(() -> { callback.onReceiveValue(null); showFailure(); });
+                        handler.post(() -> { if (!destroyed) { callback.onReceiveValue(null); showFailure(); } });
                     }
                 });
             } catch (Exception ignored) { callback.onReceiveValue(null); showFailure(); }
@@ -264,7 +287,7 @@ public final class MainActivity extends Activity {
         }
     }
     @Override protected void onDestroy() {
-        destroyed = true; handler.removeCallbacks(expiry); sync.setEnabled(false); workers.shutdownNow();
+        destroyed = true; handler.removeCallbacks(expiry); sync.setEnabled(false); decoder.shutdownNow(); workers.shutdownNow();
         if (fileChooser != null) fileChooser.onReceiveValue(null);
         if (web != null) web.destroy();
         saveBytes = null; saveId = null; saveReply = null;

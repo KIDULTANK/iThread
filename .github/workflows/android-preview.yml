@@ -7,6 +7,7 @@ on:
     paths:
       - "android/**"
       - "src/**"
+      - "test/**"
       - "scripts/android-prepare.mjs"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -14,6 +15,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: android-preview-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-android:
@@ -62,6 +67,24 @@ jobs:
             android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
           if-no-files-found: error
           retention-days: 14
+      # Build both APKs on the same runner with the same temporary debug keystore.
+      # This verifies upgrade persistence, not stable production signing across runs.
+      - uses: actions/checkout@v4
+        with:
+          ref: 0afc12f9eefd7fcb303d5efc13dd727c1036c43f
+          path: upgrade-baseline
+      - name: Build previous preview for install-over upgrade checks
+        working-directory: upgrade-baseline
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm android:prepare
+          gradle -p android assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iThread-Android-upgrade-baseline
+          path: upgrade-baseline/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
 
   compatibility:
     needs: build-android
@@ -80,6 +103,10 @@ jobs:
         with:
           name: iThread-Android-instrumented-tests
           path: test-apks
+      - uses: actions/download-artifact@v4
+        with:
+          name: iThread-Android-upgrade-baseline
+          path: baseline-apk
       - name: Enable emulator acceleration on this disposable runner
         run: sudo chmod a+rw /dev/kvm
       - name: Run tablet runtime checks
@@ -92,15 +119,22 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           script: |
-            adb install -r test-apks/debug/app-debug.apk
+            if [ '${{ matrix.api }}' -ge 35 ]; then adb install -r baseline-apk/app-debug.apk; else adb install -r test-apks/debug/app-debug.apk; fi
             adb install -r test-apks/androidTest/debug/app-debug-androidTest.apk
-            adb shell am instrument -w -r com.ithread.android.preview.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.log
+            if [ '${{ matrix.api }}' -ge 35 ]; then adb shell am instrument -w -r -e class com.ithread.android.UpgradeStorageTest#seedBaselineData com.ithread.android.preview.test/androidx.test.runner.AndroidJUnitRunner | tee upgrade-seed.log; fi
+            if [ '${{ matrix.api }}' -ge 35 ]; then ! grep -E 'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|INSTRUMENTATION_STATUS_CODE: -4' upgrade-seed.log && grep -q 'OK (1 test)' upgrade-seed.log; fi
+            adb install -r test-apks/debug/app-debug.apk
+            if [ '${{ matrix.api }}' -ge 35 ]; then adb shell am instrument -w -r -e class com.ithread.android.UpgradeStorageTest#verifyAfterUpgrade com.ithread.android.preview.test/androidx.test.runner.AndroidJUnitRunner | tee upgrade-verify.log; fi
+            if [ '${{ matrix.api }}' -ge 35 ]; then ! grep -E 'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|INSTRUMENTATION_STATUS_CODE: -4' upgrade-verify.log && grep -q 'OK (1 test)' upgrade-verify.log; fi
+            adb shell am instrument -w -r -e notClass com.ithread.android.UpgradeStorageTest com.ithread.android.preview.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.log
             ! grep -E 'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=' instrumentation.log
             grep -q 'OK (' instrumentation.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: android-runtime-api-${{ matrix.api }}
-          path: instrumentation.log
+          path: |
+            instrumentation.log
+            upgrade-*.log
           if-no-files-found: warn
           retention-days: 14
