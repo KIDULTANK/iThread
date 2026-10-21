@@ -1,6 +1,5 @@
 package com.ithread.android;
 
-import android.content.pm.ActivityInfo;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
@@ -97,10 +96,15 @@ public final class TabletSmokeTest {
     @Test public void rotatesAndRetainsLocalDataAcrossRecreation() throws Exception {
         ready();
         evaluate("localStorage.setItem('ithread-android-smoke','synthetic'); true");
-        scenario.onActivity(activity -> activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE));
-        waitTrue("window.innerWidth > window.innerHeight");
-        scenario.onActivity(activity -> activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
-        waitTrue("window.innerHeight > window.innerWidth");
+        UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+        device.setOrientationNatural();
+        Thread.sleep(500);
+        String natural = evaluate("window.innerWidth > window.innerHeight");
+        device.setOrientationLeft();
+        waitTrue("(window.innerWidth > window.innerHeight) !== " + natural);
+        device.setOrientationNatural();
+        waitTrue("(window.innerWidth > window.innerHeight) === " + natural);
+        device.unfreezeRotation();
         scenario.recreate();
         ready();
         assertEquals("true", evaluate("localStorage.getItem('ithread-android-smoke') === 'synthetic'"));
@@ -112,8 +116,14 @@ public final class TabletSmokeTest {
         evaluate("window.__exportSmoke = null; window.iThreadAndroid.saveFile({filename:'synthetic.ithread',mime:'application/json',base64:'e30='}).then(value => window.__exportSmoke = value, () => window.__exportSmoke = 'failed'); true");
         UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
         device.waitForIdle();
-        Thread.sleep(1000);
-        device.pressBack();
+        String app = InstrumentationRegistry.getInstrumentation().getTargetContext().getPackageName();
+        long end = System.nanoTime() + TimeUnit.SECONDS.toNanos(8);
+        while (app.equals(device.getCurrentPackageName()) && System.nanoTime() < end) Thread.sleep(200);
+        assertNotEquals("System document picker did not open", app, device.getCurrentPackageName());
+        for (int at = 0; at < 4 && !app.equals(device.getCurrentPackageName()); at++) {
+            device.pressBack();
+            Thread.sleep(500);
+        }
         waitTrue("window.__exportSmoke === false");
     }
 }
