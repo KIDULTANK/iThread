@@ -42,9 +42,18 @@ beforeEach(() => {
   __resetPwaUpdateForTest();
   removeServiceWorker();
 });
-afterEach(removeServiceWorker);
+afterEach(() => {
+  removeServiceWorker();
+  Object.defineProperty(window, "iThreadAndroid", { configurable: true, value: undefined });
+});
 
 describe("initPwaUpdateToast", () => {
+  it("does not let a service worker replace bundled Android code", async () => {
+    Object.defineProperty(window, "iThreadAndroid", { configurable: true, value: {} });
+    initPwaUpdateToast(showToast);
+    expect(__getRegisterCount()).toBe(0);
+    expect(await checkForUpdate()).toBe("unsupported");
+  });
   it("registers both SW lifecycle callbacks", () => {
     initPwaUpdateToast(showToast);
     const opts = __getLastRegisterSWOptions();

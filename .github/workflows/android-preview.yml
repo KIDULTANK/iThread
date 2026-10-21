@@ -37,7 +37,7 @@ jobs:
           gradle-version: "8.13"
       - run: pnpm install --frozen-lockfile
       - name: Check shared editor
-        run: pnpm typecheck && pnpm exec vitest run test/android-bridge.test.ts test/android-export.test.ts test/use-touch-context-menu.test.tsx test/sync-connection.test.ts
+        run: pnpm typecheck && pnpm exec vitest run test/android-bridge.test.ts test/android-export.test.ts test/use-touch-context-menu.test.tsx test/sync-connection.test.ts test/use-disk-file.test.tsx test/pwaUpdate.test.ts
       - name: Bundle offline editor
         run: pnpm android:prepare
       - name: Compile APK and run native policy tests

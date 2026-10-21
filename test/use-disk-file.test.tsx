@@ -62,10 +62,31 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocked.supportsFileSystemAccess.mockReturnValue(true);
   mocked.ensureWritePermission.mockResolvedValue(true);
+  mocked.downloadMapFile.mockResolvedValue(true);
 });
 afterEach(() => vi.restoreAllMocks?.());
 
 describe("useDiskFile — save / save-as", () => {
+  it("does not announce a completed export before the native document picker finishes", async () => {
+    mocked.supportsFileSystemAccess.mockReturnValue(false);
+    let finish: (value: boolean) => void = () => {};
+    mocked.downloadMapFile.mockReturnValue(
+      new Promise<boolean>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const { result, deps } = setup();
+    let saving: Promise<void> | undefined;
+    act(() => {
+      saving = result.current.saveFileAs();
+    });
+    expect(deps.showHint).not.toHaveBeenCalled();
+    await act(async () => {
+      finish(false);
+      await saving;
+    });
+    expect(deps.showHint).not.toHaveBeenCalled();
+  });
   it("Save As writes to a picked handle, binds it, and clears dirty", async () => {
     mocked.pickSaveHandle.mockResolvedValue(fakeHandle("plan.mmst"));
     const { result, deps } = setup();

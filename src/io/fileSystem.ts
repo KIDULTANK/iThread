@@ -144,9 +144,9 @@ export async function writeMapToHandle(
 }
 
 /** Fallback download (browsers without the save picker): emit the doc as an `.ithread` download. */
-export function downloadMapFile(doc: MindMapDoc): void {
+export function downloadMapFile(doc: MindMapDoc): Promise<boolean> {
   const blob = new Blob([serializeDoc(doc)], { type: NATIVE_MIME });
-  downloadBlob(blob, suggestedFileName(doc));
+  return downloadBlob(blob, suggestedFileName(doc));
 }
 
 /** A user-cancelled picker rejects with an AbortError — treated as "no selection", not an error. */

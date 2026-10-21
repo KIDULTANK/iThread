@@ -5,7 +5,7 @@ registerMessages("en", {
 });
 
 /** Android exports use the system document picker, not an unsupported WebView blob download. */
-export async function saveAndroidBlob(blob: Blob, filename: string): Promise<void> {
+export async function saveAndroidBlob(blob: Blob, filename: string): Promise<boolean> {
   try {
     if (blob.size > 16 * 1024 * 1024)
       throw new Error("Export exceeds the 16 MiB Android preview limit");
@@ -13,12 +13,14 @@ export async function saveAndroidBlob(blob: Blob, filename: string): Promise<voi
     let binary = "";
     for (let at = 0; at < bytes.length; at += 32768)
       binary += String.fromCharCode(...bytes.subarray(at, at + 32768));
-    await window.iThreadAndroid?.saveFile({
+    if (!window.iThreadAndroid) throw new Error("Android export unavailable");
+    return await window.iThreadAndroid.saveFile({
       filename,
       mime: blob.type || "application/octet-stream",
       base64: btoa(binary),
     });
   } catch (error) {
     window.alert(t("android.exportFailed", { error: String(error) }));
+    return false;
   }
 }

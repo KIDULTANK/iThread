@@ -175,8 +175,7 @@ export function useDiskFile({
       return;
     }
     if (!supportsFileSystemAccess()) {
-      downloadMapFile(d);
-      showHint(`Downloaded ${suggestedFileName(d)}`);
+      if (await downloadMapFile(d)) showHint(`Downloaded ${suggestedFileName(d)}`);
       return;
     }
     try {
@@ -223,8 +222,7 @@ export function useDiskFile({
     const handle = handleCache.current.get(d.id);
     if (!handle) {
       if (!supportsFileSystemAccess()) {
-        downloadMapFile(d);
-        showHint(`Downloaded ${suggestedFileName(d)}`);
+        if (await downloadMapFile(d)) showHint(`Downloaded ${suggestedFileName(d)}`);
         return;
       }
       await saveFileAs();
