@@ -8,8 +8,23 @@ export interface EditorKeyEvent {
   key: string;
   ctrlKey: boolean;
   metaKey: boolean;
+  isComposing?: boolean;
+  keyCode?: number;
+  nativeEvent?: { isComposing?: boolean; keyCode?: number };
   preventDefault: () => void;
   stopPropagation: () => void;
+}
+
+/** Android IMEs may report a Process/229 key without setting isComposing on the final keydown. */
+export function isCompositionKey(
+  e: Pick<EditorKeyEvent, "isComposing" | "keyCode" | "nativeEvent">,
+): boolean {
+  return !!(
+    e.isComposing ||
+    e.nativeEvent?.isComposing ||
+    e.keyCode === 229 ||
+    e.nativeEvent?.keyCode === 229
+  );
 }
 
 /** Side-effecting actions the editor can take, supplied by TopicNode (kept out of this pure router). */
@@ -29,6 +44,7 @@ export interface EditorKeyActions {
  *  default prevented), false when it should fall through to normal text entry. Pure aside from calling
  *  the supplied actions + `preventDefault`. */
 export function handleEditorKeyDown(e: EditorKeyEvent, actions: EditorKeyActions): boolean {
+  if (isCompositionKey(e)) return false;
   // Inline formatting: Ctrl/Cmd + B / I / U. The key letter IS the semantic tag.
   if ((e.ctrlKey || e.metaKey) && /^[biu]$/i.test(e.key)) {
     e.preventDefault();

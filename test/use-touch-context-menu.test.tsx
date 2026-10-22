@@ -24,6 +24,31 @@ afterEach(() => {
 });
 
 describe("touch topic menus", () => {
+  it.each([
+    "blur",
+    "visibilitychange",
+    "pointerup",
+    "pointercancel",
+    "pointerdown",
+    "scroll",
+    "pointermove",
+  ])("cancels a held press when %s occurs outside the canvas", (type) => {
+    vi.useFakeTimers();
+    const open = vi.fn();
+    const { result } = renderHook(() => useTouchContextMenu(open));
+    act(() => result.current.onPointerDownCapture(event()));
+    act(() => {
+      const dispatched = new Event(type);
+      Object.defineProperties(dispatched, {
+        pointerId: { value: 2 },
+        clientX: { value: 90 },
+        clientY: { value: 30 },
+      });
+      (type === "visibilitychange" ? document : window).dispatchEvent(dispatched);
+      vi.advanceTimersByTime(1000);
+    });
+    expect(open).not.toHaveBeenCalled();
+  });
   it("opens after a stationary press and consumes the following click", () => {
     vi.useFakeTimers();
     const open = vi.fn();

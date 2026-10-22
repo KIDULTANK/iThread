@@ -15,7 +15,39 @@ export function useTouchContextMenu(open: (id: string, x: number, y: number) => 
     if (gesture.current) clearTimeout(gesture.current.timer);
     gesture.current = null;
   }, []);
-  useEffect(() => cancel, [cancel]);
+  useEffect(() => {
+    const reset = () => {
+      cancel();
+      suppressClick.current = null;
+    };
+    const move = (event: globalThis.PointerEvent) => {
+      const current = gesture.current;
+      if (
+        current &&
+        (event.pointerId !== current.pointer ||
+          Math.hypot(event.clientX - current.x, event.clientY - current.y) > 10)
+      )
+        cancel();
+    };
+    // A second finger or pointer release can land outside this canvas, especially in split-screen.
+    window.addEventListener("pointerdown", cancel, true);
+    window.addEventListener("pointermove", move, true);
+    window.addEventListener("pointerup", cancel, true);
+    window.addEventListener("pointercancel", cancel, true);
+    window.addEventListener("blur", reset);
+    window.addEventListener("scroll", cancel, true);
+    document.addEventListener("visibilitychange", reset);
+    return () => {
+      cancel();
+      window.removeEventListener("pointerdown", cancel, true);
+      window.removeEventListener("pointermove", move, true);
+      window.removeEventListener("pointerup", cancel, true);
+      window.removeEventListener("pointercancel", cancel, true);
+      window.removeEventListener("blur", reset);
+      window.removeEventListener("scroll", cancel, true);
+      document.removeEventListener("visibilitychange", reset);
+    };
+  }, [cancel]);
   return {
     onPointerDownCapture(event: PointerEvent<HTMLElement>) {
       cancel();

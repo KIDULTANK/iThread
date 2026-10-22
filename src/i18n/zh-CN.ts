@@ -5,6 +5,7 @@ import { registerMessages } from "./registry";
 // Unlisted specialist strings fall back to the English source catalogue, so a newly-added feature can
 // never render a blank label while its Chinese wording is being reviewed.
 export const ZH_CN: Catalogue = {
+  "panel.done": "完成",
   "android.exportFailed": "导出失败，本机导图仍保留。{error}",
   "sync.historyHelp":
     "坚果云在 Windows 桌面端使用独立历史版本，每次修改会增加云端占用。网页版仍要求服务器允许浏览器跨域访问。",

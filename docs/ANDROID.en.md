@@ -39,6 +39,13 @@ clearing the library; unfinished edits may not recover. CI terminates a real ren
 Retry preserves stored maps and settings. Copied diagnostics contain only these environment fields
 and fixed event codes, not maps, paths, device IDs or credentials; no automatic upload.
 
+Dev.4 adds finger-sized Done/Cancel actions outside the zoomed canvas, fixed at the bottom of the
+available app viewport. Done keeps the edited topic selected and accepts an empty new topic.
+IME composition (including Android Process/229 events) is not interpreted as submit, formatting or
+autocomplete commands; finish composition before using Done/Cancel. Automated composition events
+do not certify every vendor's real input method. Pending long-press menus cancel on outside pointer
+release, additional fingers, scrolling or leaving the app.
+
 Only the bundled document's main frame can access the origin-restricted native message listener.
 External links leave the app; arbitrary native URLs, redirects, cleartext traffic, TLS bypass and
 `addJavascriptInterface` are not used. Credentials remain in memory, with native sessions closed on

@@ -42,7 +42,7 @@ jobs:
           gradle-version: "8.13"
       - run: pnpm install --frozen-lockfile
       - name: Check shared editor
-        run: pnpm typecheck && pnpm exec vitest run test/android-bridge.test.ts test/android-export.test.ts test/use-touch-context-menu.test.tsx test/sync-connection.test.ts test/use-disk-file.test.tsx test/fileSystem.test.ts test/pwaUpdate.test.ts test/toolbar.test.tsx test/app-integration.test.tsx --maxWorkers=2 --minWorkers=1
+        run: pnpm typecheck && pnpm exec vitest run test/android-bridge.test.ts test/android-export.test.ts test/use-touch-context-menu.test.tsx test/editor-keys.test.ts test/flowmindmap.test.tsx test/sync-connection.test.ts test/use-disk-file.test.tsx test/fileSystem.test.ts test/pwaUpdate.test.ts test/toolbar.test.tsx test/app-integration.test.tsx --maxWorkers=2 --minWorkers=1
       - name: Bundle offline editor
         run: pnpm android:prepare
       - name: Compile APK and run native policy tests
@@ -71,7 +71,7 @@ jobs:
       # This verifies upgrade persistence, not stable production signing across runs.
       - uses: actions/checkout@v4
         with:
-          ref: d0953dbd44319dd34356029eff62e4112449d383
+          ref: ce05c9d45d05aa1a3ff3a13b5a9884b275ab200b
           path: upgrade-baseline
       - name: Build previous preview for install-over upgrade checks
         working-directory: upgrade-baseline

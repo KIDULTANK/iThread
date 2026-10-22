@@ -164,3 +164,38 @@ html[data-platform="android"] .react-flow__node:not(:has(input, textarea)) {
   user-select: none;
   -webkit-touch-callout: none;
 }
+
+.mm-android-edit-actions {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  z-index: 80;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--ed-border, #e4e4e7);
+  border-radius: 16px;
+  background: var(--ed-card, #fff);
+  box-shadow: var(--ed-shadow-pop, 0 4px 24px rgba(0, 0, 0, 0.15));
+}
+.mm-android-edit-actions button {
+  min-height: 44px;
+  min-width: 88px;
+  padding: 8px 20px;
+  border: 1px solid var(--ed-border, #e4e4e7);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ed-ink, #23211c);
+  font: inherit;
+  touch-action: manipulation;
+}
+.mm-android-edit-actions .mm-android-edit-done {
+  background: var(--ed-accent, #be3d32);
+  color: #fff;
+  border-color: transparent;
+}
+.mm-android-edit-actions button:disabled {
+  opacity: 0.5;
+}

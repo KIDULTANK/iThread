@@ -30,8 +30,9 @@ import {
 } from "../../wrapWidth";
 import { MARKER_DND_TYPE } from "../contract";
 import "./messages"; // registers the canvas catalogue into this (lazy) chunk
+import { AndroidEditActions } from "./AndroidEditActions";
 import { useEditing } from "./editing";
-import { handleEditorKeyDown } from "./editorKeys";
+import { handleEditorKeyDown, isCompositionKey } from "./editorKeys";
 import { matchBorderColor } from "./geometry";
 import {
   type LinkCandidate,
@@ -347,6 +348,16 @@ function TopicNodeImpl({ id, data, selected, dragging }: NodeProps<TopicNodeT>) 
   // with that character (caret at the end) instead of the existing topic + select-all.
   const seed = isEditing ? (editing?.seed ?? null) : null;
   const editRef = useRef<HTMLDivElement>(null);
+  const composingRef = useRef(false);
+  const [composing, setComposing] = useState(false);
+  const finalizedRef = useRef(false);
+  const finishEdit = (accept: boolean) => {
+    if (finalizedRef.current || composingRef.current) return;
+    finalizedRef.current = true;
+    const html = editRef.current?.innerHTML ?? "";
+    if (accept) editing?.commitEdit(id, html, true);
+    else editing?.cancelEdit(html);
+  };
   // Hover state drives the lift/shadow (#5) and reveals the ＋ add affordances (#1).
   const [hovered, setHovered] = useState(false);
   // Is more than one node selected? A branch/marquee select would otherwise pop a per-node action bar
@@ -470,6 +481,7 @@ function TopicNodeImpl({ id, data, selected, dragging }: NodeProps<TopicNodeT>) 
   // Recompute both menus from the editor's current text (+ caret for the link one). Slash wins: a
   // leading "/" and a mid-text "[["/"@" can't sensibly coexist, so only one menu is ever open.
   const syncMenus = useCallback(() => {
+    if (composingRef.current) return;
     const el = editRef.current;
     const text = el?.textContent ?? "";
     if (dismissedRef.current !== null) {
@@ -558,6 +570,9 @@ function TopicNodeImpl({ id, data, selected, dragging }: NodeProps<TopicNodeT>) 
   // not re-render over the user's keystrokes, so the text is set imperatively, once).
   useEffect(() => {
     if (!isEditing || !editRef.current) return;
+    finalizedRef.current = false;
+    composingRef.current = false;
+    setComposing(false);
     const el = editRef.current;
     // Type-to-edit seeds with the typed character (plain text); otherwise seed with the rich HTML so
     // existing formatting stays editable, else the plain topic.
@@ -785,6 +800,13 @@ function TopicNodeImpl({ id, data, selected, dragging }: NodeProps<TopicNodeT>) 
         editing?.dropMarker(id, marker);
       }}
     >
+      {isEditing && window.iThreadAndroid ? (
+        <AndroidEditActions
+          composing={composing}
+          onDone={() => finishEdit(true)}
+          onCancel={() => finishEdit(false)}
+        />
+      ) : null}
       <Handle type="target" id="tl" position={Position.Left} style={HANDLE} />
       <Handle type="target" id="tr" position={Position.Right} style={HANDLE} />
       <Handle type="source" id="sl" position={Position.Left} style={HANDLE} />
@@ -934,6 +956,7 @@ function TopicNodeImpl({ id, data, selected, dragging }: NodeProps<TopicNodeT>) 
               <span
                 ref={editRef}
                 contentEditable
+                enterKeyHint="done"
                 suppressContentEditableWarning
                 // contentEditable already exposes an implicit textbox role + focusability; just name it.
                 aria-label={
@@ -947,7 +970,23 @@ function TopicNodeImpl({ id, data, selected, dragging }: NodeProps<TopicNodeT>) 
                 onInput={syncMenus}
                 onKeyUp={syncMenus}
                 onClick={syncMenus}
+                onCompositionStart={() => {
+                  composingRef.current = true;
+                  setComposing(true);
+                  setSlashItems([]);
+                  setLinkItems([]);
+                  setTagItems([]);
+                }}
+                onCompositionEnd={() => {
+                  composingRef.current = false;
+                  setComposing(false);
+                  syncMenus();
+                }}
                 onKeyDown={(e) => {
+                  if (composingRef.current || isCompositionKey(e)) {
+                    e.stopPropagation();
+                    return;
+                  }
                   // An open menu owns Arrow/Enter/Tab/Escape; anything else falls through to normal
                   // typing (and re-filters via onInput/onKeyUp). Slash and link menus never co-exist.
                   if (slashOpen) {
@@ -991,12 +1030,20 @@ function TopicNodeImpl({ id, data, selected, dragging }: NodeProps<TopicNodeT>) 
                     format: (tag) => {
                       if (editRef.current) toggleInline(editRef.current, tag);
                     },
-                    commit: () => editing?.commitEdit(id, html, true),
-                    commitAndAdd: (what) => editing?.commitAndAdd(id, html, what),
-                    cancel: () => editing?.cancelEdit(html),
+                    commit: () => finishEdit(true),
+                    commitAndAdd: (what) => {
+                      finalizedRef.current = true;
+                      editing?.commitAndAdd(id, html, what);
+                    },
+                    cancel: () => finishEdit(false),
                   });
                 }}
-                onBlur={() => editing?.commitEdit(id, editRef.current?.innerHTML ?? "")}
+                onBlur={() => {
+                  if (!finalizedRef.current) {
+                    finalizedRef.current = true;
+                    editing?.commitEdit(id, editRef.current?.innerHTML ?? "");
+                  }
+                }}
               />
               {slashOpen ? (
                 // Plain buttons (not an ARIA listbox): keyboard focus stays in the editor — the menu is

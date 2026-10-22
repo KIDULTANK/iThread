@@ -25,6 +25,21 @@ const actions = (): EditorKeyActions & {
 } => ({ format: vi.fn(), commit: vi.fn(), commitAndAdd: vi.fn(), cancel: vi.fn() });
 
 describe("handleEditorKeyDown", () => {
+  it.each([
+    { key: "Enter", isComposing: true },
+    { key: "Enter", nativeEvent: { isComposing: true } },
+    { key: "Enter", keyCode: 229 },
+    { key: "Enter", nativeEvent: { keyCode: 229 } },
+    { key: "Escape", isComposing: true },
+    { key: "Tab", isComposing: true },
+    { key: "b", ctrlKey: true, isComposing: true },
+  ])("leaves IME candidate input untouched: %j", (input) => {
+    const a = actions();
+    const e = ev(input);
+    expect(handleEditorKeyDown(e, a)).toBe(false);
+    expect(e.preventDefault).not.toHaveBeenCalled();
+    for (const action of Object.values(a)) expect(action).not.toHaveBeenCalled();
+  });
   // The router now dispatches the SEMANTIC tag richTextCommands applies (b/i/u), not the old
   // execCommand verb (bold/italic/underline) — the key letter is itself the tag.
   it("maps Ctrl/Cmd + B / I / U to the matching format tag", () => {

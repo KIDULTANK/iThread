@@ -137,7 +137,96 @@ describe("FlowMindMap canvas", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     vi.spyOn(window, "open").mockReturnValue(null);
   });
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    Object.defineProperty(window, "iThreadAndroid", { configurable: true, value: undefined });
+    vi.restoreAllMocks();
+  });
+
+  it("keeps Chinese IME candidate confirmation inside the topic editor", () => {
+    const { container, h, onChange } = mount();
+    run(() => h.focusNode("a"));
+    run(() => fireEvent.keyDown(document, { key: "F2" }));
+    const editor = container.querySelector('[contenteditable="true"]') as HTMLElement;
+    onChange.mockClear();
+    run(() => fireEvent.compositionStart(editor));
+    editor.textContent = "中文输入";
+    run(() => fireEvent.input(editor));
+    run(() => fireEvent.keyDown(editor, { key: "Enter", keyCode: 229 }));
+    expect(container.querySelector('[contenteditable="true"]')).toBe(editor);
+    expect(onChange).not.toHaveBeenCalled();
+    run(() => fireEvent.compositionEnd(editor));
+    run(() => fireEvent.keyDown(editor, { key: "Enter", keyCode: 13 }));
+    expect(container.querySelector('[contenteditable="true"]')).toBeNull();
+    expect(onChange.mock.calls.at(-1)?.[0].root.children[0].topic).toBe("中文输入");
+  });
+
+  it("does not activate a slash command with an IME candidate Enter", () => {
+    const { container, h, onChange } = mount();
+    run(() => h.focusNode("b"));
+    run(() => fireEvent.keyDown(document, { key: "/" }));
+    const editor = container.querySelector('[contenteditable="true"]') as HTMLElement;
+    onChange.mockClear();
+    run(() => fireEvent.keyDown(editor, { key: "Enter", isComposing: true }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(container.querySelector('[contenteditable="true"]')).toBe(editor);
+  });
+
+  function android() {
+    Object.defineProperty(window, "iThreadAndroid", {
+      configurable: true,
+      value: { saveFile: vi.fn() },
+    });
+  }
+
+  it("Android Done is outside the transformed canvas, commits once and preserves selection", () => {
+    android();
+    const { container, h, onChange } = mount();
+    run(() => h.focusNode("a"));
+    run(() => fireEvent.keyDown(document, { key: "F2" }));
+    const editor = container.querySelector('[contenteditable="true"]') as HTMLElement;
+    const done = screen.getByRole("button", { name: "Done" }) as HTMLButtonElement;
+    expect(done.closest(".react-flow")).toBeNull();
+    run(() => fireEvent.compositionStart(editor));
+    expect(done.disabled).toBe(true);
+    editor.textContent = "平板编辑";
+    run(() => fireEvent.compositionEnd(editor));
+    expect(done.disabled).toBe(false);
+    onChange.mockClear();
+    run(() => fireEvent.click(done));
+    run(() => fireEvent.blur(editor));
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0].root.children[0].topic).toBe("平板编辑");
+    expect(nodeEl(container, "a").classList.contains("selected")).toBe(true);
+    expect(document.querySelector(".mm-android-edit-actions")).toBeNull();
+  });
+
+  it("Android Cancel restores an existing topic instead of committing its draft", () => {
+    android();
+    const { container, h, onChange } = mount();
+    run(() => h.focusNode("a"));
+    run(() => fireEvent.keyDown(document, { key: "F2" }));
+    const editor = container.querySelector('[contenteditable="true"]') as HTMLElement;
+    editor.textContent = "not accepted";
+    onChange.mockClear();
+    run(() => fireEvent.click(screen.getByRole("button", { name: "Cancel" })));
+    run(() => fireEvent.blur(editor));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(nodeEl(container, "a").textContent).toContain("Alpha");
+  });
+
+  it("Android Done accepts a new empty topic", () => {
+    android();
+    const { container, h, onChange } = mount();
+    run(() => h.focusNode("b"));
+    run(() => fireEvent.keyDown(document, { key: "Enter" }));
+    expect(container.querySelector('[contenteditable="true"]')).toBeTruthy();
+    const lastDoc = onChange.mock.calls.at(-1)?.[0] as MindMapDoc;
+    const added = lastDoc.root.children.at(-1);
+    run(() => fireEvent.click(screen.getByRole("button", { name: "Done" })));
+    expect(container.querySelector('[contenteditable="true"]')).toBeNull();
+    expect(nodeEl(container, added?.id ?? "")).toBeTruthy();
+    expect(added?.topic).toBe("");
+  });
 
   it("mounts and exposes the imperative handle", () => {
     const { h } = mount();
