@@ -14,7 +14,7 @@ local-data recreation and document-export cancellation where the engine is suppo
 
 Dev.2 adds artificial Markdown, `.itmz` and 5,001-topic import→editor→native export checks.
 Only external picker results are stubbed; parsing, keyboard commands and native writes run normally.
-API 35/36 also install dev.2 over dev.1 without clearing data and check maps, versions, recovery drafts,
+API 35/36 also install the current preview over a pinned previous preview without clearing data and check maps, versions, recovery drafts,
 sync records, conflicts and language settings. Consult the corresponding workflow logs for results.
 These checks do not claim physical-device or live Windows↔Android sync acceptance.
 
@@ -32,6 +32,12 @@ preflight checks, and fixes Ctrl+O when the More menu is closed.
 Even when a newer WebView exposes browser file pickers, the Android build stays on its native
 document route and does not bind desktop save-back handles. Roundtrip checks also verify that
 the original imported file is not overwritten.
+Dev.3 separates missing providers, unknown versions, old kernels and missing secure messaging on a
+native support screen. It displays actual app/Android/WebView versions, with Copy diagnostics, Retry
+and WebView details actions. Page-load failures and renderer exits offer a fresh WebView without
+clearing the library; unfinished edits may not recover. CI terminates a real renderer and verifies
+Retry preserves stored maps and settings. Copied diagnostics contain only these environment fields
+and fixed event codes, not maps, paths, device IDs or credentials; no automatic upload.
 
 Only the bundled document's main frame can access the origin-restricted native message listener.
 External links leave the app; arbitrary native URLs, redirects, cleartext traffic, TLS bypass and

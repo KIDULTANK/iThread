@@ -4,6 +4,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.uiautomator.UiDevice;
+import java.io.File;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
@@ -11,6 +14,11 @@ import static org.junit.Assume.*;
 
 abstract class TabletTestBase {
     protected ActivityScenario<MainActivity> scenario;
+    static void captureRuntimeScreen(String name) {
+        File folder = InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir("qa");
+        if (folder != null && (folder.exists() || folder.mkdirs()))
+            UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).takeScreenshot(new File(folder, name + ".png"));
+    }
     protected static WebView findWeb(View view) {
         if (view instanceof WebView) return (WebView) view;
         if (view instanceof ViewGroup) {

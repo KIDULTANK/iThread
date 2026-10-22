@@ -7,7 +7,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** Run seed on dev.1, adb install -r dev.2 without clearing data, then run verify.
+/** Run seed on the pinned previous preview, install the new APK without clearing data, then verify.
  * Fixtures are artificial. This exercises installation persistence, not a cloud service. */
 @RunWith(AndroidJUnit4.class)
 public final class UpgradeStorageTest extends TabletTestBase {

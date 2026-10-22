@@ -8,20 +8,22 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Base64;
 import android.webkit.ValueCallback;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.webkit.JavaScriptReplyProxy;
+import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
@@ -37,6 +39,9 @@ import org.json.JSONObject;
 
 public final class MainActivity extends Activity {
     private WebView web;
+    private FrameLayout root;
+    private RuntimeDiagnostics diagnostics;
+    private volatile boolean failed;
     private final SyncTransport sync = new SyncTransport();
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final ThreadPoolExecutor workers = new ThreadPoolExecutor(2, 2, 30, TimeUnit.SECONDS,
@@ -55,7 +60,7 @@ public final class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        FrameLayout root = new FrameLayout(this);
+        root = new FrameLayout(this);
         root.setBackgroundColor(0xfff6f3ec);
         setContentView(root);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
@@ -65,14 +70,19 @@ public final class MainActivity extends Activity {
             view.setPadding(safe.left, safe.top, safe.right, safe.bottom);
             return insets;
         });
-        android.content.pm.PackageInfo provider = WebViewCompat.getCurrentWebViewPackage(this);
-        if (provider == null || !SyncPolicy.supportedWebView(provider.versionName)
-                || !WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
-            TextView message = new TextView(this);
-            message.setText("请将 Android System WebView 更新到 124 或更高版本后重新打开 iThread。\nUpdate Android System WebView to version 124 or later to run iThread.");
-            root.addView(message);
+        if (android.os.Build.VERSION.SDK_INT >= 33)
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                    android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::handleBack);
+        diagnostics = captureDiagnostics();
+        if (!diagnostics.supported()) {
+            showRuntimeFailure(RuntimeDiagnostics.Event.COMPATIBILITY_BLOCKED);
             return;
         }
+        try { initializeEditor(); }
+        catch (RuntimeException ignored) { showRuntimeFailure(RuntimeDiagnostics.Event.WEBVIEW_START_FAILED); }
+    }
+
+    private void initializeEditor() {
         web = new WebView(this);
         root.addView(web, new FrameLayout.LayoutParams(-1, -1));
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
@@ -93,6 +103,19 @@ public final class MainActivity extends Activity {
                         } catch (Exception ignored) { return blocked(); }
                 }).build();
         web.setWebViewClient(new WebViewClient() {
+            @Override public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                if (!destroyed && web == view) showRuntimeFailure(detail.didCrash()
+                        ? RuntimeDiagnostics.Event.RENDERER_CRASHED : RuntimeDiagnostics.Event.RENDERER_TERMINATED);
+                return true;
+            }
+            @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                if (request.isForMainFrame() && SyncPolicy.appDocument(request.getUrl().toString()))
+                    showRuntimeFailure(RuntimeDiagnostics.Event.PAGE_LOAD_FAILED);
+            }
+            @Override public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse response) {
+                if (request.isForMainFrame() && SyncPolicy.appDocument(request.getUrl().toString()) && response.getStatusCode() >= 400)
+                    showRuntimeFailure(RuntimeDiagnostics.Event.PAGE_LOAD_FAILED);
+            }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 // All executable content is bundled. External links open outside this WebView;
                 // cloud networking is only through the separate, provider-scoped native transport.
@@ -124,7 +147,8 @@ public final class MainActivity extends Activity {
         });
         WebViewCompat.addWebMessageListener(web, "IThreadNative", Collections.singleton(SyncPolicy.ORIGIN),
                 (view, message, sourceOrigin, mainFrame, reply) -> {
-                    if (!mainFrame || !SyncPolicy.ORIGIN.equals(sourceOrigin.toString())
+                    if (failed || destroyed || !mainFrame || message.getType() != WebMessageCompat.TYPE_STRING
+                            || !SyncPolicy.ORIGIN.equals(sourceOrigin.toString())
                             || !SyncPolicy.appDocument(view.getUrl())) return;
                     String raw = message.getData();
                     if (raw == null || raw.length() > 24 * 1024 * 1024) return;
@@ -139,13 +163,38 @@ public final class MainActivity extends Activity {
                 });
         handler.post(expiry);
         web.loadUrl(SyncPolicy.DOCUMENT);
-        if (android.os.Build.VERSION.SDK_INT >= 33)
-            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
-                    android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::handleBack);
+    }
+
+    private RuntimeDiagnostics captureDiagnostics() {
+        android.content.pm.PackageInfo provider = null;
+        Boolean listener = null;
+        try { provider = WebViewCompat.getCurrentWebViewPackage(this); } catch (RuntimeException ignored) { }
+        try { listener = WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER); } catch (RuntimeException ignored) { }
+        return new RuntimeDiagnostics(BuildConfig.VERSION_NAME, android.os.Build.VERSION.RELEASE,
+                android.os.Build.VERSION.SDK_INT, provider != null,
+                provider == null ? null : provider.packageName,
+                provider == null ? null : provider.versionName, listener);
+    }
+
+    private void showRuntimeFailure(RuntimeDiagnostics.Event event) {
+        if (destroyed || failed) return;
+        failed = true;
+        handler.removeCallbacks(expiry); sync.setEnabled(false);
+        decoder.shutdownNow(); workers.shutdownNow();
+        if (fileChooser != null) {
+            try { fileChooser.onReceiveValue(null); } catch (RuntimeException ignored) { }
+            fileChooser = null;
+        }
+        saveBytes = null; saveId = null; saveReply = null;
+        WebView stopped = web; web = null;
+        root.removeAllViews();
+        // A terminated renderer's WebView must never be reused.
+        if (stopped != null) { try { stopped.destroy(); } catch (RuntimeException ignored) { } }
+        root.addView(new RuntimeSupportView(this, diagnostics, event), new FrameLayout.LayoutParams(-1, -1));
     }
 
     private void dispatch(String raw, JavaScriptReplyProxy reply) {
-        if (destroyed) return;
+        if (destroyed || failed) return;
         try {
             JSONObject request = new JSONObject(raw);
             String id = request.getString("id"), method = request.getString("method");
@@ -192,7 +241,7 @@ public final class MainActivity extends Activity {
             encoded = result.toString();
         } catch (Exception ignored) { return; }
         handler.post(() -> {
-            if (destroyed) return;
+            if (destroyed || failed) return;
             try {
                 reply.postMessage(encoded);
             } catch (Exception ignored) { /* Closing/navigating the app invalidates the reply channel. */ }
@@ -209,7 +258,7 @@ public final class MainActivity extends Activity {
             if (!mime.matches("[a-zA-Z0-9.+-]+/[a-zA-Z0-9.+-]+")) mime = "application/octet-stream";
             final String type = mime;
             handler.post(() -> {
-                if (destroyed) return;
+                if (destroyed || failed) return;
                 if (saveId != null) { respond(reply, id, null, true); return; }
                 saveBytes = bytes; saveId = id; saveReply = reply;
                 try {
@@ -241,9 +290,9 @@ public final class MainActivity extends Activity {
                                 SyncTransport.checkReadable(input, SyncPolicy.MAX_BYTES);
                             }
                         }
-                        handler.post(() -> { if (!destroyed) callback.onReceiveValue(uris); });
+                        handler.post(() -> { if (!destroyed && !failed) callback.onReceiveValue(uris); });
                     } catch (Exception ignored) {
-                        handler.post(() -> { if (!destroyed) { callback.onReceiveValue(null); showFailure(); } });
+                        handler.post(() -> { if (!destroyed && !failed) { callback.onReceiveValue(null); showFailure(); } });
                     }
                 });
             } catch (Exception ignored) { callback.onReceiveValue(null); showFailure(); }
@@ -274,7 +323,7 @@ public final class MainActivity extends Activity {
         Toast.makeText(this, "操作失败，请检查权限、网络及 16 MiB 文件限制。\nOperation failed; check permissions, network and the 16 MiB file limit.", Toast.LENGTH_LONG).show();
     }
 
-    @Override protected void onStart() { super.onStart(); sync.setEnabled(true); }
+    @Override protected void onStart() { super.onStart(); sync.setEnabled(!failed); }
     @Override protected void onStop() { sync.setEnabled(false); super.onStop(); }
     @Override public void onBackPressed() {
         handleBack();

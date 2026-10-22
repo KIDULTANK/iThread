@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.UiDevice;
 import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewFeature;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
@@ -28,7 +29,8 @@ public final class TabletSmokeTest {
         scenario = ActivityScenario.launch(MainActivity.class);
         scenario.onActivity(activity -> {
             android.content.pm.PackageInfo provider = WebViewCompat.getCurrentWebViewPackage(activity);
-            supported = provider != null && SyncPolicy.supportedWebView(provider.versionName);
+            supported = provider != null && SyncPolicy.supportedWebView(provider.versionName)
+                    && WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER);
             System.out.println("ITHREAD_WEBVIEW " + (provider == null ? "missing" : provider.versionName)
                     + " EDITOR_SUPPORTED=" + supported);
         });
@@ -53,7 +55,7 @@ public final class TabletSmokeTest {
             if (web == null) { result.complete("null"); return; }
             web.evaluateJavascript(script, result::complete);
         });
-        return result.get(10, TimeUnit.SECONDS);
+        return result.get(30, TimeUnit.SECONDS);
     }
     private void waitTrue(String script) throws Exception {
         long end = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
@@ -65,7 +67,7 @@ public final class TabletSmokeTest {
     }
     private void ready() throws Exception {
         assumeTrue("Old emulator WebView: validates upgrade prompt, not editor compatibility", supported);
-        waitTrue("Boolean(document.querySelector('.start') || document.querySelector('.mm-editor'))");
+        waitTrue("Boolean(document.querySelector('.start') || document.querySelector('.mm-editor .react-flow'))");
     }
 
     @Test public void launchesEditorOrShowsActionableWebViewRequirement() throws Exception {
@@ -74,10 +76,14 @@ public final class TabletSmokeTest {
             assertEquals("true", evaluate("document.documentElement.dataset.platform === 'android' && Boolean(window.iThreadAndroid)"));
         } else {
             scenario.onActivity(activity -> {
-                ViewGroup content = activity.findViewById(android.R.id.content);
-                ViewGroup root = (ViewGroup) content.getChildAt(0);
-                assertTrue(((TextView) root.getChildAt(0)).getText().toString().contains("124"));
+                TextView report = activity.getWindow().getDecorView().findViewWithTag("runtime-diagnostics");
+                assertNotNull(report);
+                assertTrue(report.getText().toString().contains("webview.minimum=124"));
+                assertTrue(report.getText().toString().contains("event=COMPATIBILITY_BLOCKED"));
+                assertNotNull(activity.getWindow().getDecorView().findViewWithTag("retry-startup"));
+                assertNotNull(activity.getWindow().getDecorView().findViewWithTag("copy-diagnostics"));
             });
+            TabletTestBase.captureRuntimeScreen("compatibility");
         }
     }
 

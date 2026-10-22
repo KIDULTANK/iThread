@@ -7,12 +7,18 @@ import java.nio.charset.StandardCharsets;
 /** Pure policy, shared by the transport and JVM tests. No arbitrary native HTTP proxy. */
 final class SyncPolicy {
     static final int MAX_BYTES = 16 * 1024 * 1024;
+    static final int MIN_WEBVIEW_MAJOR = 124;
     static final String ORIGIN = "https://appassets.androidplatform.net";
     static final String DOCUMENT = ORIGIN + "/assets/index.html";
 
     static boolean supportedWebView(String version) {
-        try { return Integer.parseInt(version.split("\\.")[0]) >= 124; }
-        catch (RuntimeException ignored) { return false; }
+        return webViewMajor(version) >= MIN_WEBVIEW_MAJOR;
+    }
+    static int webViewMajor(String version) {
+        try {
+            int major = Integer.parseInt(version.split("\\.")[0]);
+            return major > 0 ? major : -1;
+        } catch (RuntimeException ignored) { return -1; }
     }
 
     static URI directory(String text) {

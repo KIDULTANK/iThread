@@ -71,7 +71,7 @@ jobs:
       # This verifies upgrade persistence, not stable production signing across runs.
       - uses: actions/checkout@v4
         with:
-          ref: 0afc12f9eefd7fcb303d5efc13dd727c1036c43f
+          ref: d0953dbd44319dd34356029eff62e4112449d383
           path: upgrade-baseline
       - name: Build previous preview for install-over upgrade checks
         working-directory: upgrade-baseline
@@ -130,6 +130,7 @@ jobs:
             if [ '${{ matrix.api }}' -ge 35 ]; then ! grep -E 'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|INSTRUMENTATION_STATUS_CODE: -4' upgrade-verify.log && grep -q 'OK (1 test)' upgrade-verify.log; fi
             adb shell am instrument -w -r -e notClass com.ithread.android.UpgradeStorageTest com.ithread.android.preview.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.log
             adb logcat -d -v brief AndroidRuntime:E chromium:E '*:S' > runtime-errors.log
+            adb pull /sdcard/Android/data/com.ithread.android.preview/files/qa runtime-screenshots || true
             ! grep -E 'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=' instrumentation.log
             grep -q 'OK (' instrumentation.log
             if [ '${{ matrix.api }}' -ge 35 ]; then ! grep -q 'INSTRUMENTATION_STATUS_CODE: -4' instrumentation.log; fi
@@ -141,5 +142,6 @@ jobs:
             instrumentation.log
             upgrade-*.log
             runtime-errors.log
+            runtime-screenshots/
           if-no-files-found: warn
           retention-days: 14
