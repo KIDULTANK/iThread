@@ -1,4 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
+import { strToU8, zipSync } from "fflate";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as fs from "../src/io/fileSystem";
 import type { MindMapDoc } from "../src/model/types";
@@ -13,6 +14,7 @@ vi.mock("../src/io/fileSystem", () => ({
   pickSaveHandle: vi.fn(),
   writeMapToHandle: vi.fn(async () => {}),
   readMapFromHandle: vi.fn(),
+  isNativeExt: vi.fn((name: string) => /\.(ithread|mmst|json)$/i.test(name)),
   ensureWritePermission: vi.fn(async () => true),
   downloadMapFile: vi.fn(),
   suggestedFileName: vi.fn(() => "map.mmst"),
@@ -59,11 +61,15 @@ function setup(d: MindMapDoc = doc()) {
 }
 
 beforeEach(() => {
+  Object.defineProperty(window, "iThreadDesktop", { configurable: true, value: undefined });
   vi.clearAllMocks();
   mocked.supportsFileSystemAccess.mockReturnValue(true);
   mocked.ensureWritePermission.mockResolvedValue(true);
 });
-afterEach(() => vi.restoreAllMocks?.());
+afterEach(() => {
+  Object.defineProperty(window, "iThreadDesktop", { configurable: true, value: undefined });
+  vi.restoreAllMocks();
+});
 
 describe("useDiskFile — save / save-as", () => {
   it("Save As writes to a picked handle, binds it, and clears dirty", async () => {
@@ -245,7 +251,7 @@ describe("useDiskFile — open / import", () => {
   it("Open imports a foreign .mmap as a library map (no handle bound, warns)", async () => {
     const handle = {
       name: "x.mmap",
-      getFile: async () => ({ arrayBuffer: async () => new ArrayBuffer(0) }),
+      getFile: async () => new File([new ArrayBuffer(0)], "x.mmap"),
     } as unknown as FileSystemFileHandle;
     mocked.openMapFile.mockResolvedValue({ kind: "import", handle });
     const { result, deps } = setup();
@@ -279,6 +285,116 @@ describe("useDiskFile — open / import", () => {
     });
     expect(click).toHaveBeenCalledTimes(1);
     input.remove();
+  });
+});
+
+describe("useDiskFile — Windows native bridge", () => {
+  function desktop(file: File) {
+    const bridge: IThreadDesktopBridge = {
+      checkForUpdates: vi.fn(),
+      openReleasePage: vi.fn(),
+      openFileDialog: vi.fn().mockImplementation(async () => ({
+        name: file.name,
+        bytes: new Uint8Array(await file.arrayBuffer()),
+        token: "synthetic-file-token",
+        lastModified: 100,
+        writable: /\.(ithread|mmst|json)$/i.test(file.name),
+      })),
+      saveFileDialog: vi.fn().mockResolvedValue(null),
+      readBoundFile: vi.fn(),
+      writeBoundFile: vi.fn(),
+      onOpenFile: vi.fn(),
+    };
+    Object.defineProperty(window, "iThreadDesktop", { configurable: true, value: bridge });
+    mocked.supportsFileSystemAccess.mockReturnValue(false);
+    return bridge;
+  }
+
+  it("Ctrl+O imports a real iThoughts archive through the iThoughts parser, without binding its source", async () => {
+    const bytes = zipSync({
+      "mapdata.xml": strToU8(
+        '<iThoughts><topics><topic uuid="root" text="法学"><topic uuid="child" text="民法"/></topic></topics></iThoughts>',
+      ),
+    });
+    const bridge = desktop(new File([bytes], "法学.ITMZ"));
+    const { result, deps } = setup();
+    await act(async () => {
+      await result.current.openFile();
+    });
+    expect(deps.setError).not.toHaveBeenCalled();
+    expect(deps.load).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "法学",
+        root: expect.objectContaining({ children: [expect.objectContaining({ topic: "民法" })] }),
+      }),
+      expect.arrayContaining([expect.stringContaining("iThoughts")]),
+    );
+    expect(deps.load.mock.calls[0][1].join(" ")).not.toContain("MindManager");
+    expect(mockedStore.saveMapHandle).not.toHaveBeenCalled();
+    expect(bridge.writeBoundFile).not.toHaveBeenCalled();
+    expect(deps.setFileName).toHaveBeenCalledWith(null);
+  });
+
+  it("imports a hierarchical Markdown file instead of treating it as a MindManager archive", async () => {
+    desktop(new File(["# 计划\n\n## 学习\n\n- **阅读**\n"], "计划.markdown"));
+    const { result, deps } = setup();
+    await act(async () => {
+      await result.current.openFile();
+    });
+    expect(deps.setError).not.toHaveBeenCalled();
+    expect(deps.load.mock.calls[0][0].root).toMatchObject({
+      topic: "计划",
+      children: [
+        expect.objectContaining({
+          topic: "学习",
+          children: [expect.objectContaining({ topic: "阅读" })],
+        }),
+      ],
+    });
+    expect(mockedStore.saveMapHandle).not.toHaveBeenCalled();
+  });
+
+  it("opens native files with the existing save-back binding", async () => {
+    desktop(new File(["{}"], "原生.ithread"));
+    mocked.readMapFromHandle.mockResolvedValue(doc());
+    const { result, deps } = setup();
+    await act(async () => {
+      await result.current.openFile();
+    });
+    expect(deps.load).toHaveBeenCalledWith(doc());
+    expect(mockedStore.saveMapHandle).toHaveBeenCalled();
+  });
+
+  it("keeps the current document untouched when a malformed iThoughts file fails", async () => {
+    desktop(new File(["not a ZIP"], "损坏.itmz"));
+    const { result, deps } = setup();
+    await act(async () => {
+      await result.current.openFile();
+    });
+    expect(deps.setError).toHaveBeenCalled();
+    expect(deps.load).not.toHaveBeenCalled();
+    expect(mockedStore.saveMapHandle).not.toHaveBeenCalled();
+  });
+
+  it("uses native Save As on the first Ctrl+S even without browser file pickers", async () => {
+    const bridge = desktop(new File([], "unused.ithread"));
+    const { result } = setup();
+    await act(async () => {
+      await result.current.saveFile();
+    });
+    expect(bridge.saveFileDialog).toHaveBeenCalledWith("map.mmst", expect.any(String));
+    expect(mocked.downloadMapFile).not.toHaveBeenCalled();
+  });
+
+  it("cancelling the Windows picker does not change the map or report an error", async () => {
+    const bridge = desktop(new File([], "unused.ithread"));
+    vi.mocked(bridge.openFileDialog).mockResolvedValue(null);
+    const { result, deps } = setup();
+    await act(async () => {
+      await result.current.openFile();
+    });
+    expect(deps.load).not.toHaveBeenCalled();
+    expect(deps.setError).not.toHaveBeenCalled();
   });
 });
 

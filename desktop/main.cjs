@@ -1,9 +1,12 @@
-const { app, BrowserWindow, dialog, ipcMain, net, shell } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, net, screen, shell } = require("electron");
 const { readFile, stat, writeFile } = require("node:fs/promises");
 const { randomUUID } = require("node:crypto");
 const path = require("node:path");
 const { createCliBridgeServer } = require("./cli-bridge.cjs");
 const { selectSystemLocale } = require("./locale.cjs");
+const { isOpenableFile, isWritableFile, openFileFilters } = require("./file-policy.cjs");
+const { desktopUpdate } = require("./updates.cjs");
+const { readWindowState, restoreWindowState, rememberWindowState } = require("./window-state.cjs");
 const { pathToFileURL } = require("node:url");
 const { createSyncTransport } = require("./sync-transport.cjs");
 const { registerSyncIpc } = require("./sync-ipc.cjs");
@@ -14,7 +17,6 @@ const APP_ID = "com.ithread.desktop";
 const APP_ORIGIN = "file://";
 const RELEASES_URL = "https://github.com/KIDULTANK/iThread/releases";
 const RELEASES_API = "https://api.github.com/repos/KIDULTANK/iThread/releases?per_page=20";
-const SUPPORTED_EXTENSIONS = new Set([".ithread", ".mmst", ".itmz"]);
 const MAX_OPEN_BYTES = 128 * 1024 * 1024;
 
 app.setName("iThread");
@@ -26,22 +28,7 @@ let cliBridgeServer = null;
 const boundFiles = new Map();
 
 function requestedFile(argv) {
-  return argv.find((arg) => SUPPORTED_EXTENSIONS.has(path.extname(arg).toLowerCase())) ?? null;
-}
-
-function semver(value) {
-  const match = String(value).match(/v?(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/i);
-  return match ? match.slice(1).map(Number) : null;
-}
-
-function compareVersions(left, right) {
-  const a = semver(left);
-  const b = semver(right);
-  if (!a || !b) return 0;
-  for (let i = 0; i < 3; i++) {
-    if (a[i] !== b[i]) return a[i] - b[i];
-  }
-  return 0;
+  return argv.find(isOpenableFile) ?? null;
 }
 
 async function sendOpenFile(filePath) {
@@ -60,8 +47,7 @@ async function sendOpenFile(filePath) {
 
 async function bindFile(filePath) {
   try {
-    const extension = path.extname(filePath).toLowerCase();
-    if (!SUPPORTED_EXTENSIONS.has(extension) && ![".json", ".mmap", ".mmp"].includes(extension)) {
+    if (!isOpenableFile(filePath)) {
       return null;
     }
     const info = await stat(filePath);
@@ -74,7 +60,7 @@ async function bindFile(filePath) {
       bytes,
       token,
       lastModified: info.mtimeMs,
-      writable: [".ithread", ".mmst", ".json"].includes(extension),
+      writable: isWritableFile(filePath),
     };
   } catch {
     return null;
@@ -82,11 +68,16 @@ async function bindFile(filePath) {
 }
 
 function createWindow() {
+  const stateFile = path.join(app.getPath("userData"), "window-state.json");
+  const state = restoreWindowState(
+    readWindowState(stateFile),
+    screen.getAllDisplays().map((display) => display.workArea),
+    screen.getPrimaryDisplay().workArea,
+  );
   const window = new BrowserWindow({
-    width: 1440,
-    height: 900,
-    minWidth: 960,
-    minHeight: 640,
+    ...state.bounds,
+    minWidth: Math.min(960, state.bounds.width),
+    minHeight: Math.min(640, state.bounds.height),
     show: false,
     title: "iThread",
     backgroundColor: "#faf9f5",
@@ -104,6 +95,8 @@ function createWindow() {
     },
   });
   mainWindow = window;
+  rememberWindowState(window, stateFile, state);
+  if (state.maximized) window.maximize();
 
   window.once("ready-to-show", () => {
     window.show();
@@ -173,23 +166,11 @@ else {
       try {
         const response = await net.fetch(RELEASES_API, {
           headers: { Accept: "application/vnd.github+json", "User-Agent": "iThread-Desktop" },
+          signal: AbortSignal.timeout(10_000),
         });
         if (!response.ok) throw new Error(`GitHub returned ${response.status}`);
         const releases = await response.json();
-        if (!Array.isArray(releases)) throw new Error("Unexpected GitHub response");
-        const available = releases
-          .filter((release) => !release.draft && semver(release.tag_name))
-          .sort((a, b) => compareVersions(b.tag_name, a.tag_name))[0];
-        if (!available)
-          return { status: "unavailable", currentVersion: app.getVersion(), url: RELEASES_URL };
-        const currentVersion = app.getVersion();
-        const latestVersion = String(available.tag_name).replace(/^v/i, "");
-        return {
-          status: compareVersions(latestVersion, currentVersion) > 0 ? "available" : "up-to-date",
-          currentVersion,
-          latestVersion,
-          url: available.html_url || RELEASES_URL,
-        };
+        return desktopUpdate(releases, app.getVersion());
       } catch {
         return { status: "unavailable", currentVersion: app.getVersion(), url: RELEASES_URL };
       }
@@ -205,11 +186,7 @@ else {
     ipcMain.handle("ithread:open-file-dialog", async () => {
       const result = await dialog.showOpenDialog(mainWindow, {
         properties: ["openFile"],
-        filters: [
-          { name: "iThread maps", extensions: ["ithread", "mmst", "json"] },
-          { name: "iThoughts maps", extensions: ["itmz"] },
-          { name: "MindManager maps", extensions: ["mmap", "mmp"] },
-        ],
+        filters: openFileFilters(selectSystemLocale(app.getPreferredSystemLanguages())),
       });
       return result.canceled || !result.filePaths[0] ? null : bindFile(result.filePaths[0]);
     });
@@ -241,10 +218,7 @@ else {
     });
     ipcMain.handle("ithread:write-bound-file", async (_event, token, contents) => {
       const filePath = boundFiles.get(token);
-      if (
-        !filePath ||
-        ![".ithread", ".mmst", ".json"].includes(path.extname(filePath).toLowerCase())
-      ) {
+      if (!filePath || !isWritableFile(filePath)) {
         throw new Error("This file is not writable from iThread");
       }
       if (typeof contents !== "string" || Buffer.byteLength(contents, "utf8") > MAX_OPEN_BYTES) {

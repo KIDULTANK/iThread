@@ -1230,8 +1230,6 @@ export const CORE_EN = {
   "app.couldnTLoadTheHistory": "Couldn't load the history for playback.",
   "app.restoreThisVersion": "Restore this version?",
   "app.yourCurrentMapIsSaved": "Your current map is saved to history first, so you can undo.",
-  "app.importedFromMindmanagerSavedTo":
-    "Imported from MindManager — saved to your library. You can't save back to .mmap; use “Save as…” to keep it as an .ithread file.",
   "app.thatFileIsNoLonger": "That file is no longer available — its handle was lost.",
   "app.couldnTOpenPermissionTo": "Couldn't open — permission to access the file was denied.",
   "app.couldnTSavePermissionTo": "Couldn't save — permission to write the file was denied.",
