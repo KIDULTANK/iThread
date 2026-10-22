@@ -22,12 +22,14 @@ public final class NativeRecoveryTest extends TabletTestBase {
 
     @Test public void recoversFromTerminatedRendererWithoutClearingLocalData() throws Exception {
         ready();
+        android.util.Log.i("iThreadRuntimeTest", "recovery: editor ready");
         evaluate("localStorage.setItem('android-renderer-recovery','synthetic-retained');true");
         evaluate("window.__rendererSeeded=false;(async()=>{const db=await new Promise((ok,no)=>{const r=indexedDB.open('mindmap-studio',7);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});"
                 + "const tx=db.transaction('maps','readwrite');const done=new Promise((ok,no)=>{tx.oncomplete=ok;tx.onerror=()=>no(tx.error)});"
                 + "tx.objectStore('maps').put({schemaVersion:1,id:'android-renderer-recovery',title:'恢复 Test',root:{id:'recovery-root',topic:'恢复 Test',note:'synthetic-note',children:[]}},'android-renderer-recovery');"
                 + "await done;db.close();window.__rendererSeeded=true;})().catch(()=>{});true");
         waitTrue("window.__rendererSeeded===true");
+        android.util.Log.i("iThreadRuntimeTest", "recovery: persisted fixture ready; terminating renderer");
         scenario.onActivity(activity -> {
             WebView web = findWeb(activity.getWindow().getDecorView());
             WebViewRenderProcess process = web.getWebViewRenderProcess();
@@ -42,6 +44,7 @@ public final class NativeRecoveryTest extends TabletTestBase {
             if (!shown[0]) Thread.sleep(200);
         }
         assertTrue("Native recovery screen did not appear", shown[0]);
+        android.util.Log.i("iThreadRuntimeTest", "recovery: native support visible");
         captureRuntimeScreen("renderer-recovery");
         scenario.onActivity(activity -> {
             View decor = activity.getWindow().getDecorView();
@@ -50,13 +53,16 @@ public final class NativeRecoveryTest extends TabletTestBase {
             assertTrue(report.getText().toString().contains("event=RENDERER_TERMINATED"));
             assertTrue(report.getText().toString().contains("compatibility=OK"));
             ((Button) decor.findViewWithTag("copy-diagnostics")).performClick();
+            android.util.Log.i("iThreadRuntimeTest", "recovery: copied diagnostics");
             ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(android.app.Activity.CLIPBOARD_SERVICE);
             assertNotNull(clipboard.getPrimaryClip());
             assertEquals(report.getText().toString(), clipboard.getPrimaryClip().getItemAt(0).getText().toString());
         });
+        android.util.Log.i("iThreadRuntimeTest", "recovery: invoking retry");
         // Exercise the real Retry action, not a direct scenario.recreate().
         scenario.onActivity(activity -> ((Button) activity.getWindow().getDecorView()
                 .findViewWithTag("retry-startup")).performClick());
+        android.util.Log.i("iThreadRuntimeTest", "recovery: retry action returned");
         // Wait for the recreated Activity to contain a fresh WebView before running editor probes.
         boolean[] restored = {false};
         end = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
@@ -65,7 +71,9 @@ public final class NativeRecoveryTest extends TabletTestBase {
             if (!restored[0]) Thread.sleep(200);
         }
         assertTrue("Retry did not create a new WebView", restored[0]);
+        android.util.Log.i("iThreadRuntimeTest", "recovery: replacement WebView created");
         ready();
+        android.util.Log.i("iThreadRuntimeTest", "recovery: replacement editor ready");
         assertEquals("true", evaluate("localStorage.getItem('android-renderer-recovery')==='synthetic-retained'"));
         evaluate("window.__rendererMapKept=false;(async()=>{const db=await new Promise(ok=>{const r=indexedDB.open('mindmap-studio',7);r.onsuccess=()=>ok(r.result)});"
                 + "const doc=await new Promise(ok=>{const r=db.transaction('maps').objectStore('maps').get('android-renderer-recovery');r.onsuccess=()=>ok(r.result)});"
