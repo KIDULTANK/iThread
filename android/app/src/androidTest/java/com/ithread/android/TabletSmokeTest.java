@@ -68,6 +68,7 @@ public final class TabletSmokeTest {
     private void ready() throws Exception {
         assumeTrue("Old emulator WebView: validates upgrade prompt, not editor compatibility", supported);
         waitTrue("Boolean(document.querySelector('.start') || document.querySelector('.mm-editor .react-flow'))");
+        TabletTestBase.waitForWindowFocus(scenario);
     }
 
     @Test public void launchesEditorOrShowsActionableWebViewRequirement() throws Exception {

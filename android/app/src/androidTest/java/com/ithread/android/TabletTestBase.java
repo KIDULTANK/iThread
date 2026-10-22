@@ -14,6 +14,15 @@ import static org.junit.Assume.*;
 
 abstract class TabletTestBase {
     protected ActivityScenario<MainActivity> scenario;
+    static void waitForWindowFocus(ActivityScenario<MainActivity> scenario) throws Exception {
+        long end = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+        boolean[] focused = {false};
+        while (!focused[0] && System.nanoTime() < end) {
+            scenario.onActivity(activity -> focused[0] = activity.hasWindowFocus());
+            if (!focused[0]) Thread.sleep(200);
+        }
+        assertTrue("The activity never received input focus", focused[0]);
+    }
     static void captureRuntimeScreen(String name) {
         File folder = InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir("qa");
         if (folder != null && (folder.exists() || folder.mkdirs()))
@@ -54,5 +63,6 @@ abstract class TabletTestBase {
         scenario.onActivity(activity -> supported[0] = findWeb(activity.getWindow().getDecorView()) != null);
         assumeTrue("WebView upgrade prompt only; editor tests skipped", supported[0]);
         waitTrue("Boolean(document.querySelector('.start') || document.querySelector('.mm-editor .react-flow'))");
+        waitForWindowFocus(scenario);
     }
 }

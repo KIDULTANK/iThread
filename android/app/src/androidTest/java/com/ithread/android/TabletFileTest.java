@@ -51,8 +51,10 @@ public final class TabletFileTest extends TabletTestBase {
     private Uri uri(File file) {
         return FileProvider.getUriForFile(context, context.getPackageName() + ".test-files", file);
     }
-    private void shortcut(int key) {
+    private void shortcut(int key) throws Exception {
+        waitForWindowFocus(scenario);
         scenario.onActivity(activity -> findWeb(activity.getWindow().getDecorView()).requestFocus());
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).pressKeyCode(key, KeyEvent.META_CTRL_ON);
     }
     private JSONObject importAndSave(String name, byte[] bytes, String title) throws Exception {

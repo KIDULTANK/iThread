@@ -4,10 +4,14 @@ import android.content.ClipboardManager;
 import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebViewRenderProcess;
-import android.widget.Button;
 import android.widget.TextView;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.uiautomator.By;
+import androidx.test.uiautomator.UiDevice;
+import androidx.test.uiautomator.UiObject2;
+import androidx.test.uiautomator.Until;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
@@ -44,6 +48,7 @@ public final class NativeRecoveryTest extends TabletTestBase {
             if (!shown[0]) Thread.sleep(200);
         }
         assertTrue("Native recovery screen did not appear", shown[0]);
+        waitForWindowFocus(scenario);
         android.util.Log.i("iThreadRuntimeTest", "recovery: native support visible");
         captureRuntimeScreen("renderer-recovery");
         scenario.onActivity(activity -> {
@@ -52,16 +57,31 @@ public final class NativeRecoveryTest extends TabletTestBase {
             TextView report = decor.findViewWithTag("runtime-diagnostics");
             assertTrue(report.getText().toString().contains("event=RENDERER_TERMINATED"));
             assertTrue(report.getText().toString().contains("compatibility=OK"));
-            ((Button) decor.findViewWithTag("copy-diagnostics")).performClick();
-            android.util.Log.i("iThreadRuntimeTest", "recovery: copied diagnostics");
-            ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(android.app.Activity.CLIPBOARD_SERVICE);
-            assertNotNull(clipboard.getPrimaryClip());
-            assertEquals(report.getText().toString(), clipboard.getPrimaryClip().getItemAt(0).getText().toString());
         });
+        UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+        UiObject2 copy = device.wait(Until.findObject(By.text("复制诊断信息 / Copy diagnostics")), 10000);
+        assertNotNull("Copy button not visible", copy);
+        copy.click(); // Real input: do not read clipboard inside the same synchronous UI callback.
+        waitForWindowFocus(scenario);
+        boolean[] copied = {false};
+        end = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (!copied[0] && System.nanoTime() < end) {
+            scenario.onActivity(activity -> {
+                if (!activity.hasWindowFocus()) return;
+                ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(android.app.Activity.CLIPBOARD_SERVICE);
+                android.content.ClipData clip = clipboard.getPrimaryClip();
+                TextView report = activity.getWindow().getDecorView().findViewWithTag("runtime-diagnostics");
+                copied[0] = clip != null && clip.getItemCount() == 1 && report.getText().toString()
+                        .equals(String.valueOf(clip.getItemAt(0).getText()));
+            });
+            if (!copied[0]) Thread.sleep(200);
+        }
+        assertTrue("Copy did not place the diagnostic report on the clipboard", copied[0]);
+        android.util.Log.i("iThreadRuntimeTest", "recovery: copied diagnostics");
         android.util.Log.i("iThreadRuntimeTest", "recovery: invoking retry");
-        // Exercise the real Retry action, not a direct scenario.recreate().
-        scenario.onActivity(activity -> ((Button) activity.getWindow().getDecorView()
-                .findViewWithTag("retry-startup")).performClick());
+        UiObject2 retry = device.wait(Until.findObject(By.text("重新检查并打开 / Retry")), 10000);
+        assertNotNull("Retry button not visible", retry);
+        retry.click();
         android.util.Log.i("iThreadRuntimeTest", "recovery: retry action returned");
         // Wait for the recreated Activity to contain a fresh WebView before running editor probes.
         boolean[] restored = {false};
