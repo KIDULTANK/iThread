@@ -54,6 +54,13 @@ public final class MainActivity extends Activity {
     private String saveId;
     private JavaScriptReplyProxy saveReply;
     private volatile boolean destroyed;
+    private boolean probeStarted, compatHistoryCleared;
+    private final Runnable compatibilityTimeout = () -> {
+        if (!destroyed && !failed && diagnostics != null && !diagnostics.supported()) {
+            diagnostics = diagnostics.withProbe("TIMEOUT");
+            showRuntimeFailure(RuntimeDiagnostics.Event.COMPATIBILITY_BLOCKED);
+        }
+    };
     private final Runnable expiry = new Runnable() {
         @Override public void run() { sync.expire(); handler.postDelayed(this, 30000); }
     };
@@ -74,7 +81,7 @@ public final class MainActivity extends Activity {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
                     android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::handleBack);
         diagnostics = captureDiagnostics();
-        if (!diagnostics.supported()) {
+        if (!diagnostics.mayInitialize()) {
             showRuntimeFailure(RuntimeDiagnostics.Event.COMPATIBILITY_BLOCKED);
             return;
         }
@@ -103,17 +110,33 @@ public final class MainActivity extends Activity {
                         } catch (Exception ignored) { return blocked(); }
                 }).build();
         web.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView view, String url) {
+                if (!BuildConfig.HUAWEI_COMPAT || failed || destroyed || web != view) return;
+                if (SyncPolicy.COMPAT_DOCUMENT.equals(url) && !probeStarted) {
+                    probeStarted = true;
+                    view.evaluateJavascript(RuntimeCapabilities.SCRIPT, result -> {
+                        if (failed || destroyed || web != view) return;
+                        handler.removeCallbacks(compatibilityTimeout);
+                        diagnostics = diagnostics.withProbe("\"PASS\"".equals(result) ? "PASS" : "FAIL");
+                        if (diagnostics.supported()) view.loadUrl(SyncPolicy.DOCUMENT);
+                        else showRuntimeFailure(RuntimeDiagnostics.Event.COMPATIBILITY_BLOCKED);
+                    });
+                } else if (SyncPolicy.appDocument(url) && diagnostics.supported() && !compatHistoryCleared) {
+                    compatHistoryCleared = true;
+                    view.clearHistory(); // Back must not return to the temporary startup probe.
+                }
+            }
             @Override public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
                 if (!destroyed && web == view) showRuntimeFailure(detail.didCrash()
                         ? RuntimeDiagnostics.Event.RENDERER_CRASHED : RuntimeDiagnostics.Event.RENDERER_TERMINATED);
                 return true;
             }
             @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                if (request.isForMainFrame() && SyncPolicy.appDocument(request.getUrl().toString()))
+                if (request.isForMainFrame() && startupDocument(request.getUrl().toString()))
                     showRuntimeFailure(RuntimeDiagnostics.Event.PAGE_LOAD_FAILED);
             }
             @Override public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse response) {
-                if (request.isForMainFrame() && SyncPolicy.appDocument(request.getUrl().toString()) && response.getStatusCode() >= 400)
+                if (request.isForMainFrame() && startupDocument(request.getUrl().toString()) && response.getStatusCode() >= 400)
                     showRuntimeFailure(RuntimeDiagnostics.Event.PAGE_LOAD_FAILED);
             }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
@@ -123,7 +146,7 @@ public final class MainActivity extends Activity {
                 return response != null ? response : blocked();
             }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                if (SyncPolicy.appDocument(request.getUrl().toString()) && request.isForMainFrame()) return false;
+                if (startupDocument(request.getUrl().toString()) && request.isForMainFrame()) return false;
                 if (request.isForMainFrame() && request.hasGesture()
                         && Arrays.asList("https", "http", "mailto").contains(request.getUrl().getScheme())) {
                     try { startActivity(new Intent(Intent.ACTION_VIEW, request.getUrl())); }
@@ -162,23 +185,35 @@ public final class MainActivity extends Activity {
                     }
                 });
         handler.post(expiry);
-        web.loadUrl(SyncPolicy.DOCUMENT);
+        if (BuildConfig.HUAWEI_COMPAT) {
+            handler.postDelayed(compatibilityTimeout, 30000);
+            web.loadUrl(SyncPolicy.COMPAT_DOCUMENT);
+        } else web.loadUrl(SyncPolicy.DOCUMENT);
+    }
+
+    private boolean startupDocument(String url) {
+        return SyncPolicy.appDocument(url) || (BuildConfig.HUAWEI_COMPAT && SyncPolicy.COMPAT_DOCUMENT.equals(url));
     }
 
     private RuntimeDiagnostics captureDiagnostics() {
         android.content.pm.PackageInfo provider = null;
         Boolean listener = null;
+        int chromium = -1;
         try { provider = WebViewCompat.getCurrentWebViewPackage(this); } catch (RuntimeException ignored) { }
         try { listener = WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER); } catch (RuntimeException ignored) { }
+        if (BuildConfig.HUAWEI_COMPAT) {
+            try { chromium = SyncPolicy.chromiumMajor(WebSettings.getDefaultUserAgent(this)); } catch (RuntimeException ignored) { }
+        }
         return new RuntimeDiagnostics(BuildConfig.VERSION_NAME, android.os.Build.VERSION.RELEASE,
                 android.os.Build.VERSION.SDK_INT, provider != null,
                 provider == null ? null : provider.packageName,
-                provider == null ? null : provider.versionName, listener);
+                provider == null ? null : provider.versionName, listener, BuildConfig.HUAWEI_COMPAT, chromium, "NOT_RUN");
     }
 
     private void showRuntimeFailure(RuntimeDiagnostics.Event event) {
         if (destroyed || failed) return;
         failed = true;
+        handler.removeCallbacks(compatibilityTimeout);
         handler.removeCallbacks(expiry); sync.setEnabled(false);
         decoder.shutdownNow(); workers.shutdownNow();
         if (fileChooser != null) {
@@ -336,7 +371,7 @@ public final class MainActivity extends Activity {
         }
     }
     @Override protected void onDestroy() {
-        destroyed = true; handler.removeCallbacks(expiry); sync.setEnabled(false); decoder.shutdownNow(); workers.shutdownNow();
+        destroyed = true; handler.removeCallbacks(expiry); handler.removeCallbacks(compatibilityTimeout); sync.setEnabled(false); decoder.shutdownNow(); workers.shutdownNow();
         if (fileChooser != null) fileChooser.onReceiveValue(null);
         if (web != null) web.destroy();
         saveBytes = null; saveId = null; saveReply = null;

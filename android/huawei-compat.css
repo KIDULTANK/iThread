@@ -1,0 +1,20 @@
+/* CSS selector :has() and dynamic viewport units are newer than this test profile's target. */
+html[data-compat="huawei"] .react-flow__node {
+  -webkit-user-select: none;
+  user-select: none;
+}
+html[data-compat="huawei"] [contenteditable="true"],
+html[data-compat="huawei"] input,
+html[data-compat="huawei"] textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+@media (max-width: 640px) {
+  html[data-compat="huawei"] .mm-panel-host,
+  html[data-compat="huawei"] .mm-inspector {
+    height: var(--mm-sheet-h, 62vh) !important;
+  }
+  html[data-compat="huawei"] .mm-sheet-handle {
+    bottom: var(--mm-sheet-h, 62vh) !important;
+  }
+}

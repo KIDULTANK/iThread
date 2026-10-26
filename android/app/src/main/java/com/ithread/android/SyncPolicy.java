@@ -8,8 +8,16 @@ import java.nio.charset.StandardCharsets;
 final class SyncPolicy {
     static final int MAX_BYTES = 16 * 1024 * 1024;
     static final int MIN_WEBVIEW_MAJOR = 124;
+    static final int COMPAT_MIN_CHROMIUM_MAJOR = 98;
     static final String ORIGIN = "https://appassets.androidplatform.net";
     static final String DOCUMENT = ORIGIN + "/assets/index.html";
+    static final String COMPAT_DOCUMENT = ORIGIN + "/assets/compatibility.html";
+
+    static int chromiumMajor(String userAgent) {
+        if (userAgent == null || userAgent.length() > 4096) return -1;
+        java.util.regex.Matcher version = java.util.regex.Pattern.compile("(?:^|\\s)Chrome/([0-9]{1,3})\\.").matcher(userAgent);
+        return version.find() ? Integer.parseInt(version.group(1)) : -1;
+    }
 
     static boolean supportedWebView(String version) {
         return webViewMajor(version) >= MIN_WEBVIEW_MAJOR;

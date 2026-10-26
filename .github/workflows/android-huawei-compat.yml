@@ -1,0 +1,110 @@
+name: Build Huawei compatibility test APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/android-huawei-compat-20261026]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: huawei-compat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.0.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+      - run: pnpm install --frozen-lockfile
+      - name: Check shared code and compatibility probe
+        run: pnpm typecheck && pnpm exec vitest run test/android-huawei-compat.test.ts test/android-bridge.test.ts test/android-export.test.ts test/use-touch-context-menu.test.tsx test/editor-keys.test.ts test/flowmindmap.test.tsx test/use-disk-file.test.tsx test/fileSystem.test.ts --maxWorkers=2 --minWorkers=1
+      - name: Build isolated legacy-targeted editor
+        env:
+          ITHREAD_ANDROID_COMPAT: huawei
+        run: pnpm android:prepare
+      - name: Compile separate APK and verify both native policies
+        run: gradle -p android -PithreadHuaweiCompat testDebugUnitTest testHuaweiCompatUnitTest assembleHuaweiCompat assembleHuaweiCompatAndroidTest --no-daemon
+      - name: Checksums
+        run: |
+          cd android/app/build/outputs/apk/huaweiCompat
+          sha256sum app-huaweiCompat.apk > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iThread-Huawei-compat-test
+          path: |
+            android/app/build/outputs/apk/huaweiCompat/app-huaweiCompat.apk
+            android/app/build/outputs/apk/huaweiCompat/SHA256SUMS.txt
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Huawei-instrumented-tests
+          path: |
+            android/app/build/outputs/apk/huaweiCompat/app-huaweiCompat.apk
+            android/app/build/outputs/apk/androidTest/huaweiCompat/app-huaweiCompat-androidTest.apk
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Huawei-native-unit-results
+          path: android/app/build/test-results/
+
+  runtime:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [32, 33]
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: actions/download-artifact@v4
+        with:
+          name: Huawei-instrumented-tests
+          path: test-apks
+      - name: Enable acceleration on the disposable CI runner
+        run: sudo chmod a+rw /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          target: google_apis
+          profile: pixel_c
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: |
+            adb install -r test-apks/huaweiCompat/app-huaweiCompat.apk
+            adb install -r test-apks/androidTest/huaweiCompat/app-huaweiCompat-androidTest.apk
+            adb shell am instrument -w -r -e notClass com.ithread.android.UpgradeStorageTest com.ithread.android.huawei.compat.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.log
+            adb logcat -d -v brief AndroidRuntime:E chromium:E '*:S' > runtime-errors.log
+            adb pull /sdcard/Android/data/com.ithread.android.huawei.compat/files/qa runtime-screenshots || true
+            ! grep -E 'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|INSTRUMENTATION_STATUS_CODE: -4' instrumentation.log
+            grep -q 'OK (' instrumentation.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: huawei-runtime-api-${{ matrix.api }}
+          path: |
+            instrumentation.log
+            runtime-errors.log
+            runtime-screenshots/

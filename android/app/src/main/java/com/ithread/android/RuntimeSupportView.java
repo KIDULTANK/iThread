@@ -35,7 +35,12 @@ final class RuntimeSupportView extends ScrollView {
         text(column, compatibility ? diagnostics.explanation()
                 : "页面或渲染进程已停止。重试不会清空本地文件库，但未完成保存的修改可能无法恢复。\n"
                 + "The page or renderer stopped. Retry keeps the local library; unsaved edits may not be recoverable.", 16, false);
-        if (compatibility) text(column,
+        if (compatibility && diagnostics.huaweiCompat) text(column,
+                "这是独立的华为兼容测试包，按实际 Chromium 版本和功能检查，不按华为组件版本号判断。\n"
+                + "需要 Chromium 98+ 及安全消息接口；不会修改系统内核，也不会覆盖普通版文件库。\n"
+                + "This separate Huawei test build checks Chromium and runtime capabilities, not the vendor package version.\n"
+                + "Requires Chromium 98+ and secure messaging. It does not replace the system engine or the regular app library.", 14, false);
+        if (compatibility && !diagnostics.huaweiCompat) text(column,
                 "安卓系统版本与 WebView 内核版本不同。本预览要求 Android 10+ 和 WebView 124+。\n"
                 + "请通过设备或模拟器的官方渠道检查 WebView 更新；更新电脑浏览器不会更新这里的内核。\n"
                 + "Android and WebView versions are separate. This preview requires Android 10+ and WebView 124+.\n"

@@ -29,9 +29,12 @@ public final class TabletSmokeTest {
         scenario = ActivityScenario.launch(MainActivity.class);
         scenario.onActivity(activity -> {
             android.content.pm.PackageInfo provider = WebViewCompat.getCurrentWebViewPackage(activity);
-            supported = provider != null && SyncPolicy.supportedWebView(provider.versionName)
+            supported = provider != null && (BuildConfig.HUAWEI_COMPAT
+                    ? SyncPolicy.chromiumMajor(android.webkit.WebSettings.getDefaultUserAgent(activity)) >= SyncPolicy.COMPAT_MIN_CHROMIUM_MAJOR
+                    : SyncPolicy.supportedWebView(provider.versionName))
                     && WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER);
             System.out.println("ITHREAD_WEBVIEW " + (provider == null ? "missing" : provider.versionName)
+                    + " CHROMIUM=" + SyncPolicy.chromiumMajor(android.webkit.WebSettings.getDefaultUserAgent(activity))
                     + " EDITOR_SUPPORTED=" + supported);
         });
     }
@@ -79,7 +82,7 @@ public final class TabletSmokeTest {
             scenario.onActivity(activity -> {
                 TextView report = activity.getWindow().getDecorView().findViewWithTag("runtime-diagnostics");
                 assertNotNull(report);
-                assertTrue(report.getText().toString().contains("webview.minimum=124"));
+                assertTrue(report.getText().toString().contains(BuildConfig.HUAWEI_COMPAT ? "chromium.minimum=98" : "webview.minimum=124"));
                 assertTrue(report.getText().toString().contains("event=COMPATIBILITY_BLOCKED"));
                 assertNotNull(activity.getWindow().getDecorView().findViewWithTag("retry-startup"));
                 assertNotNull(activity.getWindow().getDecorView().findViewWithTag("copy-diagnostics"));

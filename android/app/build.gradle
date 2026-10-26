@@ -16,11 +16,20 @@ android {
         versionCode 70004
         versionName '0.7.0-android-dev.4'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        buildConfigField 'boolean', 'HUAWEI_COMPAT', 'false'
     }
     buildTypes {
         debug { applicationIdSuffix '.preview'; versionNameSuffix '-debug' }
         release { minifyEnabled false }
+        huaweiCompat {
+            initWith debug
+            applicationIdSuffix '.huawei.compat'
+            versionNameSuffix '-huawei-compat.1'
+            buildConfigField 'boolean', 'HUAWEI_COMPAT', 'true'
+            matchingFallbacks = ['debug']
+        }
     }
+    if (project.hasProperty('ithreadHuaweiCompat')) testBuildType 'huaweiCompat'
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -52,6 +61,10 @@ tasks.register('verifyWebAssets') {
     doLast {
         if (!layout.buildDirectory.file('generated/ithread/assets/web/index.html').get().asFile.exists())
             throw new GradleException('Run pnpm android:prepare from the repository root first.')
+        def profile = layout.buildDirectory.file('generated/ithread/build-profile.txt').get().asFile
+        def expected = project.hasProperty('ithreadHuaweiCompat') ? 'huawei' : 'standard'
+        if (!profile.exists() || profile.text.trim() != expected)
+            throw new GradleException('Web asset profile must match the requested native build profile.')
     }
 }
 tasks.named('preBuild').configure { dependsOn 'verifyWebAssets' }

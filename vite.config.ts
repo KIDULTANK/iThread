@@ -290,7 +290,10 @@ export default defineConfig({
   base: "./",
   // No inline module-preload polyfill → the production HTML carries zero inline scripts, so the strict
   // `script-src 'self'` CSP holds (modern browsers / the PWA target support modulepreload natively).
-  build: { modulePreload: { polyfill: false } },
+  build: {
+    modulePreload: { polyfill: false },
+    ...(process.env.ITHREAD_ANDROID_COMPAT === "huawei" ? { target: "chrome98" } : {}),
+  },
   plugins: [
     devServiceWorkerResetPlugin(),
     iThreadCliBridgePlugin(),
