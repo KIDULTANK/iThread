@@ -56,13 +56,15 @@ abstract class TabletTestBase {
             if ("true".equals(evaluate(script))) return;
             Thread.sleep(200);
         }
-        fail("Android state not reached: " + script + "\n" + evaluate("JSON.stringify({body:document.body.innerText.slice(0,1200),upgradeError:window.__upgradeError})"));
+        fail("Android state not reached: " + script + "\n" + evaluate("JSON.stringify({body:document.body.innerText.slice(0,1200),upgradeError:window.__upgradeError,imeTrace:window.__imeTrace})"));
     }
     protected void ready() throws Exception {
         final boolean[] supported = { false };
         scenario.onActivity(activity -> supported[0] = findWeb(activity.getWindow().getDecorView()) != null);
         assumeTrue("WebView upgrade prompt only; editor tests skipped", supported[0]);
-        waitTrue("Boolean(document.querySelector('.start') || document.querySelector('.mm-editor .react-flow'))");
+        // The eager editor may briefly show its pre-restore placeholder. Wait for boot's actual
+        // start page or restored map URL before trying to click/edit/import in the cold WebView.
+        waitTrue("Boolean(document.querySelector('.start') || (new URLSearchParams(location.search).has('map') && document.querySelector('.mm-editor .react-flow')))");
         waitForWindowFocus(scenario);
     }
 }

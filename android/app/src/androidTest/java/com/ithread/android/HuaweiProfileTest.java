@@ -30,6 +30,8 @@ public final class HuaweiProfileTest extends TabletTestBase {
                 assertTrue(info.chromiumMajor >= 98);
                 assertTrue(info.supported());
                 assertEquals("PASS", info.probe);
+                android.util.Log.i("iThreadCompatTest", "provider=" + info.providerVersion
+                        + " chromium=" + info.chromiumMajor + " probe=" + info.probe);
             } catch (ReflectiveOperationException error) { throw new AssertionError(error); }
         });
         captureRuntimeScreen("huawei-profile-editor");

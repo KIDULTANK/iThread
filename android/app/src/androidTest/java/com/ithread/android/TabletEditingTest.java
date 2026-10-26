@@ -26,6 +26,10 @@ public final class TabletEditingTest extends TabletTestBase {
         evaluate("window.__editNode=document.querySelector('.react-flow__node');window.__originalTopic=window.__editNode.innerText;"
                 + "window.__editNode.firstElementChild.dispatchEvent(new MouseEvent('dblclick',{bubbles:true}));true");
         waitTrue("Boolean(document.querySelector('[contenteditable=true]') && document.querySelector('.mm-android-edit-actions'))");
+        waitTrue("document.activeElement===document.querySelector('[contenteditable=true]') && window.__editNode.isConnected");
+        // DOM existence precedes TopicNode's focus/seed effect on a cold, older engine.
+        evaluate("window.__editSettled=false;requestAnimationFrame(()=>requestAnimationFrame(()=>{window.__editSettled=document.activeElement===document.querySelector('[contenteditable=true]')}));true");
+        waitTrue("window.__editSettled===true");
     }
     private void tapAction(boolean done) throws Exception {
         waitForWindowFocus(scenario);
@@ -42,6 +46,7 @@ public final class TabletEditingTest extends TabletTestBase {
 
     @Test public void compositionConfirmationStaysInEditorAndTouchDoneCommits() throws Exception {
         editFirstTopic();
+        evaluate("window.__imeTrace=[];for(const kind of ['focusin','focusout','compositionstart','compositionend','keydown']){document.addEventListener(kind,e=>{if(window.__imeTrace.length<24)window.__imeTrace.push({kind,target:e.target.tagName,key:e.key,composing:e.isComposing,keyCode:e.keyCode,connected:window.__editNode.isConnected})},true)};true");
         evaluate("window.__topicInput=document.querySelector('[contenteditable=true]');"
                 + "window.__topicInput.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));"
                 + "window.__topicInput.textContent='平板中文编辑';"
@@ -51,6 +56,8 @@ public final class TabletEditingTest extends TabletTestBase {
         evaluate("window.__topicInput.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true,data:'平板中文编辑'}));true");
         waitTrue("!document.querySelector('.mm-android-edit-done').disabled");
         assertEquals("true", evaluate("(()=>{const bar=document.querySelector('.mm-android-edit-actions');const r=bar.getBoundingClientRect();return !bar.closest('.react-flow') && r.top>=0 && r.bottom<=innerHeight && getComputedStyle(bar).position==='fixed'})()"));
+        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).waitForIdle();
+        Thread.sleep(300); // Let the software renderer present the frame captured below.
         captureRuntimeScreen("tablet-edit-actions");
         tapAction(true);
         waitTrue("window.__editNode.innerText.includes('平板中文编辑') && window.__editNode.classList.contains('selected')");
