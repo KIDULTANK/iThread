@@ -23,6 +23,9 @@ public final class TabletEditingTest extends TabletTestBase {
         ready();
         evaluate("document.querySelector('.st-new')?.click();true");
         waitTrue("Boolean(document.querySelector('.react-flow__node'))");
+        waitForWindowFocus(scenario);
+        scenario.onActivity(activity -> findWeb(activity.getWindow().getDecorView()).requestFocus());
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
         evaluate("window.__editNode=document.querySelector('.react-flow__node');window.__originalTopic=window.__editNode.innerText;"
                 + "window.__editNode.firstElementChild.dispatchEvent(new MouseEvent('dblclick',{bubbles:true}));true");
         waitTrue("Boolean(document.querySelector('[contenteditable=true]') && document.querySelector('.mm-android-edit-actions'))");
