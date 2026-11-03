@@ -68,7 +68,7 @@ jobs:
           retention-days: 14
 
       - name: Publish preview release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && github.ref != 'refs/tags/v0.7.1'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -93,3 +93,41 @@ jobs:
             $arguments += "--generate-notes"
           }
           gh @arguments
+
+  build-huawei:
+    if: github.ref == 'refs/tags/v0.7.1'
+    uses: ./.github/workflows/android-huawei-compat.yml
+    permissions:
+      contents: read
+
+  publish-focus-preview:
+    if: github.ref == 'refs/tags/v0.7.1'
+    needs: [build-windows, build-huawei]
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: iThread-windows-x64-unsigned
+          path: release/windows
+      - uses: actions/download-artifact@v4
+        with:
+          name: iThread-Huawei-compat-test
+          path: release/huawei
+      - name: Verify Huawei checksum and publish both previews
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $huaweiApk = "release/huawei/app-huaweiCompat.apk"
+          $expected = ((Get-Content "release/huawei/SHA256SUMS.txt") -split "\s+")[0]
+          $digest = (Get-FileHash $huaweiApk -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($digest -ne $expected) { throw "Huawei APK checksum mismatch" }
+          $name = "iThread-Huawei-Test-Focus-0.7.1.apk"
+          Copy-Item $huaweiApk "release/windows/$name"
+          Add-Content -Encoding ascii "release/windows/SHA256SUMS.txt" "$digest  $name"
+          $assets = @(Get-ChildItem release/windows -File | ForEach-Object { $_.FullName })
+          gh release create $env:GITHUB_REF_NAME @assets --repo $env:GITHUB_REPOSITORY --title "iThread $env:GITHUB_REF_NAME · Focus & Auto Zoom" --prerelease --verify-tag --notes-file "docs/releases/v0.7.1.md"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

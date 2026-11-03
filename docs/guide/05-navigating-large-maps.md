@@ -30,6 +30,14 @@ Lost? The **Fit** button reframes the entire map to the viewport in one click. I
 "take me home" of the canvas, and worth wiring into muscle memory: zoom in to work, hit
 Fit to see where you are.
 
+**View → Auto zoom** follows the current selection with a smooth fit, capped at 125%.
+Try selecting two far-apart topics, then a single topic: the first needs a wider view, the second
+can be read closer up. Pan manually to keep your chosen framing until the next selection.
+
+**View → Focus mode** dims unrelated branches and keeps the path to the root. Enable it
+with a selection to lock those branches, or clear the selection first so the focus follows
+your next choice. Use the banner or **Esc** to leave focus mode.
+
 ## The minimap and zoom
 
 In the bottom-right corner sits a **minimap** -- a shrunk-down overview of the whole map,

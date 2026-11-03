@@ -467,6 +467,9 @@ function FlowInner({
     busy: cameraBusy,
     reducedMotion,
     fitView,
+    stopMotion: () => {
+      void setViewport(getViewport(), { duration: 0 });
+    },
   });
 
   // Refs so the stable callbacks below always read the latest values.

@@ -28,7 +28,7 @@ import {
   WalkBar,
 } from "./Panels";
 import { Breadcrumb, type Crumb } from "./components/Breadcrumb";
-import { CommandPalette, clearRecents } from "./components/CommandPalette";
+import { clearRecents } from "./components/CommandPalette";
 import { Dialog } from "./components/Dialog";
 import { DocumentTabs } from "./components/DocumentTabs";
 import { EdgeInspector } from "./components/EdgeInspector";
@@ -41,7 +41,6 @@ import { type DockEntry, PanelDock } from "./components/PanelDock";
 import { SearchResults } from "./components/SearchResults";
 import { ToastBar } from "./components/ToastBar";
 import { Toolbar, type ToolbarProps } from "./components/Toolbar";
-import { buildEditorCommands } from "./components/editorCommands";
 import { DialogHost, editorConfirm, editorPrompt } from "./components/editorDialogs";
 import { PANEL_LABELS } from "./panelLabels";
 import "./design/editor.css";
@@ -188,6 +187,9 @@ const ThemeDesignerDialog = lazy(() =>
 );
 const SettingsDialog = lazy(() =>
   import("./components/SettingsDialog").then((m) => ({ default: m.SettingsDialog })),
+);
+const EditorCommandPalette = lazy(() =>
+  import("./components/EditorCommandPalette").then((m) => ({ default: m.EditorCommandPalette })),
 );
 const ShortcutsDialog = lazy(() =>
   import("./components/ShortcutsDialog").then((m) => ({ default: m.ShortcutsDialog })),
@@ -3065,14 +3067,9 @@ export function App() {
 
       {/* In-editor ⌘K command palette — every toolbar action as a searchable command. */}
       {cmdkOpen && (
-        <CommandPalette
-          commands={buildEditorCommands(toolbarProps)}
-          onClose={() => setCmdkOpen(false)}
-          placeholder={t("palette.placeholder")}
-          // When a topic is selected these kinds are enabled, so ⌘K (empty query) leads with the
-          // node-scoped actions under a "For the selected topic" header.
-          contextKinds={["node", "marker", "priority"]}
-        />
+        <Suspense fallback={null}>
+          <EditorCommandPalette toolbar={toolbarProps} onClose={() => setCmdkOpen(false)} />
+        </Suspense>
       )}
     </div>
   );

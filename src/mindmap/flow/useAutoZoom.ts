@@ -21,8 +21,19 @@ export function useAutoZoom(opts: {
   busy: boolean;
   reducedMotion: boolean;
   fitView: Fit;
+  stopMotion?: () => void;
 }) {
-  const { enabled, selectedIds, nodes, initialized, editing, busy, reducedMotion, fitView } = opts;
+  const {
+    enabled,
+    selectedIds,
+    nodes,
+    initialized,
+    editing,
+    busy,
+    reducedMotion,
+    fitView,
+    stopMotion,
+  } = opts;
   const selection = enabled && selectedIds.size ? JSON.stringify([...selectedIds].sort()) : "";
   const geometry =
     selection &&
@@ -31,8 +42,9 @@ export function useAutoZoom(opts: {
         .filter((n) => selectedIds.has(n.id) && !n.hidden)
         .map((n) => [n.id, n.position.x, n.position.y, n.measured?.width, n.measured?.height]),
     );
-  const latest = useRef({ selection, nodes, selectedIds, fitView });
-  latest.current = { selection, nodes, selectedIds, fitView };
+  const latest = useRef({ selection, nodes, selectedIds, fitView, stopMotion });
+  latest.current = { selection, nodes, selectedIds, fitView, stopMotion };
+  const movingUntil = useRef(0);
   const manualSelection = useRef<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onManualMove = useCallback(() => {
@@ -42,6 +54,10 @@ export function useAutoZoom(opts: {
   // Geometry changes are a trigger; the timer reads the latest live nodes after layout settles.
   // biome-ignore lint/correctness/useExhaustiveDependencies: stable geometry signature debounces layout frames.
   useEffect(() => {
+    if ((!enabled || editing || busy) && Date.now() < movingUntil.current) {
+      movingUntil.current = 0;
+      latest.current.stopMotion?.();
+    }
     if (!enabled || manualSelection.current !== selection) manualSelection.current = null;
     if (!selection || !initialized || editing || busy || manualSelection.current === selection)
       return;
@@ -49,12 +65,14 @@ export function useAutoZoom(opts: {
       const current = latest.current;
       const targets = current.nodes.filter((n) => current.selectedIds.has(n.id) && !n.hidden);
       if (!targets.length || manualSelection.current === current.selection) return;
+      const duration = reducedMotion ? 0 : 320;
+      movingUntil.current = Date.now() + duration;
       void current.fitView({
         nodes: targets.map((n) => ({ id: n.id })),
         padding: 0.32,
         minZoom: 0.2,
         maxZoom: 1.25,
-        duration: reducedMotion ? 0 : 320,
+        duration,
       });
     }, 180);
     return () => {

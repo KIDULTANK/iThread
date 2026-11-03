@@ -2,8 +2,9 @@ name: Build Huawei compatibility test APK
 
 on:
   workflow_dispatch:
+  workflow_call:
   push:
-    branches: [codex/android-huawei-compat-20261026, codex/focus-autozoom-20261103]
+    branches: [codex/android-huawei-compat-20261026]
 
 permissions:
   contents: read
@@ -93,17 +94,21 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           script: |
+            adb shell input keyevent KEYCODE_WAKEUP
+            adb shell wm dismiss-keyguard
+            adb shell settings put system screen_off_timeout 1800000
             adb install -r test-apks/huaweiCompat/app-huaweiCompat.apk
             adb install -r test-apks/androidTest/huaweiCompat/app-huaweiCompat-androidTest.apk
             adb shell am instrument -w -r -e notClass com.ithread.android.UpgradeStorageTest com.ithread.android.huawei.compat.focus.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.log
-            adb logcat -d -v brief AndroidRuntime:E chromium:E iThreadCompatTest:I '*:S' > runtime-errors.log
+            adb logcat -d -v brief AndroidRuntime:E chromium:E ActivityManager:W WindowManager:W iThreadCompatTest:I iThreadRuntimeTest:I '*:S' > runtime-errors.log
+            adb shell dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp' >> runtime-errors.log || true
             adb pull /sdcard/Android/data/com.ithread.android.huawei.compat.focus/files/qa runtime-screenshots || true
             ! grep -E 'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|INSTRUMENTATION_STATUS_CODE: -4' instrumentation.log
             grep -q 'OK (' instrumentation.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: huawei-runtime-api-${{ matrix.api }}
+          name: huawei-runtime-api-${{ matrix.api }}-attempt-${{ github.run_attempt }}
           path: |
             instrumentation.log
             runtime-errors.log

@@ -1,9 +1,16 @@
 # Changelog
 
-Notable changes to MindMap Studio. Loosely follows Keep a Changelog; pre-1.0 and
+Notable changes to iThread. Loosely follows Keep a Changelog; pre-1.0 and
 phase-based. Open work lives in `NEXT_STEPS.md`, not here.
 
 ## [Unreleased]
+
+## [0.7.1] - 2026-11-03
+
+- Focus mode follows selection or locks one or more branches while leaving the rest of the map visible.
+- Auto zoom fits the visible selection with a scale cap and pauses for editing and gestures.
+- Windows preview includes native Open/Save As fixes, remembered window geometry and Windows-only updates.
+- A side-by-side Huawei compatibility preview includes the same view controls.
 
 ## [0.7.0] - 2026-10-21
 

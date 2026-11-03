@@ -25,6 +25,7 @@ FreeMind、OPML、MindManager 等常见格式。软件无需账号，不要求�
 - [中文快速上手](docs/QUICKSTART.zh-CN.md)
 - [已知限制](docs/KNOWN_LIMITATIONS.zh-CN.md)
 - [CLI 控制桥](docs/CLI.md)
+- [iThoughts 功能差距](docs/ithoughts-feature-audit.md)
 - [贡献指南](CONTRIBUTING.zh-CN.md)
 
 首次测试请保留原始 `.itmz`，日常编辑优先使用无损的 `.ithread` 格式。当前 Windows 构建尚未
@@ -36,6 +37,8 @@ iThread is a Windows-first, local-first mind-mapping application for people who 
 their iThoughts maps and keyboard-oriented workflows. It imports, edits and exports iThoughts `.itmz`
 files and also works with Markdown, XMind, FreeMind, OPML, MindManager and other common formats. No
 account or permanent internet connection is required, and maps stay on the local device by default.
+
+[iThoughts feature comparison](docs/ithoughts-feature-audit.md#english)
 
 首次启动跟随 Windows 首选语言（中文 → 简体中文，其他 → 英文）；手动选择优先且会保留。
 The first-launch UI follows the Windows language (Chinese → Simplified Chinese; otherwise English).

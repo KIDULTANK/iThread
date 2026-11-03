@@ -76,7 +76,8 @@ Left to right:
 | **⊟ / ⊞** | [Collapse / expand all](#collapse--expand) branches |
 | **1. Numbering** | Toggle [outline numbering](#auto-numbering) (1, 1.2, …) on every topic |
 | **⌒ Line jumps** | Toggle [line-jumps](#relationships-boundaries--callouts) — a hop where two relationship arrows cross |
-| **◎ Focus** | [Focus the selected branch](#focus-a-branch) — dim everything else (Esc exits) |
+| **View → Focus mode** | [Follow or lock focus](#focus-a-branch) — dim unrelated branches (Esc exits) |
+| **View → Auto zoom** | Frame the visible selection as you move between topics |
 | **Canvas** | **Free layout (whiteboard)** toggle + **Theme, design presets & backdrop…** — which opens the [Map panel](#topic-info-panel), where the whole per-map look lives (theme, background, design presets, connectors, typography) |
 | **ℹ Info** | Toggle the [topic info panel](#topic-info-panel) — note, markers, tags, style, links for the selected node |
 | **🔍 Find** | Open [Find & Replace](#find--replace) — a top-right overlay to search and replace topics & notes (`Ctrl/⌘+F` or `/`) |
@@ -423,11 +424,16 @@ stored locally and travel with you between maps — handy for views you return t
 
 ### Focus a branch
 
-Select a node and click **◎ Focus** to spotlight just that branch: the node, its whole subtree,
-and the path back to the central topic stay bright while everything else dims. It's the fastest way
-to talk through one part of a busy map without deleting or collapsing anything. Press **Esc** or
-click **Show all** in the banner to bring the rest back. (Like the Power Filter, it only changes
-opacity — nothing is removed.)
+Turn on **View → Focus mode** (**Alt+Shift+F**) to dim unrelated branches. Open it with no
+topics selected to follow future selections. Open it with one or more topics selected to lock
+their branches, so clicking elsewhere does not change the spotlight. The banner lets you switch
+between following and locking or exit; **Esc** also exits. Focus keeps the branch and its path
+to the central topic visible and does not change the map's structure.
+
+Turn on **View → Auto zoom** (**Alt+Shift+Z**) to center and fit the visible selection. It works
+independently of focus and pauses during topic editing, dragging or marquee selection. Manually
+panning or zooming keeps your framing until you change the selection. The automatic scale is
+capped at 125% and honors reduced motion.
 
 ### Isolate a branch
 

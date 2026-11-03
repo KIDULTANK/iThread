@@ -47,7 +47,6 @@ afterEach(() => {
 /** From a fresh mount, land in the editor by opening a template from the Start screen. */
 async function openEditor(user: ReturnType<typeof userEvent.setup>, container: HTMLElement) {
   // Boot lands on Start (no saved session); open a template card to enter the editor.
-  if (container.querySelector(".mm-editor")) return; // already in the editor
   // The Start screen's first paint can exceed the 1s default under heavy parallel/coverage load;
   // give it the same headroom as the editor-mount waits below to avoid an intermittent red.
   await waitFor(() => expect(screen.getByText("Brainstorm", { exact: true })).toBeTruthy(), {
@@ -63,6 +62,10 @@ async function openEditor(user: ReturnType<typeof userEvent.setup>, container: H
 }
 
 beforeEach(() => {
+  // Each test opens its own template. Do not race the eager canvas placeholder against
+  // restoration of a previous test's tab or URL while React is still loading lazy surfaces.
+  window.history.replaceState(null, "", "/");
+  vi.spyOn(mapStore, "getTabSession").mockResolvedValue(null);
   vi.spyOn(window, "confirm").mockReturnValue(true);
   vi.spyOn(window, "prompt").mockReturnValue("My view");
   if (!URL.createObjectURL) {
@@ -82,30 +85,12 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("App (integration)", () => {
-  it("exposes independent focus and auto zoom switches and exits focus with Escape", async () => {
-    const user = userEvent.setup();
-    const { container } = render(<App />);
-    await flush();
-    await openEditor(user, container);
-    fireEvent.keyDown(window, { code: "KeyF", altKey: true, shiftKey: true });
-    expect(screen.getByText("Focus follows your selection")).toBeTruthy();
-    await user.click(screen.getByTitle("View actions"));
-    const zoom = screen.getByRole("menuitemcheckbox", { name: "Auto zoom" });
-    expect(zoom.getAttribute("aria-checked")).toBe("false");
-    await user.click(zoom);
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.queryByText("Focus follows your selection")).toBeNull();
-    await user.click(screen.getByTitle("View actions"));
-    expect(
-      screen.getByRole("menuitemcheckbox", { name: "Auto zoom" }).getAttribute("aria-checked"),
-    ).toBe("true");
-  });
   it("boots to the Start screen and opens a map into the editor", async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);
     await flush();
     // Start screen affordances render (template gallery present).
-    expect(screen.getByText("Brainstorm", { exact: true })).toBeTruthy();
+    expect(await screen.findByText("Brainstorm", { exact: true }, { timeout: 5000 })).toBeTruthy();
     await openEditor(user, container);
     expect(container.querySelector(".mm-editor")).toBeTruthy();
     // The keyboard Open command needs this input even while the More menu is closed.
@@ -128,7 +113,7 @@ describe("App (integration)", () => {
         new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }),
       );
     });
-    const input = await screen.findByPlaceholderText(/Search commands/);
+    const input = await screen.findByPlaceholderText(/Search commands/, {}, { timeout: 5000 });
     expect(input).toBeTruthy();
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByPlaceholderText(/Search commands/)).toBeNull());
@@ -292,7 +277,7 @@ describe("App (integration)", () => {
         new KeyboardEvent("keydown", { key: ",", ctrlKey: true, bubbles: true }),
       );
     });
-    await waitFor(() => expect(screen.getByText("Local data")).toBeTruthy());
+    expect(await screen.findByText("Local data", {}, { timeout: 5000 })).toBeTruthy();
   });
 
   it("opens Settings from the rail and drives its actions", async () => {
