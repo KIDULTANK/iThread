@@ -12,6 +12,7 @@ import {
   supportsFileSystemAccess,
   writeMapToHandle,
 } from "../io/fileSystem";
+import { parseImport } from "../io/importDispatch";
 import { serializeDoc } from "../io/json";
 import type { MindMapDoc } from "../model/types";
 import { loadMapHandle, noteRecentFile, saveMapHandle } from "../store/mapStore";
@@ -104,17 +105,18 @@ export function useDiskFile({
     [bindFileHandle, recordMtime, load, setFileName, setDirty, setView, showHint],
   );
 
-  // Open a foreign file (a MindManager `.mmap`) as a one-way import: convert its bytes into a fresh
-  // library map via the shared import dispatcher and DON'T bind a handle — there's no save-back to
-  // `.mmap` (lossy by design). The map autosaves to IndexedDB like any other; the leading banner note
+  // Open a foreign file as a one-way import: convert it into a fresh
+  // library map via the shared import dispatcher and DON'T bind a handle to its original file.
+  // The map autosaves to IndexedDB like any other; the format-specific warning
   // + toast tell the user to Save as… an `.ithread` to keep it as a file.
   const importForeignFile = useCallback(
     async (handle: FileSystemFileHandle) => {
-      const bytes = new Uint8Array(await (await handle.getFile()).arrayBuffer());
-      const { parseMmap } = await import("../import/mmap"); // lazy: keeps the importer out of the entry
-      const { doc: next, warnings } = parseMmap(bytes);
+      const { doc: next, warnings } = await parseImport(
+        await handle.getFile(),
+        () => import("../import/mmap"),
+      );
       next.id = crypto.randomUUID(); // an import is a new library map, not a re-openable native file
-      load(next, [t("app.importedFromMindmanagerSavedTo"), ...warnings]);
+      load(next, warnings);
       setFileName(null); // library-only: not bound to a disk file
       setDirty(false);
       setView("editor");
@@ -226,7 +228,7 @@ export function useDiskFile({
     }
     const handle = handleCache.current.get(d.id);
     if (!handle) {
-      if (!supportsFileSystemAccess()) {
+      if (!window.iThreadDesktop && !supportsFileSystemAccess()) {
         if (await downloadMapFile(d)) showHint(`Downloaded ${suggestedFileName(d)}`);
         return;
       }
