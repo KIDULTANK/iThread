@@ -96,6 +96,32 @@ public final class TabletFileTest extends TabletTestBase {
         assertEquals("高亮", children.getJSONObject(0).getJSONArray("children").getJSONObject(0).getString("topic"));
     }
 
+    @Test public void focusAndAutoZoomWorkFromViewMenuOnHuawei() throws Exception {
+        if (!BuildConfig.HUAWEI_COMPAT) return;
+        String source = "# Focus test\n- Alpha\n  - Alpha child\n- Beta\n";
+        importAndSave("view-modes.md", source.getBytes(StandardCharsets.UTF_8), "Focus test");
+        evaluate("window.__topic=(text)=>Array.from(document.querySelectorAll('.react-flow__node')).find(n=>n.getAttribute('aria-label')===text||n.innerText.trim().split('\\n')[0]===text);"
+                + "window.__view=()=>document.querySelector('button[title=\"View actions\"],button[title=\"视图操作\"]').click();"
+                + "window.__choice=(en,zh)=>Array.from(document.querySelectorAll('[role=menuitemcheckbox]')).find(n=>n.textContent.includes(en)||n.textContent.includes(zh));"
+                + "window.__opacity=(name)=>Number(getComputedStyle(window.__topic(name).firstElementChild).opacity);"
+                + "window.__zoom=()=>new DOMMatrixReadOnly(getComputedStyle(document.querySelector('.react-flow__viewport')).transform).m22;true");
+        waitTrue("Boolean(window.__topic('Alpha')&&window.__topic('Beta'))");
+        evaluate("document.querySelector('.react-flow__pane').click();window.__view();true");
+        waitTrue("Boolean(window.__choice('Focus mode','焦点模式'))");
+        evaluate("window.__choice('Focus mode','焦点模式').click();window.__topic('Alpha').click();true");
+        waitTrue("window.__opacity('Beta')<0.3 && window.__opacity('Alpha')>0.95");
+        evaluate("window.__topic('Beta').click();true");
+        waitTrue("window.__opacity('Alpha')<0.3 && window.__opacity('Beta')>0.95");
+        evaluate("Array.from(document.querySelectorAll('button')).find(b=>['Lock focus to selection','锁定当前选区的焦点'].includes(b.textContent.trim())).click();window.__topic('Alpha').click();true");
+        waitTrue("window.__opacity('Alpha')<0.3 && window.__opacity('Beta')>0.95 && window.__topic('Alpha').classList.contains('selected')");
+        evaluate("window.__view();true");
+        waitTrue("Boolean(window.__choice('Auto zoom','自动缩放'))");
+        evaluate("window.__choice('Auto zoom','自动缩放').click();true");
+        waitTrue("Math.abs(window.__zoom()-1.25)<0.01");
+        waitTrue("(()=>{const a=window.__topic('Alpha').getBoundingClientRect();const p=document.querySelector('.react-flow').getBoundingClientRect();return Math.abs(a.x+a.width/2-p.x-p.width/2)<12})()");
+        captureRuntimeScreen("huawei-focus-auto-zoom");
+    }
+
     @Test public void importsItmzWithChineseNotesLinksAndFolding() throws Exception {
         String xml = "<iThoughts><topics><topic uuid='synthetic-root' text='平板 itmz Test'>"
                 + "<topic uuid='synthetic-a' text='分支 A' note='人工备注' link='https://example.com/' folded='1'>"

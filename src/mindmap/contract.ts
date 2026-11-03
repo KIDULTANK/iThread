@@ -418,6 +418,8 @@ export interface MindMapProps {
   onSelect?: (selected: SelectedNode | null) => void;
   /** Fires when the number of selected nodes changes (the inspector enters bulk mode when >1). */
   onSelectionCount?: (count: number) => void;
+  /** Current complete topic selection, including marquee and modified clicks. */
+  onSelectionIds?: (ids: string[]) => void;
   /** Fires with a per-field "mixed" summary of the selection, so the inspector can blank-out + label
    *  a task field whose value differs across the selected topics (instead of showing the anchor's). */
   onSelectionFields?: (fields: SelectionFields) => void;
@@ -481,6 +483,8 @@ export interface MindMapProps {
   /** When true, viewport animations (fit / centre / set) run instantly — honours the user's
    *  reduced-motion preference (OS or the in-app toggle). Absent → animated. */
   reducedMotion?: boolean;
+  /** Automatically frame the selected visible topics, with manual navigation taking precedence. */
+  autoZoom?: boolean;
   /** Which of the three peer projections (MindManager-style "model once, view many ways") is active —
    *  drives the status-bar Map/Outline/Board segmented control. "map" (the plain canvas) when absent. */
   activeView?: "map" | "outline" | "board";

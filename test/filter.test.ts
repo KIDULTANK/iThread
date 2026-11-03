@@ -226,6 +226,15 @@ describe("focusSet", () => {
   it("lights the whole tree when focusing the root, and a floating node alone", () => {
     expect([...focusSet(doc, "r")].sort()).toEqual(["a", "bg", "c", "e", "m", "r"]); // not floating
     expect([...focusSet(doc, "f")]).toEqual(["f"]); // floating topic has no ancestors
+    expect([...focusSet(doc, ["a", "m", "f", "missing"])].sort()).toEqual([
+      "a",
+      "bg",
+      "c",
+      "e",
+      "f",
+      "m",
+      "r",
+    ]);
   });
 
   it("returns an empty set for an unknown id", () => {

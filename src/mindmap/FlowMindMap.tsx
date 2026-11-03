@@ -218,6 +218,7 @@ import {
 import { moveShapeAndCapture } from "./flow/shapeCapture";
 import { type GuideLine, computeSnap } from "./flow/snap";
 import type { EdgeData, FlowEdge, TopicNode as TopicNodeT } from "./flow/types";
+import { useAutoZoom } from "./flow/useAutoZoom";
 import { useLatestRef } from "./flow/useLatestRef";
 import { shouldVirtualize } from "./flow/virtualize";
 import { mindManagerTheme } from "./theme";
@@ -311,6 +312,7 @@ function FlowInner({
   onChange,
   onSelect,
   onSelectionCount,
+  onSelectionIds,
   onSelectionFields,
   onSelectionMarkerTags,
   onSelectEdge,
@@ -325,6 +327,7 @@ function FlowInner({
   initialSession,
   libraryMaps = [],
   reducedMotion = false,
+  autoZoom = false,
   activeView = "map",
   onSetView,
   ref,
@@ -345,7 +348,7 @@ function FlowInner({
   // Avoid doing the expensive first projection/layout during React render. Small maps still paint in
   // the first frame; a fully expanded large map starts empty and is populated by sync()'s worker.
   const deferInitialFlow = useMemo(() => shouldBuildFlowStateInWorker(viewOf), [viewOf]);
-  const initialFlow = useMemo<BuildFlowStateResult>(() => {
+  const [initialFlow] = useState<BuildFlowStateResult>(() => {
     if (deferInitialFlow) return { nodes: [], edges: [] };
     return buildFlowState({
       doc: viewOf,
@@ -360,17 +363,7 @@ function FlowInner({
       highlightIds,
       rollupTitles: new Map(libraryMaps.map((m) => [m.id, m.title])),
     });
-  }, [
-    deferInitialFlow,
-    viewOf,
-    palette,
-    numbered,
-    direction,
-    litIds,
-    hideUnmatched,
-    highlightIds,
-    libraryMaps,
-  ]);
+  });
   const [nodes, setNodes, onNodesChange] = useNodesState<TopicNodeT>(initialFlow.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdge>(initialFlow.edges);
   const { prefs: interactionPrefs } = useInteractionPrefs();
@@ -464,6 +457,17 @@ function FlowInner({
     zoomOut,
   } = useReactFlow();
   const initialized = useNodesInitialized();
+  const [cameraBusy, setCameraBusy] = useState(false);
+  const onManualMove = useAutoZoom({
+    enabled: autoZoom,
+    nodes,
+    selectedIds,
+    initialized,
+    editing: editingId !== null || editingLinkId !== null,
+    busy: cameraBusy,
+    reducedMotion,
+    fitView,
+  });
 
   // Refs so the stable callbacks below always read the latest values.
   const docRef = useRef(doc);
@@ -1418,8 +1422,10 @@ function FlowInner({
 
   // Report the selection count up (the inspector switches to bulk mode when >1).
   const onSelectionCountRef = useLatestRef(onSelectionCount);
+  const onSelectionIdsRef = useLatestRef(onSelectionIds);
   useEffect(() => {
     onSelectionCountRef.current?.(selectedIds.size);
+    onSelectionIdsRef.current?.([...selectedIds]);
   }, [selectedIds]);
 
   // Report a per-field "mixed" summary of the selection, so the inspector can blank-out + label a
@@ -2457,6 +2463,18 @@ function FlowInner({
             selectionKeyCode={null}
             multiSelectionKeyCode={["Shift", "Meta", "Control"]}
             onSelectionChange={onSelectionChange}
+            onMoveStart={(event) => {
+              if (event) onManualMove();
+            }}
+            onSelectionStart={() => {
+              onManualMove();
+              setCameraBusy(true);
+            }}
+            onSelectionEnd={() => setCameraBusy(false)}
+            onNodeDragStart={() => {
+              onManualMove();
+              setCameraBusy(true);
+            }}
             onNodeClick={(ev, node) => {
               // In "Link to…" mode, the next click on a *different* node completes the relationship —
               // silently (no modal), then opens the new line's label for inline editing.
@@ -2525,12 +2543,13 @@ function FlowInner({
               setMenu({ x: e.clientX, y: e.clientY, id: node.id });
             }}
             onNodeDrag={(_, node) => handleDrag(node.id, node.position)}
-            onNodeDragStop={(e, node) =>
+            onNodeDragStop={(e, node) => {
+              setCameraBusy(false);
               handleDragStop(node.id, node.position, {
                 shift: e.shiftKey,
                 ctrl: e.ctrlKey || e.metaKey,
-              })
-            }
+              });
+            }}
             onEdgeContextMenu={(e, edge) => {
               e.preventDefault();
               if (edge.type !== "crosslink") return;

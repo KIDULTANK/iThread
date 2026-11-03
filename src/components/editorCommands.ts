@@ -218,6 +218,16 @@ export function buildEditorCommands(props: ToolbarProps): Command[] {
       !!sel,
     );
   add("collapse-all", t("cmd.collapse-all"), "view", () => m()?.setAllExpanded(false));
+  add("toggle-focus", t("view.focus"), "view", canvas.toggleFocus);
+  add("follow-focus", t("view.followSelection"), "view", () => canvas.setFocusMode("follow"));
+  add(
+    "lock-focus",
+    t("view.lockSelection"),
+    "view",
+    () => canvas.setFocusMode("locked"),
+    canvas.selectedCount > 0,
+  );
+  add("toggle-auto-zoom", t("view.autoZoom"), "view", canvas.toggleAutoZoom);
   add("expand-all", t("cmd.expand-all"), "view", () => m()?.setAllExpanded(true));
   for (const n of [1, 2, 3, 4, 5])
     add(`expand-level:${n}`, t("cmd.expandLevel", { n }), "view", () => m()?.setExpandedToLevel(n));

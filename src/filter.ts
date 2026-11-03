@@ -134,22 +134,29 @@ export interface FilterResult {
 // "Focus this branch": the lit set is the node's whole subtree plus its ancestors (the path back
 // to the root), so focusing keeps the branch and its route visible while everything else dims.
 // Reuses the same lit/dim pipeline as the Power Filter. Empty set if the id isn't found. Pure.
-export function focusSet(doc: MindMapDoc, id: string): Set<string> {
+export function focusSet(doc: MindMapDoc, ids: string | readonly string[]): Set<string> {
+  const wanted = new Set(typeof ids === "string" ? [ids] : ids);
   const lit = new Set<string>();
-  const litSubtree = (n: MapNode): void => {
-    lit.add(n.id);
-    for (const c of n.children) litSubtree(c);
-  };
-  const find = (n: MapNode, ancestors: string[]): boolean => {
-    if (n.id === id) {
-      for (const a of ancestors) lit.add(a);
-      litSubtree(n);
-      return true;
+  if (!wanted.size) return lit;
+  // One iterative traversal of the main and floating trees. On the way down, mark focused
+  // descendants; on the way back up, mark their ancestors. No repeated subtree scans for multi-select.
+  const stack = [doc.root, ...(doc.floatingTopics ?? [])].map((node) => ({
+    node,
+    inside: false,
+    exit: false,
+  }));
+  while (stack.length) {
+    const item = stack.pop();
+    if (!item) break;
+    const { node, inside, exit } = item;
+    if (exit) {
+      if (node.children.some((child) => lit.has(child.id))) lit.add(node.id);
+    } else {
+      const focused = inside || wanted.has(node.id);
+      if (focused) lit.add(node.id);
+      stack.push({ node, inside: focused, exit: true });
+      for (const child of node.children) stack.push({ node: child, inside: focused, exit: false });
     }
-    return n.children.some((c) => find(c, [...ancestors, n.id]));
-  };
-  if (!find(doc.root, [])) {
-    for (const f of doc.floatingTopics ?? []) if (find(f, [])) break;
   }
   return lit;
 }

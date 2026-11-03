@@ -19,7 +19,7 @@ public final class HuaweiProfileTest extends TabletTestBase {
             return;
         }
         ready();
-        assertEquals("com.ithread.android.huawei.compat", InstrumentationRegistry.getInstrumentation().getTargetContext().getPackageName());
+        assertEquals("com.ithread.android.huawei.compat.focus", InstrumentationRegistry.getInstrumentation().getTargetContext().getPackageName());
         assertEquals("true", evaluate("document.documentElement.dataset.compat==='huawei' && location.pathname==='/assets/index.html' && Boolean(window.iThreadAndroid)"));
         scenario.onActivity(activity -> {
             try {

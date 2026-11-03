@@ -82,6 +82,24 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("App (integration)", () => {
+  it("exposes independent focus and auto zoom switches and exits focus with Escape", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    await flush();
+    await openEditor(user, container);
+    fireEvent.keyDown(window, { code: "KeyF", altKey: true, shiftKey: true });
+    expect(screen.getByText("Focus follows your selection")).toBeTruthy();
+    await user.click(screen.getByTitle("View actions"));
+    const zoom = screen.getByRole("menuitemcheckbox", { name: "Auto zoom" });
+    expect(zoom.getAttribute("aria-checked")).toBe("false");
+    await user.click(zoom);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByText("Focus follows your selection")).toBeNull();
+    await user.click(screen.getByTitle("View actions"));
+    expect(
+      screen.getByRole("menuitemcheckbox", { name: "Auto zoom" }).getAttribute("aria-checked"),
+    ).toBe("true");
+  });
   it("boots to the Start screen and opens a map into the editor", async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);

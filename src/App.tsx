@@ -49,8 +49,9 @@ import "./design/editorial.css";
 import { useCliBridge } from "./agent/useCliBridge";
 import { editorThemeVars } from "./design/tokens";
 import { designById } from "./designs";
-import { type FilterCriteria, filterResult, filterToDoc, focusSet, isFilterActive } from "./filter";
+import { type FilterCriteria, filterResult, filterToDoc, isFilterActive } from "./filter";
 import { clampIndex, togglePlay } from "./historyPlayback";
+import { useBranchFocus } from "./hooks/useBranchFocus";
 import { useClipboardImagePaste } from "./hooks/useClipboardImagePaste";
 import { useCommandPaletteHotkey } from "./hooks/useCommandPaletteHotkey";
 import { useDiskFile } from "./hooks/useDiskFile";
@@ -67,6 +68,7 @@ import { usePasteOutline } from "./hooks/usePasteOutline";
 import { useSheetDrag } from "./hooks/useSheetDrag";
 import { useToast } from "./hooks/useToast";
 import { useVersionHistory } from "./hooks/useVersionHistory";
+import { useViewModeHotkeys } from "./hooks/useViewModeHotkeys";
 import { getLocale, t } from "./i18n";
 import { tNodes } from "./i18n/nodes";
 import { MARKER_PALETTE } from "./icons";
@@ -517,17 +519,25 @@ export function App() {
     if ((selected || selectedEdge || selectedOverlay) && !panels.infoMinimized)
       panels.setInfoOpen(true);
   }, [selected?.id, selectedEdge?.id, selectedOverlay?.id]);
-  const [focus, setFocus] = useState<{ id: string; topic: string } | null>(null);
-  const focusLit = useMemo(() => (focus ? focusSet(liveDoc, focus.id) : null), [focus, liveDoc]);
-  const litIds = focusLit && focusLit.size > 0 ? focusLit : (filterHits?.lit ?? null);
+  const [focusSelection, setFocusSelection] = useState<string[]>([]);
+  const branchFocus = useBranchFocus(liveDoc, focusSelection);
+  const { mode: focusMode, setFocus } = branchFocus;
+  const litIds = branchFocus.litIds ?? filterHits?.lit ?? null;
+  const [autoZoom, setAutoZoom] = useState(false);
+  const toggleFocus = useCallback(
+    () =>
+      branchFocus.setMode(
+        focusMode === "off" ? (focusSelection.length ? "locked" : "follow") : "off",
+      ),
+    [branchFocus.setMode, focusMode, focusSelection.length],
+  );
+  const toggleAutoZoom = useCallback(() => setAutoZoom((value) => !value), []);
+  useViewModeHotkeys(view === "editor", toggleFocus, toggleAutoZoom);
   // Drill-in (focus-on-topic): the node whose subtree fills the canvas (a pure view re-root). Null =
   // the whole map. Editing still works while drilled — the canvas keeps editing the full doc.
   const [drillId, setDrillId] = useState<string | null>(null);
   const drillTopic = drillId ? (findAnyNode(liveDoc, drillId)?.topic ?? null) : null;
   // Drop a focus/drill whose node has been deleted, and let Esc clear them.
-  useEffect(() => {
-    if (focus && (!focusLit || focusLit.size === 0)) setFocus(null);
-  }, [focus, focusLit]);
   useEffect(() => {
     if (drillId && !findAnyNode(liveDoc, drillId)) setDrillId(null);
   }, [drillId, liveDoc]);
@@ -1618,6 +1628,11 @@ export function App() {
       changeLayout,
       selected,
       setFocus,
+      focusMode,
+      setFocusMode: branchFocus.setMode,
+      toggleFocus,
+      autoZoom,
+      toggleAutoZoom,
       handleImage,
       handleBackgroundImage,
       copyFormat,
@@ -2044,7 +2059,7 @@ export function App() {
 
         <ToastBar toast={toast} onDismiss={dismissToast} variant="inline" />
 
-        {focus && (
+        {focusMode !== "off" && (
           <div
             style={{
               display: "flex",
@@ -2058,18 +2073,21 @@ export function App() {
               color: "var(--ed-toast-ink, #26215c)",
             }}
           >
-            <span>
-              ◎{" "}
-              {tNodes("app.focusingBranch", {
-                topic: <strong>{focus.topic || t("common.untitled")}</strong>,
-              })}
-            </span>
+            <span>◎ {t(focusMode === "follow" ? "view.focusFollowing" : "view.focusLocked")}</span>
             <button
               type="button"
               onClick={() => setFocus(null)}
               style={{ ...controlStyle, padding: "1px 8px", fontSize: 12 }}
             >
               {t("app.showAllEsc")}
+            </button>
+            <button
+              type="button"
+              onClick={() => branchFocus.setMode(focusMode === "follow" ? "locked" : "follow")}
+              disabled={focusMode === "follow" && !focusSelection.length}
+              style={{ ...controlStyle, padding: "1px 8px", fontSize: 12 }}
+            >
+              {t(focusMode === "follow" ? "view.lockSelection" : "view.followSelection")}
             </button>
           </div>
         )}
@@ -2380,7 +2398,9 @@ export function App() {
                 numbered={panels.numbered}
                 spellcheck={panels.spellcheck}
                 litIds={playback ? null : litIds}
-                hideUnmatched={!playback && filter.hide && panels.filterOpen}
+                hideUnmatched={!playback && focusMode === "off" && filter.hide && panels.filterOpen}
+                autoZoom={!playback && guidedWalk.index === null && autoZoom}
+                onSelectionIds={setFocusSelection}
                 highlightIds={playback ? null : searchMatchIds}
                 drillId={playback ? null : drillId}
                 libraryMaps={maps.map((m) => ({ id: m.id, title: m.title }))}

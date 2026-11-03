@@ -102,6 +102,13 @@ export const CORE_EN = {
   },
   "app.importedMoreSuffix": " (+{n} more)",
   "app.focusingBranch": "Focusing branch: {topic}",
+  "view.focus": "Focus mode",
+  "view.followSelection": "Follow selection",
+  "view.lockSelection": "Lock focus to selection",
+  "view.focusFollowing": "Focus follows your selection",
+  "view.focusLocked": "Focus locked · other branches stay visible",
+  "view.autoZoom": "Auto zoom",
+  "view.toggleAutoZoom": "Toggle automatic zoom to selection",
   "app.drilledInto": "Drilled into: {topic}",
   "app.pasteOutlineExplain":
     "Paste an outline, a bullet list, or Markdown — indentation (or {hashHeadings} headings) sets the hierarchy. A spreadsheet selection (Excel / Sheets) becomes one topic per row, with extra columns as the note and a {tagsColumn} column as tags.",

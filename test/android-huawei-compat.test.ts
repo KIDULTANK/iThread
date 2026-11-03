@@ -60,7 +60,7 @@ describe("Huawei compatibility profile", () => {
   it("keeps the normal APK identity and uses a different identity for the special build", () => {
     const gradle = source("android/app/build.gradle");
     expect(gradle).toContain("applicationIdSuffix '.preview'");
-    expect(gradle).toContain("applicationIdSuffix '.huawei.compat'");
+    expect(gradle).toContain("applicationIdSuffix '.huawei.compat.focus'");
     expect(gradle).toContain("buildConfigField 'boolean', 'HUAWEI_COMPAT', 'false'");
     expect(source("android/app/src/main/java/com/ithread/android/SyncPolicy.java")).toContain(
       "MIN_WEBVIEW_MAJOR = 124",

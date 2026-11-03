@@ -23,8 +23,8 @@ android {
         release { minifyEnabled false }
         huaweiCompat {
             initWith debug
-            applicationIdSuffix '.huawei.compat'
-            versionNameSuffix '-huawei-compat.1'
+            applicationIdSuffix '.huawei.compat.focus'
+            versionNameSuffix '-huawei-compat.2'
             buildConfigField 'boolean', 'HUAWEI_COMPAT', 'true'
             matchingFallbacks = ['debug']
         }

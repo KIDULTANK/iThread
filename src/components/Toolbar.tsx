@@ -9,6 +9,7 @@ import {
   MenuSub,
 } from "../design/primitives";
 import { examples } from "../examples";
+import type { FocusMode } from "../hooks/useBranchFocus";
 import type { SaveState } from "../hooks/useIdbAutosave";
 import { t } from "../i18n";
 import { MAP_PARTS, buildMapPart } from "../mapParts";
@@ -186,6 +187,11 @@ export interface ToolbarCanvas {
   changeLayout: (value: LayoutKind) => void;
   selected: SelectedNode | null;
   setFocus: (focus: { id: string; topic: string }) => void;
+  focusMode: FocusMode;
+  setFocusMode: (mode: FocusMode) => void;
+  toggleFocus: () => void;
+  autoZoom: boolean;
+  toggleAutoZoom: () => void;
   /** Per-node image picker (the "Image" label control). */
   handleImage: (event: ChangeEvent<HTMLInputElement>) => void;
   /** Per-map canvas background image picker. */
@@ -931,6 +937,23 @@ export function Toolbar({
           sheet={isMobile}
         >
           <MenuItem icon={mi("fit")} label={t("cmd.fit")} onSelect={() => m()?.fit()} />
+          <MenuCheckboxItem
+            icon={mi("balance")}
+            label={t("view.focus")}
+            checked={canvas.focusMode !== "off"}
+            trailing={mi("check")}
+            closeOnSelect
+            onSelect={canvas.toggleFocus}
+          />
+          <MenuCheckboxItem
+            icon={mi("fit")}
+            label={t("view.autoZoom")}
+            checked={canvas.autoZoom}
+            trailing={mi("check")}
+            closeOnSelect
+            onSelect={canvas.toggleAutoZoom}
+          />
+          <MenuSeparator />
           <MenuItem
             icon={mi("balance")}
             label={t("cmd.balance-map")}

@@ -3,7 +3,7 @@ name: Build Huawei compatibility test APK
 on:
   workflow_dispatch:
   push:
-    branches: [codex/android-huawei-compat-20261026]
+    branches: [codex/android-huawei-compat-20261026, codex/focus-autozoom-20261103]
 
 permissions:
   contents: read
@@ -95,9 +95,9 @@ jobs:
           script: |
             adb install -r test-apks/huaweiCompat/app-huaweiCompat.apk
             adb install -r test-apks/androidTest/huaweiCompat/app-huaweiCompat-androidTest.apk
-            adb shell am instrument -w -r -e notClass com.ithread.android.UpgradeStorageTest com.ithread.android.huawei.compat.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.log
+            adb shell am instrument -w -r -e notClass com.ithread.android.UpgradeStorageTest com.ithread.android.huawei.compat.focus.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.log
             adb logcat -d -v brief AndroidRuntime:E chromium:E iThreadCompatTest:I '*:S' > runtime-errors.log
-            adb pull /sdcard/Android/data/com.ithread.android.huawei.compat/files/qa runtime-screenshots || true
+            adb pull /sdcard/Android/data/com.ithread.android.huawei.compat.focus/files/qa runtime-screenshots || true
             ! grep -E 'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|INSTRUMENTATION_STATUS_CODE: -4' instrumentation.log
             grep -q 'OK (' instrumentation.log
       - uses: actions/upload-artifact@v4

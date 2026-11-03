@@ -111,6 +111,8 @@ export function shortcutGroups(): ShortcutGroup[] {
       title: t("common.view"),
       items: [
         { keys: ".", action: t("shortcuts.action.collapseExpandBranch") },
+        { keys: "Alt + Shift + F", action: t("view.focus") },
+        { keys: "Alt + Shift + Z", action: t("view.toggleAutoZoom") },
         { keys: "0…9", action: t("shortcuts.action.showLevels") },
         { keys: t("shortcuts.keys.middleRightDrag"), action: t("shortcuts.action.panTheCanvas") },
         {
