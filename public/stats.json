@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-11-02T15:54:21.531Z",
-  "commit": "048c2ec",
+  "generatedAt": "2026-11-09T16:21:32.854Z",
+  "commit": "ded3696",
   "headline": {
     "linesTsJs": 93982,
     "tests": 2435,
-    "lineCoveragePct": 90.3,
-    "commits": 1271,
-    "ageDays": 143,
+    "lineCoveragePct": 90.21,
+    "commits": 1272,
+    "ageDays": 150,
     "trackedFiles": 645,
     "featureManualPct": 100,
     "featureBookPct": 96.1,
@@ -41,50 +41,50 @@
   ],
   "coverage": {
     "lines": {
-      "pct": 90.3,
-      "covered": 35913,
+      "pct": 90.21,
+      "covered": 35879,
       "total": 39769
     },
     "statements": {
-      "pct": 90.3,
-      "covered": 35913,
+      "pct": 90.21,
+      "covered": 35879,
       "total": 39769
     },
     "functions": {
-      "pct": 79.09,
-      "covered": 2122,
+      "pct": 79.05,
+      "covered": 2121,
       "total": 2683
     },
     "branches": {
-      "pct": 86.44,
-      "covered": 10211,
-      "total": 11812
+      "pct": 86.47,
+      "covered": 10213,
+      "total": 11811
     }
   },
   "tests": {
     "unit": 2435,
     "e2e": 0,
-    "durationMs": 116074,
+    "durationMs": 130744,
     "slowest": [
       {
         "file": "test/flowmindmap.test.tsx",
-        "ms": 26875
+        "ms": 30866
       },
       {
         "file": "test/app-integration.test.tsx",
-        "ms": 18982
+        "ms": 23852
       },
       {
         "file": "test/panels.test.tsx",
-        "ms": 8399
+        "ms": 9866
       },
       {
         "file": "test/toolbar.test.tsx",
-        "ms": 7650
+        "ms": 8919
       },
       {
         "file": "test/book-build.test.ts",
-        "ms": 4761
+        "ms": 6259
       }
     ]
   },
@@ -127,6 +127,10 @@
     "mutationScore": null,
     "leastCovered": [
       {
+        "file": "components/RecoveryDialog.tsx",
+        "pct": 0
+      },
+      {
         "file": "io/ithoughts.worker.ts",
         "pct": 0
       },
@@ -141,10 +145,6 @@
       {
         "file": "mindmap/flow/ShapeLayer.tsx",
         "pct": 20.33
-      },
-      {
-        "file": "components/start/useLibrary.ts",
-        "pct": 40.47
       }
     ],
     "churnHotspots": [
@@ -172,7 +172,7 @@
     "risky": [
       {
         "file": "App.tsx",
-        "pct": 57.33,
+        "pct": 57.53,
         "commits": 7
       }
     ]
@@ -330,8 +330,8 @@
   },
   "git": {
     "born": "2026-06-11T20:30:20+02:00",
-    "ageDays": 143,
-    "commits": 1271,
+    "ageDays": 150,
+    "commits": 1272,
     "commits7d": 0,
     "authors": [
       {
@@ -340,7 +340,7 @@
       },
       {
         "name": "github-actions[bot]",
-        "count": 572
+        "count": 573
       },
       {
         "name": "Claude",
@@ -352,8 +352,8 @@
       }
     ],
     "churn30d": {
-      "added": 8131,
-      "removed": 1964
+      "added": 4152,
+      "removed": 475
     },
     "changelogEntries": 462
   }
